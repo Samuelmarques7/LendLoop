@@ -1,4 +1,4 @@
-﻿# Nome do Projeto
+﻿# LendLoop
 
 Este projeto propõe uma plataforma de aluguel online entre pessoas (modelo peer-to-peer), com o objetivo de facilitar o acesso a itens de uso esporádico e dar utilidade a objetos que estão ociosos.
 
@@ -36,3 +36,4 @@ Com poucos cliques, qualquer pessoa pode anunciar um item ou alugar o que precis
 
 1. **Clone o repositório**  
    git clone https://github.com/Samuelmarques7/do-zero-ao-mvp
+
