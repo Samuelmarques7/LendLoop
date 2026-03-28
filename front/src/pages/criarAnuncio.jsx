@@ -16,7 +16,7 @@ function CriarAnuncio () // componente inicia com letra maiúscula
     // estado para armazenar as fotos do produto, inicialmente é um array vazio, pois ainda não tem fotos
     const [fotos, setFotos] = useState([])
 
-    function handleSubmit (e) // 'e' é o evento de submit do formulario, essa função será chamada
+    function handleDetalhesSubmit (e) // 'e' é o evento de submit do formulario, essa função será chamada
     {
         // 'preventDefault' faz com que a página não recarregue
         e.preventDefault()
@@ -29,6 +29,13 @@ function CriarAnuncio () // componente inicia com letra maiúscula
         console.log('Subcategoria:', subcategoria)
     }
 
+    function handleFotosSubmit (e)
+    {
+        e.preventDefault()
+        setStep(3)
+
+        console.log('Fotos:', fotos)
+    }
     // função para manter todas as fotos cujo indice for diferente do indice da foto que queremos remover
     // revome a foto do array, função que recebe como parametro o indice da foto a ser removida
     function removerFoto(index)
@@ -44,7 +51,7 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                     <div>
                         <h2>Detalhes do Anúncio</h2> {/* 'h2' título menor */}
 
-                        <form onSubmit = {handleSubmit}>
+                        <form onSubmit = {handleDetalhesSubmit}>
                             <label>Título</label> {/* 'label' para descrever a que o campo se refere */}
                             <input
                                 placeholder="ex: Batedeira Arno" 
@@ -86,19 +93,18 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                     <div>
                         <h2>Fotos do Anúncio</h2>
 
-                        <form>
+                        <form onSubmit = {handleFotosSubmit}>
                             <input 
                                 type='file' multiple
                                 onChange = {(e) => 
                                 {
                                     {/* Neste setFotos, recebe dentro do input os files atuais e junta com os anteriores, faz tipo um +=, '...' serve para espalhar os elementos do array */}
                                     setFotos(fotosAnteriores => [...fotosAnteriores, ...Array.from(e.target.files)])
-                                    console.log(fotos)
                                 }}
                             />
 
-                            <button>Continuar</button>
-                        </form>
+                            <button type='submit'>Continuar</button>
+                        </form> 
 
                         {/* Exibe as fotos selecionadas */}
                         {/* '=>' é um arrow function, é uma forma resumida de escrever funções em JavaScript */}
@@ -109,8 +115,6 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                                 <button onClick={() => removerFoto(indice)}>X</button>
                             </div>
                         ))}
-                        
-
                     </div>
                 }
             </>
