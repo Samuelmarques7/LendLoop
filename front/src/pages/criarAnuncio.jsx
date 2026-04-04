@@ -16,6 +16,16 @@ function CriarAnuncio () // componente inicia com letra maiúscula
     // estado para armazenar as fotos do produto, inicialmente é um array vazio, pois ainda não tem fotos
     const [fotos, setFotos] = useState([])
 
+    const [endereco, setEndereco] = useState({
+        cep: "",
+        rua: "",
+        numero: "",
+        complemento: "",
+        bairro: "",
+        cidade: "",
+        estado: ""
+    })
+
     function handleDetalhesSubmit (e) // 'e' é o evento de submit do formulario, essa função será chamada
     {
         // 'preventDefault' faz com que a página não recarregue
@@ -115,6 +125,11 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                                 <button onClick={() => removerFoto(indice)}>X</button>
                             </div>
                         ))}
+                    </div>
+                }
+                {step === 3 &&
+                    <div>
+
                     </div>
                 }
             </>
