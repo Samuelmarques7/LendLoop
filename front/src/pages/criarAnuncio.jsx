@@ -148,7 +148,25 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                             <input
                                 placeholder='00000-000'
                                 value={endereco.cep}
-                                onChange = {(e) => setEndereco({...endereco, cep: e.target.value})}
+                                onChange = {(e) => {
+                                    setEndereco({...endereco, cep: e.target.value})
+
+                                    if(e.target.value.length === 8)
+                                    {
+                                        fetch(`https://brasilapi.com.br/api/cep/v1/${e.target.value}`)
+                                            .then(retorno => retorno.json())
+                                            .then(dados =>
+                                                {
+                                                    setEndereco({
+                                                        ...endereco,
+                                                        rua: dados.street,
+                                                        bairro: dados.neighborhood,
+                                                        cidade: dados.city,
+                                                        estado: dados.state
+                                                    })
+                                                })
+                                    }
+                                }}
                             />
 
                             <label>Rua</label>
