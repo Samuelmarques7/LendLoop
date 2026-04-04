@@ -6,6 +6,8 @@ function CriarAnuncio () // componente inicia com letra maiúscula
 {
     const [step, setStep] = useState(1)
 
+    const estados = ['SELECIONE','AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO']
+
     // estados para armazenar os dados do produto
     // 'setTitulo' não armazena uma variavel, mas sim uma função 
     const [titulo, setTitulo] = useState("") 
@@ -16,11 +18,13 @@ function CriarAnuncio () // componente inicia com letra maiúscula
     // estado para armazenar as fotos do produto, inicialmente é um array vazio, pois ainda não tem fotos
     const [fotos, setFotos] = useState([])
 
+   // estado para armazenar o endereço do produto, inicialmente é um objeto vazio, pois ainda não tem endereço 
     const [endereco, setEndereco] = useState({
         cep: "",
         rua: "",
         numero: "",
         complemento: "",
+        semComplemento: false,
         bairro: "",
         cidade: "",
         estado: ""
@@ -45,6 +49,14 @@ function CriarAnuncio () // componente inicia com letra maiúscula
         setStep(3)
 
         console.log('Fotos:', fotos)
+    }
+
+    function handleLocalizacaoSubmit (e)
+    {
+        e.preventDefault()
+        setStep(4)
+
+        console.log('Endereço:', endereco)
     }
     // função para manter todas as fotos cujo indice for diferente do indice da foto que queremos remover
     // revome a foto do array, função que recebe como parametro o indice da foto a ser removida
@@ -129,7 +141,73 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                 }
                 {step === 3 &&
                     <div>
+                        <h2>Localização</h2>
 
+                        <form onSubmit={handleLocalizacaoSubmit}>
+                            <label>CEP</label>
+                            <input
+                                placeholder='00000-000'
+                                value={endereco.cep}
+                                onChange = {(e) => setEndereco({...endereco, cep: e.target.value})}
+                            />
+
+                            <label>Rua</label>
+                            <input
+                                value={endereco.rua}
+                                onChange = {(e) => setEndereco({...endereco, rua: e.target.value})}
+                            />
+
+                            <label>Número</label>
+                            <input
+                                placeholder='ex: 123'
+                                value={endereco.numero}
+                                onChange = {(e) => setEndereco({...endereco, numero: e.target.value})}
+                            />
+
+                            <label>Complemento</label>
+                            <input
+                                disabled={endereco.semComplemento} 
+                                placeholder='ex: Casa, Apto, etc...'
+                                value={endereco.complemento}
+                                onChange = {(e) => setEndereco({...endereco, complemento: e.target.value})}
+                            />
+
+                            {/*'checked' serve para verificar se o checkbox está marcado , logo corresponde a dois estados apenas*/}
+                            {/* condicao ? 'se verdadeiro' : 'se falso' */}
+                            <input 
+                                type='checkbox'
+                                checked={endereco.semComplemento}
+                                onChange={(e) => setEndereco({
+                                    ...endereco, semComplemento: e.target.checked,
+                                    complemento: e.target.checked ? '' : ''
+                                })}
+                            />
+                            <label>Sem complemento</label>
+                
+                            <label>Bairro</label>
+                            <input
+                                value={endereco.bairro}
+                                onChange = {(e) => setEndereco({...endereco, bairro: e.target.value})}
+                            />
+
+                            <label>Cidade</label>
+                            <input
+                                value={endereco.cidade}
+                                onChange = {(e) => setEndereco({...endereco, cidade: e.target.value})}
+                            />
+
+                            <label>Estado</label>
+                            <select
+                                value={endereco.estado}
+                                onChange = {(e) => setEndereco({...endereco, estado: e.target.value})}
+                            >
+                                {estados.map(estado =>(
+                                    <option key = {estado} value={estado}>{estado}</option>
+                                ))}
+                            </select>
+
+                            <button type='submit'>Continuar</button>
+                        </form>
                     </div>
                 }
             </>
