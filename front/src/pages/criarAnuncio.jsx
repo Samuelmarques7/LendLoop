@@ -122,7 +122,7 @@ function CriarAnuncio () // componente inicia com letra maiúscula
     // Dentro do 'return' vai tudo que queremos mostrar na tela, como textos, imagens, etc.
     return (  
         <>
-            <h1>Criar Novo Anúncio</h1>  {/* 'h1' título maior */}        
+            <h1 className='text-verde-escuro'>Criar Novo Anúncio</h1>  {/* 'h1' título maior */}        
                 {step === 1 && 
                     <div>
                         <h2>Detalhes do Anúncio</h2> {/* 'h2' título menor */}

@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
-.read-the-docs{
-  color: pink;
+@theme {
+  --color-verde-escuro: #006861;
+  --color-verde-agua: #00B795;
+  --color-ciano: #05BFBE;
+  --color-azul-oceano: #00639E;
+  --color-grafite: #1A1A1A;
 }
