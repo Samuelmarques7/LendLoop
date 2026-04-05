@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { DayPicker } from 'react-day-picker'
+import 'react-day-picker/dist/style.css'
 
 // 'function' no react é um componente
 // 'function' estamos criando uma parte da interface (uma tela)
@@ -30,6 +32,8 @@ function CriarAnuncio () // componente inicia com letra maiúscula
         estado: ""
     })
 
+    const [disponivel, setDisponivel] = useState([])
+
     function handleDetalhesSubmit (e) // 'e' é o evento de submit do formulario, essa função será chamada
     {
         // 'preventDefault' faz com que a página não recarregue
@@ -58,6 +62,16 @@ function CriarAnuncio () // componente inicia com letra maiúscula
 
         console.log('Endereço:', endereco)
     }
+
+    function handleDisponibilidadeSubmit()
+    {
+        // sem 'e.preventDefault()', pois esse botão não está dentro de um formulário, logo não tem evento de submit'
+        // como não há formulário, não recarrega a página, então não precisa do 'preventDefault'
+        setStep(5)
+
+        console.log('Disponibilidade:', disponivel)
+    }
+    
     // função para manter todas as fotos cujo indice for diferente do indice da foto que queremos remover
     // revome a foto do array, função que recebe como parametro o indice da foto a ser removida
     function removerFoto(index)
@@ -226,6 +240,23 @@ function CriarAnuncio () // componente inicia com letra maiúscula
 
                             <button type='submit'>Continuar</button>
                         </form>
+                    </div>
+                }
+                {step === 4 &&
+                    <div>
+                        <h2>Disponibilidade</h2>
+
+                        <DayPicker
+                            mode='multiple'
+                            selected={disponivel}
+                            onSelect={setDisponivel}
+                        />
+
+                        {console.log(disponivel)}
+
+                        <p>{disponivel.length} dias selecionados</p>
+
+                        <button onClick={handleDisponibilidadeSubmit}>Continuar</button>                    
                     </div>
                 }
             </>
