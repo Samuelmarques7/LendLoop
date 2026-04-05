@@ -8,8 +8,6 @@ function CriarAnuncio () // componente inicia com letra maiúscula
 {
     const [step, setStep] = useState(1)
 
-    const estados = ['SELECIONE','AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO']
-
     // estados para armazenar os dados do produto
     // 'setTitulo' não armazena uma variavel, mas sim uma função 
     const [titulo, setTitulo] = useState("") 
@@ -32,7 +30,14 @@ function CriarAnuncio () // componente inicia com letra maiúscula
         estado: ""
     })
 
+    const estados = ['SELECIONE','AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO']
+    
     const [disponivel, setDisponivel] = useState([])
+
+    const [precos, setPrecos] = useState({
+        precoPorDia: '',
+        caucao: ''   
+    })
 
     function handleDetalhesSubmit (e) // 'e' é o evento de submit do formulario, essa função será chamada
     {
@@ -71,7 +76,42 @@ function CriarAnuncio () // componente inicia com letra maiúscula
 
         console.log('Disponibilidade:', disponivel)
     }
-    
+
+    function handlePrecosSubmit(e)
+    {
+        e.preventDefault()
+        setStep(6)
+
+        console.log('Preços e Condições:', precos)
+    }
+
+    function handlePublicar()
+    {
+        console.log('Anúncio publicado!', {
+            titulo,
+            descricao,
+            categoria,
+            subcategoria,
+            fotos,
+            endereco,
+            disponivel,
+            precos
+        })
+    }
+
+    function handleRascunho()
+    {
+        console.log('Anúncio salvo como rascunho!', {
+            titulo,
+            descricao,
+            categoria,
+            subcategoria,
+            fotos,
+            endereco,
+            disponivel,
+            precos
+        })
+    }
     // função para manter todas as fotos cujo indice for diferente do indice da foto que queremos remover
     // revome a foto do array, função que recebe como parametro o indice da foto a ser removida
     function removerFoto(index)
@@ -139,6 +179,7 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                                 }}
                             />
 
+                            <button onClick={() => setStep(step - 1)}>Voltar</button>
                             <button type='submit'>Continuar</button>
                         </form> 
 
@@ -237,7 +278,8 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                                     <option key = {estado} value={estado}>{estado}</option>
                                 ))}
                             </select>
-
+                            
+                            <button onClick={() => setStep(step - 1)}>Voltar</button>
                             <button type='submit'>Continuar</button>
                         </form>
                     </div>
@@ -256,7 +298,57 @@ function CriarAnuncio () // componente inicia com letra maiúscula
 
                         <p>{disponivel.length} dias selecionados</p>
 
+                        <button onClick={() => setStep(step - 1)}>Voltar</button>
                         <button onClick={handleDisponibilidadeSubmit}>Continuar</button>                    
+                    </div>
+                }
+                {step === 5 &&
+                    <div>
+                        <form onSubmit={handlePrecosSubmit}>
+                            <h2>Preços e Condições</h2>
+
+                            <label>Preço por dia</label>
+                            <input
+                                type='number'
+                                placeholder='R$ 0,00'
+                                value={precos.precoPorDia}
+                                onChange={(e) => setPrecos({...precos, precoPorDia: e.target.value})}
+                            />
+
+                            <label>Valor do caução (Opcional) </label>
+                            <input
+                                type='number'
+                                placeholder='R$ 0,00'
+                                value={precos.caucao}
+                                onChange={(e) => setPrecos({...precos, caucao: e.target.value})}
+                            />
+
+                            <button onClick={() => setStep(step - 1)}>Voltar</button>
+                            <button type='submit'>Concluir</button>
+                        </form>
+                    </div>
+                }
+                {step === 6 &&
+                    <div>
+                        <h2>Resumo do Anúncio</h2>
+
+                        <p><strong>Produto:</strong> {titulo}</p>
+                        <p><strong>Descrição:</strong> {descricao}</p>
+                        <p><strong>Categoria:</strong> {categoria} / {subcategoria}</p>
+                        <p>{fotos.length} fotos adicionadas</p>
+                        <p><strong>Endereço:</strong> 
+                            {endereco.rua}, 
+                            {endereco.numero}, 
+                            {endereco.complemento && endereco.complemento} - {endereco.bairro}, 
+                            {endereco.cidade}/{endereco.estado}
+                        </p>
+                        <p><strong>Disponibilidade:</strong> {disponivel.length} dias selecionados</p>
+                        <p><strong>Preço por dia:</strong> {precos.precoPorDia}</p>
+                        {precos.caucao && <p><strong>Caução:</strong> {precos.caucao}</p>} 
+
+                        <button onClick={() => setStep(step - 1)}>Voltar</button>
+                        <button onClick={handlePublicar}>Publicar Anúncio</button>
+                        <button onClick={handleRascunho}>Salvar como rascunho</button>
                     </div>
                 }
             </>
