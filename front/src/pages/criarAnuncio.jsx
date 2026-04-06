@@ -7,6 +7,7 @@ import 'react-day-picker/dist/style.css'
 function CriarAnuncio () // componente inicia com letra maiúscula
 {
     const [step, setStep] = useState(1)
+    const steps = ['Detalhes', 'Fotos', 'Localização', 'Disponibilidade', 'Preços', 'Resumo']
 
     // estados para armazenar os dados do produto
     // 'setTitulo' não armazena uma variavel, mas sim uma função 
@@ -122,7 +123,36 @@ function CriarAnuncio () // componente inicia com letra maiúscula
     // Dentro do 'return' vai tudo que queremos mostrar na tela, como textos, imagens, etc.
     return (  
         <>
-            <h1 className='text-verde-escuro'>Criar Novo Anúncio</h1>  {/* 'h1' título maior */}        
+            <div className='max-w-3x1 mx-auto px-6'>
+                <div className='flex items-center justify-center mt-4'>
+                    {steps.map((nome, index) => {
+                        const complete = index + 1 < step
+                        const active = index + 1 === step
+
+                        return (
+                            <div key={index} className='flex items-start'>
+                                <div className='flex flex-col items-center min-w-16'>
+                                
+                                    {/*bolinha*/}
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${active ? 'bg-verde-agua' : complete ? 'bg-verde-escuro' : 'bg-gray-300'}`}>
+                                        {index + 1}
+                                    </div>
+
+                                    {/*nome*/}
+                                    <span className={`text-xs font-medium mt-1 ${active ? 'text-verde-agua' : complete ? 'text-verde-escuro' : 'text-gray-400'}`}>
+                                        {nome}
+                                    </span>
+                                </div>
+
+                                {/*linha*/}
+                                {index < steps.length - 1 && <div className={`w-16 h-1 mt-4 ${complete ? 'bg-verde-escuro' : 'bg-gray-300'}`}></div>}
+                            </div>
+                        )
+                    })}
+                </div>
+
+                <h1 className='text-verde-escuro'>Criar Novo Anúncio</h1>  {/* 'h1' título maior */}        
+                    
                 {step === 1 && 
                     <div>
                         <h2>Detalhes do Anúncio</h2> {/* 'h2' título menor */}
@@ -130,6 +160,7 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                         <form onSubmit = {handleDetalhesSubmit}>
                             <label>Título</label> {/* 'label' para descrever a que o campo se refere */}
                             <input
+                                className='input-default'
                                 placeholder="ex: Batedeira Arno" 
                                 value = {titulo}
                                 onChange = {(e) => setTitulo(e.target.value)}
@@ -137,13 +168,15 @@ function CriarAnuncio () // componente inicia com letra maiúscula
 
                             <label>Descrição</label>
                             <textarea 
+                                className='input-default'
                                 placeholder="Descreva seu item em detalhes...." 
                                 value = {descricao}
                                 onChange = {(e) => setDescricao(e.target.value)}
                             />
-                
+                    
                             <label>Categoria</label>
                             <select
+                                className='input-default'
                                 value = {categoria}
                                 onChange = {(e) => setCategoria(e.target.value)}
                             >
@@ -154,14 +187,15 @@ function CriarAnuncio () // componente inicia com letra maiúscula
 
                             <label>Subcategoria</label>
                             <select
+                                className='input-default'
                                 value = {subcategoria}
                                 onChange = {(e) => setSubcategoria(e.target.value)}
                             >
                                 <option>Selecione</option>
                             </select>
-                
-                            {/* 'type=submit', pois submit é a convenção para botões de envio de formulario  */}
-                            <button type="submit">Continuar</button>
+                    
+                            {/* 'type=submit', pois submit é a convenção para botões de envio de formulario  */}        
+                            <button type="submit" className='btn-next'>Próximo</button>
                         </form>
                     </div>
                 }
@@ -172,6 +206,7 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                         <form onSubmit = {handleFotosSubmit}>
                             <input 
                                 type='file' multiple
+                                className='input-default'
                                 onChange = {(e) => 
                                 {
                                     {/* Neste setFotos, recebe dentro do input os files atuais e junta com os anteriores, faz tipo um +=, '...' serve para espalhar os elementos do array */}
@@ -179,8 +214,8 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                                 }}
                             />
 
-                            <button onClick={() => setStep(step - 1)}>Voltar</button>
-                            <button type='submit'>Continuar</button>
+                            <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
+                            <button type='submit' className='btn-next'>Próximo</button>
                         </form> 
 
                         {/* Exibe as fotos selecionadas */}
@@ -201,6 +236,7 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                         <form onSubmit={handleLocalizacaoSubmit}>
                             <label>CEP</label>
                             <input
+                                className='input-default'
                                 placeholder='00000-000'
                                 value={endereco.cep}
                                 onChange = {(e) => {
@@ -226,12 +262,14 @@ function CriarAnuncio () // componente inicia com letra maiúscula
 
                             <label>Rua</label>
                             <input
+                                className='input-default'
                                 value={endereco.rua}
                                 onChange = {(e) => setEndereco({...endereco, rua: e.target.value})}
                             />
 
                             <label>Número</label>
                             <input
+                                className='input-default'
                                 placeholder='ex: 123'
                                 value={endereco.numero}
                                 onChange = {(e) => setEndereco({...endereco, numero: e.target.value})}
@@ -240,6 +278,7 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                             <label>Complemento</label>
                             <input
                                 disabled={endereco.semComplemento} 
+                                className='input-default'
                                 placeholder='ex: Casa, Apto, etc...'
                                 value={endereco.complemento}
                                 onChange = {(e) => setEndereco({...endereco, complemento: e.target.value})}
@@ -249,6 +288,7 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                             {/* condicao ? 'se verdadeiro' : 'se falso' */}
                             <input 
                                 type='checkbox'
+                                className="w-5 h-5 accent-verde-agua cursor-pointer"
                                 checked={endereco.semComplemento}
                                 onChange={(e) => setEndereco({
                                     ...endereco, semComplemento: e.target.checked,
@@ -259,18 +299,21 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                 
                             <label>Bairro</label>
                             <input
+                                className='input-default'
                                 value={endereco.bairro}
                                 onChange = {(e) => setEndereco({...endereco, bairro: e.target.value})}
                             />
 
                             <label>Cidade</label>
                             <input
+                                className='input-default'
                                 value={endereco.cidade}
                                 onChange = {(e) => setEndereco({...endereco, cidade: e.target.value})}
                             />
 
                             <label>Estado</label>
                             <select
+                                className='input-default'
                                 value={endereco.estado}
                                 onChange = {(e) => setEndereco({...endereco, estado: e.target.value})}
                             >
@@ -279,8 +322,8 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                                 ))}
                             </select>
                             
-                            <button onClick={() => setStep(step - 1)}>Voltar</button>
-                            <button type='submit'>Continuar</button>
+                            <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
+                            <button type='submit' className='btn-next'>Próximo</button>
                         </form>
                     </div>
                 }
@@ -298,8 +341,8 @@ function CriarAnuncio () // componente inicia com letra maiúscula
 
                         <p>{disponivel.length} dias selecionados</p>
 
-                        <button onClick={() => setStep(step - 1)}>Voltar</button>
-                        <button onClick={handleDisponibilidadeSubmit}>Continuar</button>                    
+                        <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
+                        <button onClick={handleDisponibilidadeSubmit} className='btn-next'>Próximo</button>                    
                     </div>
                 }
                 {step === 5 &&
@@ -310,6 +353,7 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                             <label>Preço por dia</label>
                             <input
                                 type='number'
+                                className='input-default'
                                 placeholder='R$ 0,00'
                                 value={precos.precoPorDia}
                                 onChange={(e) => setPrecos({...precos, precoPorDia: e.target.value})}
@@ -318,13 +362,14 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                             <label>Valor do caução (Opcional) </label>
                             <input
                                 type='number'
+                                className='input-default'
                                 placeholder='R$ 0,00'
                                 value={precos.caucao}
                                 onChange={(e) => setPrecos({...precos, caucao: e.target.value})}
                             />
 
-                            <button onClick={() => setStep(step - 1)}>Voltar</button>
-                            <button type='submit'>Concluir</button>
+                            <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
+                            <button type='submit' className='btn-next'>Concluir</button>
                         </form>
                     </div>
                 }
@@ -346,13 +391,14 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                         <p><strong>Preço por dia:</strong> {precos.precoPorDia}</p>
                         {precos.caucao && <p><strong>Caução:</strong> {precos.caucao}</p>} 
 
-                        <button onClick={() => setStep(step - 1)}>Voltar</button>
-                        <button onClick={handlePublicar}>Publicar Anúncio</button>
-                        <button onClick={handleRascunho}>Salvar como rascunho</button>
+                        <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
+                        <button onClick={handlePublicar} className='btn-next'>Publicar Anúncio</button>
+                        <button onClick={handleRascunho} className= 'bg-transparent border-2 border-verde-agua text-verde-agua hover:text-verde-escuro hover:border-verde-escuro px-6 py-2 rounded-lg font-bold transition-all cursor-pointer uppercase tracking-widest'>Salvar como rascunho</button>
                     </div>
                 }
-            </>
-        )
-    }
+            </div>
+        </>
+    )
+}
 
 export default CriarAnuncio //exportação do componente para ser usado em outros arquivos, como o 'App.jsx'
