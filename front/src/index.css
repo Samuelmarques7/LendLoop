@@ -1,5 +1,25 @@
 @import "tailwindcss";
 
-.read-the-docs{
-  color: pink;
+@theme {
+  --color-verde-escuro: #006861;
+  --color-verde-agua: #00B795;
+  --color-ciano: #05BFBE;
+  --color-azul-oceano: #00639E;
+  --color-grafite: #1A1A1A;
+  --font-outfit: 'Outfit', sans-serif;
+}
+
+body {
+  font-family: var(--font-outfit);
+}
+@layer components {
+  .btn-next {
+    @apply bg-verde-agua text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-verde-escuro transition-all cursor-pointer uppercase tracking-widest;
+  }
+  .btn-back {
+    @apply border border-gray-300 text-gray-400 hover:text-verde-escuro hover:border-verde-escuro px-6 py-2 rounded-lg transition-all cursor-pointer uppercase tracking-widest;
+  }
+  .input-default {
+    @apply w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:border-verde-agua transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100;
+  }
 }

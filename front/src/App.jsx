@@ -1,12 +1,14 @@
+import CriarAnuncio from "./pages/criarAnuncio" // importando componente para ser usado essa página
 import { ResultadosBusca } from './pages/ResultadosBusca';
 import './index.css';
 
-function App() {
+function App()
+{
   return (
     <div>
-      <ResultadosBusca />
+      <CriarAnuncio /> {/* mostra essa página na tela, ou seja, a page de criar anuncio   */}
+       <ResultadosBusca />
     </div>
   )
 }
-
-export default App;
+export default App // exportação deste componente para ser usado de maneira externa
