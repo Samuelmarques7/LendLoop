@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { 
   LuSearch, 
   LuCalendar, 
@@ -12,6 +13,8 @@ import {
 } from "react-icons/lu";
 
 export function ResultadosBusca() {
+  const navigate = useNavigate(); 
+
   const produtos = [
     {
       id: 1,
@@ -66,8 +69,8 @@ export function ResultadosBusca() {
   return (
     <div className="min-h-screen bg-[#F8F9FA] font-sans text-[#1A1A1A] flex flex-col p-4 md:p-6">
       
-    {/* HEADER - Estilo Cápsula Arredondada */}
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-50 w-full shadow-sm">
+      {/* HEADER - Estilo Cápsula Arredondada */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50 w-full shadow-sm">
         <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
           <div className="text-xl font-bold tracking-widest text-[#1A1A1A] cursor-pointer uppercase">
             PROJETO 
@@ -258,10 +261,16 @@ export function ResultadosBusca() {
                     R$ {produto.preco} <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">/dia</span>
                   </div>
                   <div className="w-full space-y-2 mt-4">
-                    <button className="w-full bg-[#1A1A1A] text-white text-[11px] font-black py-3 rounded-xl hover:bg-black transition-all uppercase tracking-widest cursor-pointer active:scale-95 shadow-sm">
+                    <button 
+                      onClick={() => navigate(`/produto/${produto.id}`)}
+                      className="w-full bg-[#1A1A1A] text-white text-[11px] font-black py-3 rounded-xl hover:bg-black transition-all uppercase tracking-widest cursor-pointer active:scale-95 shadow-sm"
+                    >
                       Reservar
                     </button>
-                    <button className="w-full bg-white border border-gray-200 text-[#1A1A1A] text-[10px] font-bold py-2 rounded-lg hover:border-[#00B795] hover:text-[#00B795] transition-all uppercase tracking-wider cursor-pointer">
+                    <button 
+                      onClick={() => navigate(`/produto/${produto.id}`)}
+                      className="w-full bg-white border border-gray-200 text-[#1A1A1A] text-[10px] font-bold py-2 rounded-lg hover:border-[#00B795] hover:text-[#00B795] transition-all uppercase tracking-wider cursor-pointer"
+                    >
                       Ver detalhes
                     </button>
                   </div>
