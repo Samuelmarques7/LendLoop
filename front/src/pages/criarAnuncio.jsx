@@ -395,15 +395,19 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                     <div>
                         <h2 className = 'text-xl font-bold text-verde-escuro mb-6'>Disponibilidade</h2>
 
-                        <DayPicker
-                            mode='multiple'
-                            selected={disponivel}
-                            onSelect={setDisponivel}
-                        />
+                        <div className="flex justify-center my-4">
+                            <DayPicker
+                                mode='multiple'
+                                selected={disponivel}
+                                onSelect={setDisponivel}
+                            />
+                        </div>
 
                         {console.log(disponivel)}
 
-                        <p>{disponivel.length} dias selecionados</p>
+                        <p className="text-center text-verde-agua font-semibold mb-4">
+                            {disponivel.length} {disponivel.length === 1 ? 'dia selecionado' : 'dias selecionados'}
+                        </p>
 
                         <div className = 'flex justify-between mt-6'>
                             <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
@@ -414,27 +418,33 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                 {step === 5 &&
                     <div>
                         <form onSubmit={handlePrecosSubmit}>
-                            <h2 className = 'text-xl font-bold text-verde-escuro mb-6'>Preços e Condições</h2>
+                            <h2 className='text-xl font-bold text-verde-escuro mb-6'>Preços e Condições</h2>
 
-                            <label>Preço por dia</label>
-                            <input
-                                type='number'
-                                className='input-default'
-                                placeholder='R$ 0,00'
-                                value={precos.precoPorDia}
-                                onChange={(e) => setPrecos({...precos, precoPorDia: e.target.value})}
-                            />
+                            <div className="flex gap-4 mb-4">
+                                <div className="flex-1">
+                                    <label className="label-field">Preço por dia</label>
+                                    <input
+                                        type='number'
+                                        className='input-default'
+                                        placeholder='0,00'
+                                        value={precos.precoPorDia}
+                                        onChange={(e) => setPrecos({...precos, precoPorDia: e.target.value})}
+                                    />
+                                </div>
 
-                            <label>Valor do caução (Opcional) </label>
-                            <input
-                                type='number'
-                                className='input-default'
-                                placeholder='R$ 0,00'
-                                value={precos.caucao}
-                                onChange={(e) => setPrecos({...precos, caucao: e.target.value})}
-                            />
+                                <div className="flex-1">
+                                    <label className="label-field">Caução (Opcional)</label>
+                                    <input
+                                        type='number'
+                                        className='input-default'
+                                        placeholder='0,00'
+                                        value={precos.caucao}
+                                        onChange={(e) => setPrecos({...precos, caucao: e.target.value})}
+                                    />
+                                </div>
+                            </div>
 
-                            <div className = 'flex justify-between mt-6'>
+                            <div className='flex justify-between mt-6'>
                                 <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
                                 <button type='submit' className='btn-next'>Concluir</button>
                             </div>
@@ -443,29 +453,27 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                 }
                 {step === 6 &&
                     <div>
-                        <h2 className = 'text-xl font-bold text-verde-escuro mb-6'>Resumo do Anúncio</h2>
+                        <h2 className='text-xl font-bold text-verde-escuro mb-6'>Resumo do Anúncio</h2>
 
-                        <p><strong>Produto:</strong> {titulo}</p>
-                        <p><strong>Descrição:</strong> {descricao}</p>
-                        <p><strong>Categoria:</strong> {categoria} / {subcategoria}</p>
-                        <p>{fotos.length} fotos adicionadas</p>
-                        <p><strong>Endereço:</strong> 
-                            {endereco.rua}, 
-                            {endereco.numero}, 
-                            {endereco.complemento && endereco.complemento} - {endereco.bairro}, 
-                            {endereco.cidade}/{endereco.estado}
-                        </p>
-                        <p><strong>Disponibilidade:</strong> {disponivel.length} dias selecionados</p>
-                        <p><strong>Preço por dia:</strong> {precos.precoPorDia}</p>
-                        {precos.caucao && <p><strong>Caução:</strong> {precos.caucao}</p>} 
-
-                        <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
-                        <button onClick={handlePublicar} className='btn-next'>Publicar Anúncio</button>
-                        <button onClick={handleRascunho} className= 'bg-transparent border-2 border-verde-agua text-verde-agua hover:text-verde-escuro hover:border-verde-escuro px-6 py-2 rounded-lg font-bold transition-all cursor-pointer uppercase tracking-widest'>Salvar como rascunho</button>
+                        <div className="space-y-3 mb-8">
+                            <p className="text-grafite"><strong>Produto:</strong> {titulo}</p>
+                            <p className="text-grafite"><strong>Descrição:</strong> {descricao}</p>
+                            <p className="text-grafite"><strong>Categoria:</strong> {categoria} / {subcategoria}</p>
+                            <p className="text-grafite"><strong>Fotos:</strong> {fotos.length} adicionadas</p>
+                            <p className="text-grafite"><strong>Endereço:</strong> {endereco.rua}, {endereco.numero}</p>        
+                        </div>
+                    
+                        <div className="flex justify-between items-center">
+                            <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
+                        <div className="flex gap-4">
+                            <button onClick={handleRascunho} className='bg-transparent border-2 border-verde-agua text-verde-agua hover:text-verde-escuro hover:border-verde-escuro px-6 py-2 rounded-lg font-bold transition-all cursor-pointer uppercase tracking-widest'>Salvar como rascunho</button>
+                            <button onClick={handlePublicar} className='btn-next'>Publicar Anúncio</button>
+                        </div>
                     </div>
-                }
-            </div>
-        </>
+                </div>
+            }
+        </div>
+    </>
     )
 }
 
