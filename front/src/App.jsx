@@ -7,7 +7,7 @@ function App()
   return (
     <div>
       <CriarAnuncio /> {/* mostra essa página na tela, ou seja, a page de criar anuncio   */}
-       <ResultadosBusca />
+       {/* <ResultadosBusca /> */}
     </div>
   )
 }
