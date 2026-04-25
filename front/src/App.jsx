@@ -1,14 +1,19 @@
-import CriarAnuncio from "./pages/criarAnuncio" // importando componente para ser usado essa página
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { PaginaInicial } from './pages/PaginaInicial';
+import CriarAnuncio from './pages/criarAnuncio';
 import { ResultadosBusca } from './pages/ResultadosBusca';
 import './index.css';
 
-function App()
-{
+function App() {
   return (
-    <div>
-      <CriarAnuncio /> {/* mostra essa página na tela, ou seja, a page de criar anuncio   */}
-       {/* <ResultadosBusca /> */}
-    </div>
-  )
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<PaginaInicial />} />
+        <Route path="/busca" element={<ResultadosBusca />} />
+        <Route path="/criar-anuncio" element={<CriarAnuncio />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
-export default App // exportação deste componente para ser usado de maneira externa
+
+export default App;
