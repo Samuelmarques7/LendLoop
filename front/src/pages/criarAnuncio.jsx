@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { DayPicker } from 'react-day-picker'
 import 'react-day-picker/dist/style.css'
 
@@ -17,8 +17,9 @@ function CriarAnuncio () // componente inicia com letra maiúscula
     const [subcategoria, setSubcategoria] = useState("")
 
     // estado para armazenar as fotos do produto, inicialmente é um array vazio, pois ainda não tem fotos
+    const inputFotoRef = useRef(null)
     const [fotos, setFotos] = useState([])
-
+    
    // estado para armazenar o endereço do produto, inicialmente é um objeto vazio, pois ainda não tem endereço 
     const [endereco, setEndereco] = useState({
         cep: "",
@@ -212,37 +213,67 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                 }
                 {step === 2 && 
                     <div>
-                        <h2 className = 'text-lg font-bold text-grafite'>Fotos do Anúncio</h2>
+                        <h2 className = 'text-xl font-bold text-verde-escuro mb-6'>Fotos do Anúncio</h2>
 
                         <form onSubmit = {handleFotosSubmit}>
+                            {/* input escondido */}
                             <input 
-                                type='file' multiple
-                                className='input-default'
-                                onChange = {(e) => 
-                                {
-                                    {/* Neste setFotos, recebe dentro do input os files atuais e junta com os anteriores, faz tipo um +=, '...' serve para espalhar os elementos do array */}
+                                type='file' 
+                                multiple
+                                ref={inputFotoRef}
+                                className='hidden'
+                                onChange={(e) => {
                                     setFotos(fotosAnteriores => [...fotosAnteriores, ...Array.from(e.target.files)])
                                 }}
                             />
 
-                            <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
-                            <button type='submit' className='btn-next'>Próximo</button>
-                        </form> 
+                            <div className="border-2 border-dashed border-verde-agua rounded-2xl p-4 transition-all">
+    
+                                {/* grid de fotos */}
+                                {fotos.length > 0 && (
+                                    <div className="grid grid-cols-3 gap-3 mb-4">
+                                        {fotos.map((foto, indice) => (
+                                            <div key={indice} className="relative">
+                                                <img 
+                                                    src={URL.createObjectURL(foto)} 
+                                                    className="w-full h-32 object-cover rounded-xl"
+                                                />
+                                                <button 
+                                                    onClick={(e) => {
+                                                        e.preventDefault()
+                                                        removerFoto(indice)
+                                                    }}
+                                                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold"
+                                                >
+                                                    X
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
 
-                        {/* Exibe as fotos selecionadas */}
-                        {/* '=>' é um arrow function, é uma forma resumida de escrever funções em JavaScript */}
-                        {/* 'map' funciona como um loop, tipo um for */}
-                        {fotos.map((foto, indice) => (
-                            <div>
-                                <img src = {URL.createObjectURL(foto)}/>
-                                <button onClick={() => removerFoto(indice)}>X</button>
+                                {/* botão de adicionar */}
+                                <div 
+                                    onClick={() => inputFotoRef.current.click()}
+                                    className="flex flex-col items-center justify-center py-8 cursor-pointer hover:bg-verde-agua/10 rounded-xl transition-all"
+                                >
+                                    <p className="text-verde-escuro font-semibold">
+                                        {fotos.length > 0 ? '+ Adicionar mais fotos' : 'Clique para adicionar fotos'}
+                                    </p>
+                                    <p className="text-gray-400 text-sm mt-1">PNG, JPG até 5MB</p>
+                                </div>
                             </div>
-                        ))}
+                            
+                            <div className = 'flex justify-between mt-6'>
+                                <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
+                                <button type='submit' className='btn-next'>Próximo</button>
+                            </div>
+                        </form> 
                     </div>
                 }
                 {step === 3 &&
                     <div>
-                        <h2>Localização</h2>
+                        <h2 className = 'text-xl font-bold text-verde-escuro mb-6'>Localização</h2>
 
                         <form onSubmit={handleLocalizacaoSubmit}>
                             <label>CEP</label>
@@ -332,15 +363,17 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                                     <option key = {estado} value={estado}>{estado}</option>
                                 ))}
                             </select>
-                            
-                            <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
-                            <button type='submit' className='btn-next'>Próximo</button>
+
+                            <div className = 'flex justify-between mt-6'>
+                                <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
+                                <button type='submit' className='btn-next'>Próximo</button>
+                            </div>    
                         </form>
                     </div>
                 }
                 {step === 4 &&
                     <div>
-                        <h2>Disponibilidade</h2>
+                        <h2 className = 'text-xl font-bold text-verde-escuro mb-6'>Disponibilidade</h2>
 
                         <DayPicker
                             mode='multiple'
@@ -352,14 +385,16 @@ function CriarAnuncio () // componente inicia com letra maiúscula
 
                         <p>{disponivel.length} dias selecionados</p>
 
-                        <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
-                        <button onClick={handleDisponibilidadeSubmit} className='btn-next'>Próximo</button>                    
+                        <div className = 'flex justify-between mt-6'>
+                            <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
+                            <button onClick={handleDisponibilidadeSubmit} className='btn-next'>Próximo</button>                    
+                        </div>
                     </div>
                 }
                 {step === 5 &&
                     <div>
                         <form onSubmit={handlePrecosSubmit}>
-                            <h2>Preços e Condições</h2>
+                            <h2 className = 'text-xl font-bold text-verde-escuro mb-6'>Preços e Condições</h2>
 
                             <label>Preço por dia</label>
                             <input
@@ -379,14 +414,16 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                                 onChange={(e) => setPrecos({...precos, caucao: e.target.value})}
                             />
 
-                            <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
-                            <button type='submit' className='btn-next'>Concluir</button>
+                            <div className = 'flex justify-between mt-6'>
+                                <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
+                                <button type='submit' className='btn-next'>Concluir</button>
+                            </div>
                         </form>
                     </div>
                 }
                 {step === 6 &&
                     <div>
-                        <h2>Resumo do Anúncio</h2>
+                        <h2 className = 'text-xl font-bold text-verde-escuro mb-6'>Resumo do Anúncio</h2>
 
                         <p><strong>Produto:</strong> {titulo}</p>
                         <p><strong>Descrição:</strong> {descricao}</p>
