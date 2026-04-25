@@ -9,24 +9,16 @@ import {
   LuClock
 } from "react-icons/lu";
 
+// IMPORTAÇÃO DOS COMPONENTES (Ajuste o caminho '../components/...' se a sua pasta tiver outro nome)
+import { Header } from "../components/Header";
+import { Footer } from "../components/Footer";
+
 export function DetalhesProduto() {
   return (
     <div className="min-h-screen bg-[#F8F9FA] font-sans text-[#1A1A1A] flex flex-col">
       
-      {/* HEADER */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50 w-full shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
-          <div className="text-xl font-bold tracking-widest text-[#1A1A1A] cursor-pointer uppercase">
-            PROJETO 
-          </div>
-          <div className="flex gap-10 items-center text-sm font-medium text-gray-600">
-            <button className="hover:text-[#00B795] transition-all cursor-pointer">Entrar </button>
-            <button className="bg-[#1A1A1A] text-white px-8 py-3 rounded-lg hover:bg-black transition-all cursor-pointer shadow-md font-bold">
-              Cadastrar 
-            </button>
-          </div>
-        </div>
-      </header>
+      {/* HEADER COMPONENTE */}
+      <Header />
 
       <main className="max-w-7xl mx-auto w-full flex-grow p-6 pt-8">
         
@@ -202,21 +194,9 @@ export function DetalhesProduto() {
         </div>
       </main>
 
-      {/* FOOTER */}
-      <footer className="bg-white border-t border-gray-100 w-full py-12 mt-12">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="text-xl font-black tracking-tighter text-[#1A1A1A]">PROJETO</div>
-          <div className="flex gap-10 text-[10px] text-gray-500 uppercase tracking-widest font-bold">
-            <span className="hover:text-[#00B795] cursor-pointer">Sobre Nós</span>
-            <span className="hover:text-[#00B795] cursor-pointer">FAQ</span>
-            <span className="hover:text-[#00B795] cursor-pointer">Termos</span>
-            <span className="hover:text-[#00B795] cursor-pointer">Contato</span>
-          </div>
-          <p className="text-[9px] text-gray-400 uppercase tracking-widest font-bold">
-            © 2026 PROJETO. TODOS OS DIREITOS RESERVADOS.
-          </p>
-        </div>
-      </footer>
+      {/* FOOTER COMPONENTE */}
+      <Footer />
+      
     </div>
   );
 }
