@@ -123,7 +123,7 @@ function CriarAnuncio () // componente inicia com letra maiúscula
     // Dentro do 'return' vai tudo que queremos mostrar na tela, como textos, imagens, etc.
     return (  
         <>
-            <div className='max-w-3x1 mx-auto px-6'>
+            <div className='max-w-3xl mx-auto px-6'>
                 <div className='flex items-center justify-center mt-4'>
                     {steps.map((nome, index) => {
                         const complete = index + 1 < step
@@ -158,7 +158,7 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                         <h2>Detalhes do Anúncio</h2> {/* 'h2' título menor */}
 
                         <form onSubmit = {handleDetalhesSubmit}>
-                            <label>Título</label> {/* 'label' para descrever a que o campo se refere */}
+                            <label >Título</label> {/* 'label' para descrever a que o campo se refere */}
                             <input
                                 className='input-default'
                                 placeholder="ex: Batedeira Arno" 
