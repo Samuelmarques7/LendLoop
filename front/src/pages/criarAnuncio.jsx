@@ -151,57 +151,68 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                     })}
                 </div>
 
-                <h1 className='text-verde-escuro'>Criar Novo Anúncio</h1>  {/* 'h1' título maior */}        
+                <h1 className='text-2xl font-bold text-grafite mt-6 mb-2'>Criar Novo Anúncio</h1>  {/* 'h1' título maior */}        
                     
                 {step === 1 && 
-                    <div>
-                        <h2>Detalhes do Anúncio</h2> {/* 'h2' título menor */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mt-6"> {/*gambiarra*/}
+                        <h2 className = 'text-xl font-bold text-verde-escuro mb-6'>Detalhes do Anúncio</h2> {/* 'h2' título menor */}
 
                         <form onSubmit = {handleDetalhesSubmit}>
-                            <label >Título</label> {/* 'label' para descrever a que o campo se refere */}
-                            <input
-                                className='input-default'
-                                placeholder="ex: Batedeira Arno" 
-                                value = {titulo}
-                                onChange = {(e) => setTitulo(e.target.value)}
-                            />
+                            <div className = 'mb-4'>
+                                <label className = 'label-field'>Título</label> {/* 'label' para descrever a que o campo se refere */}
+                                <input
+                                    className='input-default'
+                                    placeholder="ex: Batedeira Arno" 
+                                    value = {titulo}
+                                    onChange = {(e) => setTitulo(e.target.value)}
+                                />
+                            </div>
 
-                            <label>Descrição</label>
-                            <textarea 
-                                className='input-default'
-                                placeholder="Descreva seu item em detalhes...." 
-                                value = {descricao}
-                                onChange = {(e) => setDescricao(e.target.value)}
-                            />
-                    
-                            <label>Categoria</label>
-                            <select
-                                className='input-default'
-                                value = {categoria}
-                                onChange = {(e) => setCategoria(e.target.value)}
-                            >
-                                <option>Selecione</option>
-                                <option value = 'ferramentas'>Ferramentas</option>
-                                <option value = 'eletronicos'>Eletrônicos</option>
-                            </select>
+                            <div className = 'mb-4'>
+                                <label className = 'label-field'>Descrição</label>
+                                <textarea 
+                                    className='input-default'
+                                    placeholder="Descreva seu item em detalhes...." 
+                                    value = {descricao}
+                                    onChange = {(e) => setDescricao(e.target.value)}
+                                />
+                            </div>
 
-                            <label>Subcategoria</label>
-                            <select
-                                className='input-default'
-                                value = {subcategoria}
-                                onChange = {(e) => setSubcategoria(e.target.value)}
-                            >
-                                <option>Selecione</option>
-                            </select>
+                            <div className = 'flex gap-4'>
+                                <div className='flex-1 mb-4'>
+                                    <label className = 'label-field'>Categoria</label>
+                                    <select
+                                        className='input-default'
+                                        value = {categoria}
+                                        onChange = {(e) => setCategoria(e.target.value)}
+                                    >
+                                    <option>Selecione</option>
+                                    <option value = 'ferramentas'>Ferramentas</option>
+                                    <option value = 'eletronicos'>Eletrônicos</option>
+                                    </select>
+                                </div>
+                                <div className='flex-1 mb-4'>
+                                    <label className = 'label-field'>Subcategoria</label>
+                                        <select
+                                            className='input-default'
+                                            value = {subcategoria}
+                                            onChange = {(e) => setSubcategoria(e.target.value)}
+                                        >
+                                        <option>Selecione</option>
+                                    </select>
+                                </div>
+                            </div>
                     
                             {/* 'type=submit', pois submit é a convenção para botões de envio de formulario  */}        
-                            <button type="submit" className='btn-next'>Próximo</button>
+                            <div className = 'flex justify-end mt-6'>
+                                <button type="submit" className='btn-next'>Próximo</button>
+                            </div>
                         </form>
                     </div>
                 }
                 {step === 2 && 
                     <div>
-                        <h2>Fotos do Anúncio</h2>
+                        <h2 className = 'text-lg font-bold text-grafite'>Fotos do Anúncio</h2>
 
                         <form onSubmit = {handleFotosSubmit}>
                             <input 
