@@ -276,93 +276,113 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                         <h2 className = 'text-xl font-bold text-verde-escuro mb-6'>Localização</h2>
 
                         <form onSubmit={handleLocalizacaoSubmit}>
-                            <label>CEP</label>
-                            <input
-                                className='input-default'
-                                placeholder='00000-000'
-                                value={endereco.cep}
-                                onChange = {(e) => {
-                                    setEndereco({...endereco, cep: e.target.value})
+                            <div className = 'mb-4 max-w-sm'>
+                                <label className = 'label-field'>CEP</label>
+                                <input
+                                    className='input-default'
+                                    placeholder='00000-000'
+                                    value={endereco.cep}
+                                    onChange = {(e) => {
+                                        setEndereco({...endereco, cep: e.target.value})
 
-                                    if(e.target.value.length === 8)
-                                    {
-                                        fetch(`https://brasilapi.com.br/api/cep/v1/${e.target.value}`)
-                                            .then(retorno => retorno.json())
-                                            .then(dados =>
-                                                {
-                                                    setEndereco({
-                                                        ...endereco,
-                                                        rua: dados.street,
-                                                        bairro: dados.neighborhood,
-                                                        cidade: dados.city,
-                                                        estado: dados.state
+                                        if(e.target.value.length === 8)
+                                        {
+                                            fetch(`https://brasilapi.com.br/api/cep/v1/${e.target.value}`)
+                                                .then(retorno => retorno.json())
+                                                .then(dados =>
+                                                    {
+                                                        setEndereco({
+                                                            ...endereco,
+                                                            rua: dados.street,
+                                                            bairro: dados.neighborhood,
+                                                            cidade: dados.city,
+                                                            estado: dados.state
+                                                        })
                                                     })
-                                                })
-                                    }
-                                }}
-                            />
+                                        }
+                                    }}
+                                />
+                            </div>
 
-                            <label>Rua</label>
-                            <input
-                                className='input-default'
-                                value={endereco.rua}
-                                onChange = {(e) => setEndereco({...endereco, rua: e.target.value})}
-                            />
+                            <div className = 'mb-4'>
+                                <label className = 'label-field'>Rua</label>
+                                <input
+                                    className='input-default'
+                                    value={endereco.rua}
+                                    onChange = {(e) => setEndereco({...endereco, rua: e.target.value})}
+                                />
+                            </div>
 
-                            <label>Número</label>
-                            <input
-                                className='input-default'
-                                placeholder='ex: 123'
-                                value={endereco.numero}
-                                onChange = {(e) => setEndereco({...endereco, numero: e.target.value})}
-                            />
+                            <div className = 'flex gap-4 mb-4'>
+                                <div className = 'flex-1'>
+                                    <label className = 'label-field'>Número</label>
+                                    <input
+                                        className='input-default'
+                                        placeholder='ex: 123'
+                                        value={endereco.numero}
+                                        onChange = {(e) => setEndereco({...endereco, numero: e.target.value})}
+                                    />
+                                </div>
 
-                            <label>Complemento</label>
-                            <input
-                                disabled={endereco.semComplemento} 
-                                className='input-default'
-                                placeholder='ex: Casa, Apto, etc...'
-                                value={endereco.complemento}
-                                onChange = {(e) => setEndereco({...endereco, complemento: e.target.value})}
-                            />
+                                <div className = 'flex-1'>
+                                    <label className = 'label-field'>Complemento</label>
+                                    <input
+                                        disabled={endereco.semComplemento} 
+                                        className='input-default'
+                                        placeholder='ex: Casa, Apto, etc...'
+                                        value={endereco.complemento}
+                                        onChange = {(e) => setEndereco({...endereco, complemento: e.target.value})}
+                                    />
+                                
+                                    {/*'checked' serve para verificar se o checkbox está marcado , logo corresponde a dois estados apenas*/}
+                                    {/* condicao ? 'se verdadeiro' : 'se falso' */}
+                                    <div className = 'flex items-center gap-2 mt-2'>    
+                                        <input 
+                                            type='checkbox'
+                                            className="w-5 h-5 accent-verde-agua cursor-pointer"
+                                            checked={endereco.semComplemento}
+                                            onChange={(e) => setEndereco({
+                                                ...endereco, semComplemento: e.target.checked,
+                                                complemento: e.target.checked ? '' : ''
+                                            })}
+                                        />
+                                        <label className = 'label-field'>Sem complemento</label>
+                                    </div>  
+                                </div>
+                            </div>
 
-                            {/*'checked' serve para verificar se o checkbox está marcado , logo corresponde a dois estados apenas*/}
-                            {/* condicao ? 'se verdadeiro' : 'se falso' */}
-                            <input 
-                                type='checkbox'
-                                className="w-5 h-5 accent-verde-agua cursor-pointer"
-                                checked={endereco.semComplemento}
-                                onChange={(e) => setEndereco({
-                                    ...endereco, semComplemento: e.target.checked,
-                                    complemento: e.target.checked ? '' : ''
-                                })}
-                            />
-                            <label>Sem complemento</label>
-                
-                            <label>Bairro</label>
-                            <input
-                                className='input-default'
-                                value={endereco.bairro}
-                                onChange = {(e) => setEndereco({...endereco, bairro: e.target.value})}
-                            />
+                            <div className = 'flex gap-4 mb-4'>
+                                <div className = 'flex-1'>
+                                    <label className = 'label-field'>Bairro</label>
+                                    <input
+                                        className='input-default'
+                                        value={endereco.bairro}
+                                        onChange = {(e) => setEndereco({...endereco, bairro: e.target.value})}
+                                    />
+                                </div>
 
-                            <label>Cidade</label>
-                            <input
-                                className='input-default'
-                                value={endereco.cidade}
-                                onChange = {(e) => setEndereco({...endereco, cidade: e.target.value})}
-                            />
+                                <div className = 'flex-1'>
+                                    <label className = 'label-field'>Cidade</label>
+                                    <input
+                                        className='input-default'
+                                        value={endereco.cidade}
+                                        onChange = {(e) => setEndereco({...endereco, cidade: e.target.value})}
+                                    />
+                                </div>
 
-                            <label>Estado</label>
-                            <select
-                                className='input-default'
-                                value={endereco.estado}
-                                onChange = {(e) => setEndereco({...endereco, estado: e.target.value})}
-                            >
-                                {estados.map(estado =>(
-                                    <option key = {estado} value={estado}>{estado}</option>
-                                ))}
-                            </select>
+                                <div className = 'flex-1'>
+                                    <label className = 'label-field'>Estado</label>
+                                    <select
+                                        className='input-default'
+                                        value={endereco.estado}
+                                        onChange = {(e) => setEndereco({...endereco, estado: e.target.value})}
+                                    >
+                                        {estados.map(estado =>(
+                                            <option key = {estado} value={estado}>{estado}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
 
                             <div className = 'flex justify-between mt-6'>
                                 <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
