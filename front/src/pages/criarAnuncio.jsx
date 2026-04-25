@@ -1,6 +1,8 @@
 import { useState, useRef } from 'react'
 import { DayPicker } from 'react-day-picker'
 import 'react-day-picker/dist/style.css'
+import { Header } from '../components/Header'
+import { Footer } from '../components/Footer'
 
 // 'function' no react é um componente
 // 'function' estamos criando uma parte da interface (uma tela)
@@ -122,9 +124,10 @@ function CriarAnuncio () // componente inicia com letra maiúscula
     }
 
     // Dentro do 'return' vai tudo que queremos mostrar na tela, como textos, imagens, etc.
-    return (  
-        <>
-            <div className='max-w-3xl mx-auto px-6'>
+    return (
+        <div className="min-h-screen flex flex-col">
+            <Header />
+            <div className='max-w-3xl mx-auto px-6 w-full flex-1'>
                 <div className='flex items-center justify-center mt-4'>
                     {steps.map((nome, index) => {
                         const complete = index + 1 < step
@@ -472,8 +475,9 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                     </div>
                 </div>
             }
+            <Footer />
         </div>
-    </>
+    </div>    
     )
 }
 
