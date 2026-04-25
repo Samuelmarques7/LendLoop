@@ -22,4 +22,7 @@ body {
   .input-default {
     @apply w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:border-verde-agua transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100;
   }
+  .label-field {
+    @apply block text-sm font-semibold text-grafite mb-1;
+}
 }
