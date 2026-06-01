@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'; 
 import { LuWrench, LuMonitor, LuDumbbell, LuFlower2, LuCar, LuPartyPopper, LuSearch } from 'react-icons/lu';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
@@ -26,12 +27,13 @@ const passosAnfitriao = [
 const parceiros = ['Parceiro 1', 'Parceiro 2', 'Parceiro 3', 'Parceiro 4'];
 
 export function PaginaInicial() {
+  const navigate = useNavigate(); 
+
   return (
     <div className="min-h-screen flex flex-col">
 
       <Header />
 
-      {/* Hero */}
       <section
         className="w-full flex items-center justify-center py-24 px-8"
         style={{ background: 'linear-gradient(135deg, #006861 0%, #00B795 60%, #05BFBE 100%)' }}
@@ -52,14 +54,16 @@ export function PaginaInicial() {
               placeholder="O que você quer alugar?"
               className="flex-1 py-4 text-grafite outline-none text-base"
             />
-            <button className="bg-verde-escuro hover:bg-grafite text-white px-6 font-semibold transition-colors cursor-pointer">
+            <button 
+              onClick={() => navigate('/busca')} // 👈 CLIQUE PARA BUSCA
+              className="bg-verde-escuro hover:bg-grafite text-white px-6 font-semibold transition-colors cursor-pointer"
+            >
               Buscar
             </button>
           </div>
         </div>
       </section>
 
-      {/* Categorias Populares */}
       <section className="py-16 px-8 bg-white">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-3xl font-bold text-center text-verde-escuro mb-3">Categorias Populares</h2>
@@ -79,7 +83,6 @@ export function PaginaInicial() {
         </div>
       </section>
 
-      {/* Como Funciona */}
       <section className="py-16 px-8 bg-gray-50">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-3xl font-bold text-center text-verde-escuro mb-3">Como Funciona</h2>
@@ -106,7 +109,6 @@ export function PaginaInicial() {
               </div>
             </div>
 
-            {/* Para Anfitriões */}
             <div>
               <h3 className="text-xl font-bold text-center text-grafite mb-8">Para Anfitriões</h3>
               <div className="flex flex-col gap-6">
@@ -128,18 +130,18 @@ export function PaginaInicial() {
         </div>
       </section>
 
-      {/* CTA Seja um Anfitrião */}
       <section className="bg-grafite py-20 px-8 flex flex-col items-center text-center">
         <h2 className="text-3xl font-bold text-white mb-4">Seja um Anfitrião</h2>
         <p className="text-gray-300 mb-8 max-w-md">
           Transforme seus itens não utilizados em renda. Comece a hospedar hoje.
         </p>
-        <button className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-verde-agua hover:border-verde-agua transition-colors cursor-pointer">
+        <button 
+          onClick={() => navigate('/painelLocador')} // 👈 CLIQUE PARA O PAINEL
+          className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-verde-agua hover:border-verde-agua transition-colors cursor-pointer"
+        >
           Começar a Hospedar (Grátis e Sem Compromisso)
         </button>
       </section>
-
-      {/* Parceiros de Confiança */}
       <section className="py-10 px-8 bg-white">
         <div className="max-w-5xl mx-auto">
           <p className="text-sm font-semibold text-azul-oceano mb-4">Parceiros de Confiança</p>

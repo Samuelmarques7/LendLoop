@@ -13,11 +13,18 @@ export function Header() {
         onClick={() => navigate('/')}
       />
       <div className="flex items-center gap-4">
-        <button className="text-verde-escuro hover:text-verde-agua font-semibold transition-colors cursor-pointer">
+        <button 
+          onClick={() => navigate('/painelLocador')}
+          className="text-verde-escuro hover:text-verde-agua font-semibold transition-colors cursor-pointer"
+        >
           Entrar
         </button>
-        <button className="bg-verde-agua text-white px-5 py-2 rounded-lg font-semibold hover:bg-verde-escuro transition-colors cursor-pointer">
-          Cadastrar
+        
+        <button 
+          onClick={() => navigate('/criar-anuncio')}
+          className="bg-verde-agua text-white px-5 py-2 rounded-lg font-semibold hover:bg-verde-escuro transition-colors cursor-pointer"
+        >
+          Criar Anúncio
         </button>
       </div>
     </header>
