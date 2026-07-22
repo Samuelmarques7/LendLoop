@@ -1,5 +1,5 @@
 @import "tailwindcss";
-
+ 
 @theme {
   --color-verde-escuro: #006861;
   --color-verde-agua: #00B795;
@@ -8,21 +8,48 @@
   --color-grafite: #1A1A1A;
   --font-outfit: 'Outfit', sans-serif;
 }
-
+ 
 body {
   font-family: var(--font-outfit);
 }
 @layer components {
   .btn-next {
-    @apply bg-verde-agua text-white px-6 py-2 rounded-lg font-bold shadow-md hover:bg-verde-escuro transition-all cursor-pointer uppercase tracking-widest;
+    @apply bg-verde-agua text-white px-6 py-2.5 rounded-xl font-bold shadow-sm hover:bg-verde-escuro transition-all cursor-pointer uppercase tracking-widest text-xs active:scale-95;
   }
   .btn-back {
-    @apply border border-gray-300 text-gray-400 hover:text-verde-escuro hover:border-verde-escuro px-6 py-2 rounded-lg transition-all cursor-pointer uppercase tracking-widest;
+    @apply border border-gray-200 text-gray-400 hover:text-verde-escuro hover:border-verde-escuro px-6 py-2.5 rounded-xl transition-all cursor-pointer uppercase tracking-widest text-xs;
   }
   .input-default {
-    @apply w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:border-verde-agua transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100;
+    @apply w-full border border-gray-200 bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-verde-agua/20 focus:border-verde-agua transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100;
   }
   .label-field {
-    @apply block text-sm font-semibold text-grafite mb-1;
+    @apply block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5;
+  }
+}@import "tailwindcss";
+ 
+@theme {
+  --color-verde-escuro: #006861;
+  --color-verde-agua: #00B795;
+  --color-ciano: #05BFBE;
+  --color-azul-oceano: #00639E;
+  --color-grafite: #1A1A1A;
+  --font-outfit: 'Outfit', sans-serif;
 }
+ 
+body {
+  font-family: var(--font-outfit);
+}
+@layer components {
+  .btn-next {
+    @apply bg-verde-agua text-white px-6 py-2.5 rounded-xl font-bold shadow-sm hover:bg-verde-escuro transition-all cursor-pointer uppercase tracking-widest text-xs active:scale-95;
+  }
+  .btn-back {
+    @apply border border-gray-200 text-gray-400 hover:text-verde-escuro hover:border-verde-escuro px-6 py-2.5 rounded-xl transition-all cursor-pointer uppercase tracking-widest text-xs;
+  }
+  .input-default {
+    @apply w-full border border-gray-200 bg-gray-50 rounded-xl px-4 py-3 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-verde-agua/20 focus:border-verde-agua transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100;
+  }
+  .label-field {
+    @apply block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5;
+  }
 }

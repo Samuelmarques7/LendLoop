@@ -157,11 +157,17 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                     })}
                 </div>
 
-                <h1 className='text-2xl font-bold text-[#1A1A1A] mb-2'>Criar Novo Anúncio</h1>  {/* 'h1' título maior */}        
+                <div className='mb-2'>
+                    <h1 className='text-2xl font-bold text-[#1A1A1A]'>Criar Novo Anúncio</h1>  {/* 'h1' título maior */}
+                    <p className='text-gray-400 text-sm mt-1'>Preencha as informações para anunciar seu item</p>
+                </div>
                     
                 {step === 1 && 
                     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6"> {/*gambiarra*/}
-                        <h2 className = 'text-xl font-bold text-[#006861] mb-6'>Detalhes do Anúncio</h2> {/* 'h2' título menor */}
+                        <div className='mb-6'>
+                            <h2 className = 'text-xl font-bold text-[#1A1A1A]'>Detalhes do Anúncio</h2> {/* 'h2' título menor */}
+                            <p className='text-gray-400 text-sm mt-1'>Conte para os locatários o que você está oferecendo</p>
+                        </div>
 
                         <form onSubmit = {handleDetalhesSubmit}>
                             <div className = 'mb-4'>
@@ -218,7 +224,10 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                 }
                 {step === 2 && 
                     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
-                        <h2 className = 'text-xl font-bold text-[#006861] mb-6'>Fotos do Anúncio</h2>
+                        <div className='mb-6'>
+                            <h2 className = 'text-xl font-bold text-[#1A1A1A]'>Fotos do Anúncio</h2>
+                            <p className='text-gray-400 text-sm mt-1'>Fotos claras aumentam suas chances de locação</p>
+                        </div>
 
                         <form onSubmit = {handleFotosSubmit}>
                             {/* input escondido */}
@@ -278,7 +287,10 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                 }
                 {step === 3 &&
                     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
-                        <h2 className = 'text-xl font-bold text-[#006861] mb-6'>Localização</h2>
+                        <div className='mb-6'>
+                            <h2 className = 'text-xl font-bold text-[#1A1A1A]'>Localização</h2>
+                            <p className='text-gray-400 text-sm mt-1'>Onde o locatário poderá retirar o item</p>
+                        </div>
 
                         <form onSubmit={handleLocalizacaoSubmit}>
                             <div className = 'mb-4 max-w-sm'>
@@ -398,7 +410,10 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                 }
                 {step === 4 &&
                     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
-                        <h2 className = 'text-xl font-bold text-[#006861] mb-6'>Disponibilidade</h2>
+                        <div className='mb-6'>
+                            <h2 className = 'text-xl font-bold text-[#1A1A1A]'>Disponibilidade</h2>
+                            <p className='text-gray-400 text-sm mt-1'>Selecione os dias em que o item estará disponível</p>
+                        </div>
 
                         <div className="flex justify-center my-4">
                             <DayPicker
@@ -423,7 +438,10 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                 {step === 5 &&
                     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
                         <form onSubmit={handlePrecosSubmit}>
-                            <h2 className='text-xl font-bold text-[#006861] mb-6'>Preços e Condições</h2>
+                            <div className='mb-6'>
+                                <h2 className='text-xl font-bold text-[#1A1A1A]'>Preços e Condições</h2>
+                                <p className='text-gray-400 text-sm mt-1'>Defina quanto vai cobrar pela locação</p>
+                            </div>
 
                             <div className="flex gap-4 mb-4">
                                 <div className="flex-1">
@@ -458,7 +476,10 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                 }
                 {step === 6 &&
                     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
-                        <h2 className='text-xl font-bold text-[#006861] mb-6'>Resumo do Anúncio</h2>
+                        <div className='mb-6'>
+                            <h2 className='text-xl font-bold text-[#1A1A1A]'>Resumo do Anúncio</h2>
+                            <p className='text-gray-400 text-sm mt-1'>Confira tudo antes de publicar</p>
+                        </div>
 
                         <div className="space-y-3 mb-8 bg-gray-50/50 rounded-xl p-5 border border-gray-100">
                             <p className="text-[#1A1A1A]"><strong>Produto:</strong> {titulo}</p>
