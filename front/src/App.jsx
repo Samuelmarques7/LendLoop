@@ -14,7 +14,7 @@ function App() {
         <Route path="/busca" element={<ResultadosBusca />} />
         <Route path="/criar-anuncio" element={<CriarAnuncio />} />
         <Route path="/produto/:id" element={<DetalhesProduto />} />
-
+         <Route path="/painel-locatario" element={<PainelLocatario />} />
       </Routes>
     </BrowserRouter>
   );
