@@ -40,7 +40,10 @@ function CriarAnuncio () // componente inicia com letra maiúscula
 
     const [precos, setPrecos] = useState({
         precoPorDia: '',
-        caucao: ''   
+        caucao: '',
+        exigirCaucao: false,
+        horarioRetirada: '09:00',
+        horarioDevolucao: '17:00'
     })
 
     function handleDetalhesSubmit (e) // 'e' é o evento de submit do formulario, essa função será chamada
@@ -127,7 +130,7 @@ function CriarAnuncio () // componente inicia com letra maiúscula
     return (
         <div className="min-h-screen bg-[#F8F9FA] flex flex-col">
             <Header />
-            <div className='max-w-3xl mx-auto px-6 w-full flex-1 pt-10 pb-16'>
+            <div className='max-w-4xl mx-auto px-6 w-full flex-1 pt-10 pb-16'>
 
                 {/* STEPS - mesma lógica de antes, só com as cores hex usadas no ResultadosBusca */}
                 <div className='flex items-center justify-center mb-4'>
@@ -244,7 +247,7 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                             <div className="border-2 border-dashed border-gray-200 hover:border-[#00B795] rounded-2xl p-4 transition-all">
     
                                 {/* grid de fotos */}
-                                {fotos.length > 0 && (
+                                {fotos.length > 0 ? (
                                     <div className="grid grid-cols-3 gap-3 mb-4">
                                         {fotos.map((foto, indice) => (
                                             <div key={indice} className="relative">
@@ -263,18 +266,40 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                                                 </button>
                                             </div>
                                         ))}
+                                        {/* slots vazios restantes, no padrão do wireframe */}
+                                        {Array.from({ length: Math.max(0, 6 - fotos.length) }).map((_, i) => (
+                                            <div
+                                                key={`vazio-${i}`}
+                                                onClick={() => inputFotoRef.current.click()}
+                                                className="h-32 rounded-xl border border-dashed border-gray-200 flex items-center justify-center text-gray-300 text-xl cursor-pointer hover:border-[#00B795] hover:text-[#00B795] transition-all"
+                                            >
+                                                +
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-3 gap-3 mb-4">
+                                        {Array.from({ length: 6 }).map((_, i) => (
+                                            <div
+                                                key={`vazio-${i}`}
+                                                onClick={() => inputFotoRef.current.click()}
+                                                className="h-32 rounded-xl border border-dashed border-gray-200 flex items-center justify-center text-gray-300 text-xl cursor-pointer hover:border-[#00B795] hover:text-[#00B795] transition-all"
+                                            >
+                                                +
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
 
-                                {/* botão de adicionar */}
+                                {/* texto de apoio abaixo do grid */}
                                 <div 
                                     onClick={() => inputFotoRef.current.click()}
-                                    className="flex flex-col items-center justify-center py-8 cursor-pointer hover:bg-[#00B795]/5 rounded-xl transition-all"
+                                    className="flex flex-col items-center justify-center py-4 cursor-pointer hover:bg-[#00B795]/5 rounded-xl transition-all"
                                 >
-                                    <p className="text-[#006861] font-semibold">
-                                        {fotos.length > 0 ? '+ Adicionar mais fotos' : 'Clique para adicionar fotos'}
+                                    <p className="text-[#006861] font-semibold text-sm">
+                                        {fotos.length > 0 ? '+ Adicionar mais fotos' : 'Clique em qualquer quadro para adicionar fotos'}
                                     </p>
-                                    <p className="text-gray-400 text-sm mt-1">PNG, JPG até 5MB</p>
+                                    <p className="text-gray-400 text-xs mt-1">PNG, JPG até 5MB</p>
                                 </div>
                             </div>
                             
@@ -401,6 +426,26 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                                 </div>
                             </div>
 
+                            {/* Mapa - placeholder visual, integração real de mapa fica pra depois */}
+                            <div className='mb-4'>
+                                <label className='label-field'>Localização no mapa</label>
+                                <div className="relative h-56 rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden flex items-center justify-center">
+                                    <div className="absolute inset-0 opacity-40" style={{
+                                        backgroundImage: 'linear-gradient(#e5e7eb 1px, transparent 1px), linear-gradient(90deg, #e5e7eb 1px, transparent 1px)',
+                                        backgroundSize: '24px 24px'
+                                    }}></div>
+                                    <div className="relative flex flex-col items-center gap-2 text-center px-4">
+                                        <div className="w-10 h-10 rounded-full bg-[#00B795] flex items-center justify-center shadow-lg">
+                                            <div className="w-3 h-3 rounded-full bg-white"></div>
+                                        </div>
+                                        <p className="text-sm font-bold text-[#1A1A1A]">
+                                            {endereco.rua ? `${endereco.rua}, ${endereco.cidade || ''}` : 'Preencha o endereço acima'}
+                                        </p>
+                                        <p className="text-xs text-gray-400">Arraste o pin para ajustar a localização exata</p>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className = 'flex justify-between mt-6'>
                                 <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
                                 <button type='submit' className='btn-next'>Próximo</button>
@@ -415,11 +460,15 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                             <p className='text-gray-400 text-sm mt-1'>Selecione os dias em que o item estará disponível</p>
                         </div>
 
-                        <div className="flex justify-center my-4">
+                        <div className="flex justify-center my-4 bg-gray-50/50 rounded-2xl border border-gray-100 p-6">
                             <DayPicker
                                 mode='multiple'
                                 selected={disponivel}
                                 onSelect={setDisponivel}
+                                classNames={{
+                                    day_selected: 'bg-[#00B795] text-white rounded-lg',
+                                    day_today: 'font-bold text-[#00639E]'
+                                }}
                             />
                         </div>
 
@@ -467,6 +516,41 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                                 </div>
                             </div>
 
+                            <div className='flex items-center gap-2 mb-6'>
+                                <input
+                                    type='checkbox'
+                                    className="w-5 h-5 accent-[#00B795] cursor-pointer"
+                                    checked={precos.exigirCaucao}
+                                    onChange={(e) => setPrecos({...precos, exigirCaucao: e.target.checked})}
+                                />
+                                <label className='label-field mb-0'>Exigir caução</label>
+                            </div>
+
+                            <div className='border-t border-gray-100 pt-6 mb-2'>
+                                <h3 className='text-sm font-bold text-[#1A1A1A] uppercase tracking-wide mb-4'>Regras de Reserva</h3>
+                                <div className="flex gap-4">
+                                    <div className="flex-1">
+                                        <label className="label-field">Horário de retirada</label>
+                                        <input
+                                            type='time'
+                                            className='input-default'
+                                            value={precos.horarioRetirada}
+                                            onChange={(e) => setPrecos({...precos, horarioRetirada: e.target.value})}
+                                        />
+                                    </div>
+
+                                    <div className="flex-1">
+                                        <label className="label-field">Horário de devolução</label>
+                                        <input
+                                            type='time'
+                                            className='input-default'
+                                            value={precos.horarioDevolucao}
+                                            onChange={(e) => setPrecos({...precos, horarioDevolucao: e.target.value})}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className='flex justify-between mt-6'>
                                 <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
                                 <button type='submit' className='btn-next'>Concluir</button>
@@ -486,7 +570,10 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                             <p className="text-[#1A1A1A]"><strong>Descrição:</strong> {descricao}</p>
                             <p className="text-[#1A1A1A]"><strong>Categoria:</strong> {categoria} / {subcategoria}</p>
                             <p className="text-[#1A1A1A]"><strong>Fotos:</strong> {fotos.length} adicionadas</p>
-                            <p className="text-[#1A1A1A]"><strong>Endereço:</strong> {endereco.rua}, {endereco.numero}</p>        
+                            <p className="text-[#1A1A1A]"><strong>Endereço:</strong> {endereco.rua}, {endereco.numero}</p>
+                            <p className="text-[#1A1A1A]"><strong>Disponibilidade:</strong> {disponivel.length} {disponivel.length === 1 ? 'dia selecionado' : 'dias selecionados'}</p>
+                            <p className="text-[#1A1A1A]"><strong>Preço por dia:</strong> R$ {precos.precoPorDia || '0,00'}{precos.exigirCaucao && precos.caucao ? ` (+ caução de R$ ${precos.caucao})` : ''}</p>
+                            <p className="text-[#1A1A1A]"><strong>Retirada/Devolução:</strong> {precos.horarioRetirada} às {precos.horarioDevolucao}</p>
                         </div>
                     
                         <div className="flex justify-between items-center">
