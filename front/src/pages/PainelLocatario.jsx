@@ -9,11 +9,11 @@ import {
   LuMessageSquare,
   LuUser,
   LuSettings,
-  LuClock3,
+  LuCalendar,
   LuMailWarning,
   LuBell,
   LuX,
-  LuCheckCircle2
+  LuCircleCheckBig
 } from "react-icons/lu";
 
 export default function PainelLocatario() {
@@ -54,7 +54,7 @@ export default function PainelLocatario() {
   };
 
   const stats = [
-    { id: 1, titulo: "Próximos Aluguéis", valor: "3", icon: LuClock3, color: "text-[#00639E]", bg: "bg-blue-50" },
+    { id: 1, titulo: "Próximos Aluguéis", valor: "3", icon: LuCalendar, color: "text-[#00639E]", bg: "bg-blue-50" },
     { id: 2, titulo: "Solicitações Pendentes", valor: String(solicitacoesEnviadas.length), icon: LuMailWarning, color: "text-orange-500", bg: "bg-orange-50" },
     { id: 3, titulo: "Pagamentos Pendentes", valor: `R$ ${pagamentos.pendentes.reduce((soma, p) => soma + p.valor, 0)}`, icon: LuWallet, color: "text-[#00B795]", bg: "bg-[#00B795]/10" },
     { id: 4, titulo: "Mensagens Não Lidas", valor: "3", icon: LuMessageSquare, color: "text-[#05BFBE]", bg: "bg-[#05BFBE]/10" }
@@ -213,7 +213,7 @@ function SecaoPainel({ stats, alugueis, pagamentos, solicitacoesEnviadas, abaAlu
         <div className="p-2">
           {alugueis[abaAlugueis].length === 0 ? (
             <div className="p-8 text-center text-gray-400">
-              <LuCheckCircle2 size={32} className="mx-auto mb-2 opacity-30" />
+              <LuCircleCheckBig size={32} className="mx-auto mb-2 opacity-30" />
               <p className="text-sm font-bold">Nenhum aluguel nesta categoria</p>
             </div>
           ) : (
@@ -259,7 +259,7 @@ function SecaoPainel({ stats, alugueis, pagamentos, solicitacoesEnviadas, abaAlu
           <div className="p-2 flex-grow">
             {solicitacoesEnviadas.length === 0 ? (
               <div className="p-8 text-center text-gray-400">
-                <LuCheckCircle2 size={32} className="mx-auto mb-2 opacity-30" />
+                <LuCircleCheckBig size={32} className="mx-auto mb-2 opacity-30" />
                 <p className="text-sm font-bold">Nenhuma solicitação enviada</p>
               </div>
             ) : (
@@ -313,7 +313,7 @@ function SecaoPainel({ stats, alugueis, pagamentos, solicitacoesEnviadas, abaAlu
           <div className="p-2 flex-grow">
             {pagamentos[abaPagamentos].length === 0 ? (
               <div className="p-8 text-center text-gray-400">
-                <LuCheckCircle2 size={32} className="mx-auto mb-2 opacity-30" />
+                <LuCircleCheckBig size={32} className="mx-auto mb-2 opacity-30" />
                 <p className="text-sm font-bold">Nenhum pagamento nesta categoria</p>
               </div>
             ) : (
