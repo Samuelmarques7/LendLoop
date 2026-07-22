@@ -125,10 +125,12 @@ function CriarAnuncio () // componente inicia com letra maiúscula
 
     // Dentro do 'return' vai tudo que queremos mostrar na tela, como textos, imagens, etc.
     return (
-        <div className="min-h-screen flex flex-col">
+        <div className="min-h-screen bg-[#F8F9FA] flex flex-col">
             <Header />
-            <div className='max-w-3xl mx-auto px-6 w-full flex-1'>
-                <div className='flex items-center justify-center mt-4'>
+            <div className='max-w-3xl mx-auto px-6 w-full flex-1 pt-10 pb-16'>
+
+                {/* STEPS - mesma lógica de antes, só com as cores hex usadas no ResultadosBusca */}
+                <div className='flex items-center justify-center mb-4'>
                     {steps.map((nome, index) => {
                         const complete = index + 1 < step
                         const active = index + 1 === step
@@ -138,28 +140,28 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                                 <div className='flex flex-col items-center min-w-16'>
                                 
                                     {/*bolinha*/}
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${active ? 'bg-verde-agua' : complete ? 'bg-verde-escuro' : 'bg-gray-300'}`}>
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold transition-all ${active ? 'bg-[#00B795]' : complete ? 'bg-[#1A1A1A]' : 'bg-gray-200'}`}>
                                         {index + 1}
                                     </div>
 
                                     {/*nome*/}
-                                    <span className={`text-xs font-medium mt-1 ${active ? 'text-verde-agua' : complete ? 'text-verde-escuro' : 'text-gray-400'}`}>
+                                    <span className={`text-[10px] font-bold uppercase tracking-wider mt-1.5 ${active ? 'text-[#00B795]' : complete ? 'text-[#1A1A1A]' : 'text-gray-300'}`}>
                                         {nome}
                                     </span>
                                 </div>
 
                                 {/*linha*/}
-                                {index < steps.length - 1 && <div className={`w-16 h-1 mt-4 ${complete ? 'bg-verde-escuro' : 'bg-gray-300'}`}></div>}
+                                {index < steps.length - 1 && <div className={`w-12 h-0.5 mt-4 transition-all ${complete ? 'bg-[#1A1A1A]' : 'bg-gray-200'}`}></div>}
                             </div>
                         )
                     })}
                 </div>
 
-                <h1 className='text-2xl font-bold text-grafite mt-6 mb-2'>Criar Novo Anúncio</h1>  {/* 'h1' título maior */}        
+                <h1 className='text-2xl font-bold text-[#1A1A1A] mb-2'>Criar Novo Anúncio</h1>  {/* 'h1' título maior */}        
                     
                 {step === 1 && 
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mt-6"> {/*gambiarra*/}
-                        <h2 className = 'text-xl font-bold text-verde-escuro mb-6'>Detalhes do Anúncio</h2> {/* 'h2' título menor */}
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6"> {/*gambiarra*/}
+                        <h2 className = 'text-xl font-bold text-[#006861] mb-6'>Detalhes do Anúncio</h2> {/* 'h2' título menor */}
 
                         <form onSubmit = {handleDetalhesSubmit}>
                             <div className = 'mb-4'>
@@ -215,8 +217,8 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                     </div>
                 }
                 {step === 2 && 
-                    <div>
-                        <h2 className = 'text-xl font-bold text-verde-escuro mb-6'>Fotos do Anúncio</h2>
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
+                        <h2 className = 'text-xl font-bold text-[#006861] mb-6'>Fotos do Anúncio</h2>
 
                         <form onSubmit = {handleFotosSubmit}>
                             {/* input escondido */}
@@ -230,7 +232,7 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                                 }}
                             />
 
-                            <div className="border-2 border-dashed border-verde-agua rounded-2xl p-4 transition-all">
+                            <div className="border-2 border-dashed border-gray-200 hover:border-[#00B795] rounded-2xl p-4 transition-all">
     
                                 {/* grid de fotos */}
                                 {fotos.length > 0 && (
@@ -246,7 +248,7 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                                                         e.preventDefault()
                                                         removerFoto(indice)
                                                     }}
-                                                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold"
+                                                    className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm text-red-500 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-sm hover:bg-red-500 hover:text-white transition-colors cursor-pointer"
                                                 >
                                                     X
                                                 </button>
@@ -258,9 +260,9 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                                 {/* botão de adicionar */}
                                 <div 
                                     onClick={() => inputFotoRef.current.click()}
-                                    className="flex flex-col items-center justify-center py-8 cursor-pointer hover:bg-verde-agua/10 rounded-xl transition-all"
+                                    className="flex flex-col items-center justify-center py-8 cursor-pointer hover:bg-[#00B795]/5 rounded-xl transition-all"
                                 >
-                                    <p className="text-verde-escuro font-semibold">
+                                    <p className="text-[#006861] font-semibold">
                                         {fotos.length > 0 ? '+ Adicionar mais fotos' : 'Clique para adicionar fotos'}
                                     </p>
                                     <p className="text-gray-400 text-sm mt-1">PNG, JPG até 5MB</p>
@@ -275,8 +277,8 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                     </div>
                 }
                 {step === 3 &&
-                    <div>
-                        <h2 className = 'text-xl font-bold text-verde-escuro mb-6'>Localização</h2>
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
+                        <h2 className = 'text-xl font-bold text-[#006861] mb-6'>Localização</h2>
 
                         <form onSubmit={handleLocalizacaoSubmit}>
                             <div className = 'mb-4 max-w-sm'>
@@ -342,14 +344,14 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                                     <div className = 'flex items-center gap-2 mt-2'>    
                                         <input 
                                             type='checkbox'
-                                            className="w-5 h-5 accent-verde-agua cursor-pointer"
+                                            className="w-5 h-5 accent-[#00B795] cursor-pointer"
                                             checked={endereco.semComplemento}
                                             onChange={(e) => setEndereco({
                                                 ...endereco, semComplemento: e.target.checked,
                                                 complemento: e.target.checked ? '' : ''
                                             })}
                                         />
-                                        <label className = 'label-field'>Sem complemento</label>
+                                        <label className = 'label-field mb-0'>Sem complemento</label>
                                     </div>  
                                 </div>
                             </div>
@@ -395,8 +397,8 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                     </div>
                 }
                 {step === 4 &&
-                    <div>
-                        <h2 className = 'text-xl font-bold text-verde-escuro mb-6'>Disponibilidade</h2>
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
+                        <h2 className = 'text-xl font-bold text-[#006861] mb-6'>Disponibilidade</h2>
 
                         <div className="flex justify-center my-4">
                             <DayPicker
@@ -408,7 +410,7 @@ function CriarAnuncio () // componente inicia com letra maiúscula
 
                         {console.log(disponivel)}
 
-                        <p className="text-center text-verde-agua font-semibold mb-4">
+                        <p className="text-center text-[#00B795] font-semibold mb-4">
                             {disponivel.length} {disponivel.length === 1 ? 'dia selecionado' : 'dias selecionados'}
                         </p>
 
@@ -419,9 +421,9 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                     </div>
                 }
                 {step === 5 &&
-                    <div>
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
                         <form onSubmit={handlePrecosSubmit}>
-                            <h2 className='text-xl font-bold text-verde-escuro mb-6'>Preços e Condições</h2>
+                            <h2 className='text-xl font-bold text-[#006861] mb-6'>Preços e Condições</h2>
 
                             <div className="flex gap-4 mb-4">
                                 <div className="flex-1">
@@ -455,29 +457,29 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                     </div>
                 }
                 {step === 6 &&
-                    <div>
-                        <h2 className='text-xl font-bold text-verde-escuro mb-6'>Resumo do Anúncio</h2>
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
+                        <h2 className='text-xl font-bold text-[#006861] mb-6'>Resumo do Anúncio</h2>
 
-                        <div className="space-y-3 mb-8">
-                            <p className="text-grafite"><strong>Produto:</strong> {titulo}</p>
-                            <p className="text-grafite"><strong>Descrição:</strong> {descricao}</p>
-                            <p className="text-grafite"><strong>Categoria:</strong> {categoria} / {subcategoria}</p>
-                            <p className="text-grafite"><strong>Fotos:</strong> {fotos.length} adicionadas</p>
-                            <p className="text-grafite"><strong>Endereço:</strong> {endereco.rua}, {endereco.numero}</p>        
+                        <div className="space-y-3 mb-8 bg-gray-50/50 rounded-xl p-5 border border-gray-100">
+                            <p className="text-[#1A1A1A]"><strong>Produto:</strong> {titulo}</p>
+                            <p className="text-[#1A1A1A]"><strong>Descrição:</strong> {descricao}</p>
+                            <p className="text-[#1A1A1A]"><strong>Categoria:</strong> {categoria} / {subcategoria}</p>
+                            <p className="text-[#1A1A1A]"><strong>Fotos:</strong> {fotos.length} adicionadas</p>
+                            <p className="text-[#1A1A1A]"><strong>Endereço:</strong> {endereco.rua}, {endereco.numero}</p>        
                         </div>
                     
                         <div className="flex justify-between items-center">
                             <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
-                        <div className="flex gap-4">
-                            <button onClick={handleRascunho} className='bg-transparent border-2 border-verde-agua text-verde-agua hover:text-verde-escuro hover:border-verde-escuro px-6 py-2 rounded-lg font-bold transition-all cursor-pointer uppercase tracking-widest'>Salvar como rascunho</button>
-                            <button onClick={handlePublicar} className='btn-next'>Publicar Anúncio</button>
+                            <div className="flex gap-4">
+                                <button onClick={handleRascunho} className='bg-transparent border-2 border-[#00B795] text-[#00B795] hover:text-[#006861] hover:border-[#006861] px-6 py-2 rounded-lg font-bold transition-all cursor-pointer uppercase tracking-widest'>Salvar como rascunho</button>
+                                <button onClick={handlePublicar} className='btn-next'>Publicar Anúncio</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            }
+                }
+            </div>
             <Footer />
-        </div>
-    </div>    
+        </div>    
     )
 }
 
