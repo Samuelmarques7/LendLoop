@@ -3,7 +3,7 @@ import { PaginaInicial } from './pages/PaginaInicial';
 import CriarAnuncio from './pages/criarAnuncio';
 import { ResultadosBusca } from './pages/ResultadosBusca';
 import { DetalhesProduto } from './pages/DetalhesProduto'; 
-import { PainelLocatario } from './pages/PainelLocatario';
+import PainelLocatario from './pages/PainelLocatario';
 
 import './index.css';
 
