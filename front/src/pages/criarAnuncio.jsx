@@ -40,7 +40,10 @@ function CriarAnuncio () // componente inicia com letra maiúscula
 
     const [precos, setPrecos] = useState({
         precoPorDia: '',
-        caucao: ''   
+        caucao: '',
+        exigirCaucao: false,
+        horarioRetirada: '09:00',
+        horarioDevolucao: '17:00'
     })
 
     function handleDetalhesSubmit (e) // 'e' é o evento de submit do formulario, essa função será chamada
@@ -125,10 +128,12 @@ function CriarAnuncio () // componente inicia com letra maiúscula
 
     // Dentro do 'return' vai tudo que queremos mostrar na tela, como textos, imagens, etc.
     return (
-        <div className="min-h-screen flex flex-col">
+        <div className="min-h-screen bg-[#F8F9FA] flex flex-col">
             <Header />
-            <div className='max-w-3xl mx-auto px-6 w-full flex-1'>
-                <div className='flex items-center justify-center mt-4'>
+            <div className='max-w-4xl mx-auto px-6 w-full flex-1 pt-10 pb-16'>
+
+                {/* STEPS - mesma lógica de antes, só com as cores hex usadas no ResultadosBusca */}
+                <div className='flex items-center justify-center mb-4'>
                     {steps.map((nome, index) => {
                         const complete = index + 1 < step
                         const active = index + 1 === step
@@ -138,28 +143,34 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                                 <div className='flex flex-col items-center min-w-16'>
                                 
                                     {/*bolinha*/}
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${active ? 'bg-verde-agua' : complete ? 'bg-verde-escuro' : 'bg-gray-300'}`}>
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold transition-all ${active ? 'bg-[#00B795]' : complete ? 'bg-[#1A1A1A]' : 'bg-gray-200'}`}>
                                         {index + 1}
                                     </div>
 
                                     {/*nome*/}
-                                    <span className={`text-xs font-medium mt-1 ${active ? 'text-verde-agua' : complete ? 'text-verde-escuro' : 'text-gray-400'}`}>
+                                    <span className={`text-[10px] font-bold uppercase tracking-wider mt-1.5 ${active ? 'text-[#00B795]' : complete ? 'text-[#1A1A1A]' : 'text-gray-300'}`}>
                                         {nome}
                                     </span>
                                 </div>
 
                                 {/*linha*/}
-                                {index < steps.length - 1 && <div className={`w-16 h-1 mt-4 ${complete ? 'bg-verde-escuro' : 'bg-gray-300'}`}></div>}
+                                {index < steps.length - 1 && <div className={`w-12 h-0.5 mt-4 transition-all ${complete ? 'bg-[#1A1A1A]' : 'bg-gray-200'}`}></div>}
                             </div>
                         )
                     })}
                 </div>
 
-                <h1 className='text-2xl font-bold text-grafite mt-6 mb-2'>Criar Novo Anúncio</h1>  {/* 'h1' título maior */}        
+                <div className='mb-2'>
+                    <h1 className='text-2xl font-bold text-[#1A1A1A]'>Criar Novo Anúncio</h1>  {/* 'h1' título maior */}
+                    <p className='text-gray-400 text-sm mt-1'>Preencha as informações para anunciar seu item</p>
+                </div>
                     
                 {step === 1 && 
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mt-6"> {/*gambiarra*/}
-                        <h2 className = 'text-xl font-bold text-verde-escuro mb-6'>Detalhes do Anúncio</h2> {/* 'h2' título menor */}
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6"> {/*gambiarra*/}
+                        <div className='mb-6'>
+                            <h2 className = 'text-xl font-bold text-[#1A1A1A]'>Detalhes do Anúncio</h2> {/* 'h2' título menor */}
+                            <p className='text-gray-400 text-sm mt-1'>Conte para os locatários o que você está oferecendo</p>
+                        </div>
 
                         <form onSubmit = {handleDetalhesSubmit}>
                             <div className = 'mb-4'>
@@ -215,8 +226,11 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                     </div>
                 }
                 {step === 2 && 
-                    <div>
-                        <h2 className = 'text-xl font-bold text-verde-escuro mb-6'>Fotos do Anúncio</h2>
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
+                        <div className='mb-6'>
+                            <h2 className = 'text-xl font-bold text-[#1A1A1A]'>Fotos do Anúncio</h2>
+                            <p className='text-gray-400 text-sm mt-1'>Fotos claras aumentam suas chances de locação</p>
+                        </div>
 
                         <form onSubmit = {handleFotosSubmit}>
                             {/* input escondido */}
@@ -230,10 +244,10 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                                 }}
                             />
 
-                            <div className="border-2 border-dashed border-verde-agua rounded-2xl p-4 transition-all">
+                            <div className="border-2 border-dashed border-gray-200 hover:border-[#00B795] rounded-2xl p-4 transition-all">
     
                                 {/* grid de fotos */}
-                                {fotos.length > 0 && (
+                                {fotos.length > 0 ? (
                                     <div className="grid grid-cols-3 gap-3 mb-4">
                                         {fotos.map((foto, indice) => (
                                             <div key={indice} className="relative">
@@ -246,24 +260,46 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                                                         e.preventDefault()
                                                         removerFoto(indice)
                                                     }}
-                                                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold"
+                                                    className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm text-red-500 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-sm hover:bg-red-500 hover:text-white transition-colors cursor-pointer"
                                                 >
                                                     X
                                                 </button>
                                             </div>
                                         ))}
+                                        {/* slots vazios restantes, no padrão do wireframe */}
+                                        {Array.from({ length: Math.max(0, 6 - fotos.length) }).map((_, i) => (
+                                            <div
+                                                key={`vazio-${i}`}
+                                                onClick={() => inputFotoRef.current.click()}
+                                                className="h-32 rounded-xl border border-dashed border-gray-200 flex items-center justify-center text-gray-300 text-xl cursor-pointer hover:border-[#00B795] hover:text-[#00B795] transition-all"
+                                            >
+                                                +
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-3 gap-3 mb-4">
+                                        {Array.from({ length: 6 }).map((_, i) => (
+                                            <div
+                                                key={`vazio-${i}`}
+                                                onClick={() => inputFotoRef.current.click()}
+                                                className="h-32 rounded-xl border border-dashed border-gray-200 flex items-center justify-center text-gray-300 text-xl cursor-pointer hover:border-[#00B795] hover:text-[#00B795] transition-all"
+                                            >
+                                                +
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
 
-                                {/* botão de adicionar */}
+                                {/* texto de apoio abaixo do grid */}
                                 <div 
                                     onClick={() => inputFotoRef.current.click()}
-                                    className="flex flex-col items-center justify-center py-8 cursor-pointer hover:bg-verde-agua/10 rounded-xl transition-all"
+                                    className="flex flex-col items-center justify-center py-4 cursor-pointer hover:bg-[#00B795]/5 rounded-xl transition-all"
                                 >
-                                    <p className="text-verde-escuro font-semibold">
-                                        {fotos.length > 0 ? '+ Adicionar mais fotos' : 'Clique para adicionar fotos'}
+                                    <p className="text-[#006861] font-semibold text-sm">
+                                        {fotos.length > 0 ? '+ Adicionar mais fotos' : 'Clique em qualquer quadro para adicionar fotos'}
                                     </p>
-                                    <p className="text-gray-400 text-sm mt-1">PNG, JPG até 5MB</p>
+                                    <p className="text-gray-400 text-xs mt-1">PNG, JPG até 5MB</p>
                                 </div>
                             </div>
                             
@@ -275,8 +311,11 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                     </div>
                 }
                 {step === 3 &&
-                    <div>
-                        <h2 className = 'text-xl font-bold text-verde-escuro mb-6'>Localização</h2>
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
+                        <div className='mb-6'>
+                            <h2 className = 'text-xl font-bold text-[#1A1A1A]'>Localização</h2>
+                            <p className='text-gray-400 text-sm mt-1'>Onde o locatário poderá retirar o item</p>
+                        </div>
 
                         <form onSubmit={handleLocalizacaoSubmit}>
                             <div className = 'mb-4 max-w-sm'>
@@ -342,14 +381,14 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                                     <div className = 'flex items-center gap-2 mt-2'>    
                                         <input 
                                             type='checkbox'
-                                            className="w-5 h-5 accent-verde-agua cursor-pointer"
+                                            className="w-5 h-5 accent-[#00B795] cursor-pointer"
                                             checked={endereco.semComplemento}
                                             onChange={(e) => setEndereco({
                                                 ...endereco, semComplemento: e.target.checked,
                                                 complemento: e.target.checked ? '' : ''
                                             })}
                                         />
-                                        <label className = 'label-field'>Sem complemento</label>
+                                        <label className = 'label-field mb-0'>Sem complemento</label>
                                     </div>  
                                 </div>
                             </div>
@@ -387,6 +426,26 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                                 </div>
                             </div>
 
+                            {/* Mapa - placeholder visual, integração real de mapa fica pra depois */}
+                            <div className='mb-4'>
+                                <label className='label-field'>Localização no mapa</label>
+                                <div className="relative h-56 rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden flex items-center justify-center">
+                                    <div className="absolute inset-0 opacity-40" style={{
+                                        backgroundImage: 'linear-gradient(#e5e7eb 1px, transparent 1px), linear-gradient(90deg, #e5e7eb 1px, transparent 1px)',
+                                        backgroundSize: '24px 24px'
+                                    }}></div>
+                                    <div className="relative flex flex-col items-center gap-2 text-center px-4">
+                                        <div className="w-10 h-10 rounded-full bg-[#00B795] flex items-center justify-center shadow-lg">
+                                            <div className="w-3 h-3 rounded-full bg-white"></div>
+                                        </div>
+                                        <p className="text-sm font-bold text-[#1A1A1A]">
+                                            {endereco.rua ? `${endereco.rua}, ${endereco.cidade || ''}` : 'Preencha o endereço acima'}
+                                        </p>
+                                        <p className="text-xs text-gray-400">Arraste o pin para ajustar a localização exata</p>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className = 'flex justify-between mt-6'>
                                 <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
                                 <button type='submit' className='btn-next'>Próximo</button>
@@ -395,20 +454,27 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                     </div>
                 }
                 {step === 4 &&
-                    <div>
-                        <h2 className = 'text-xl font-bold text-verde-escuro mb-6'>Disponibilidade</h2>
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
+                        <div className='mb-6'>
+                            <h2 className = 'text-xl font-bold text-[#1A1A1A]'>Disponibilidade</h2>
+                            <p className='text-gray-400 text-sm mt-1'>Selecione os dias em que o item estará disponível</p>
+                        </div>
 
-                        <div className="flex justify-center my-4">
+                        <div className="flex justify-center my-4 bg-gray-50/50 rounded-2xl border border-gray-100 p-6">
                             <DayPicker
                                 mode='multiple'
                                 selected={disponivel}
                                 onSelect={setDisponivel}
+                                classNames={{
+                                    day_selected: 'bg-[#00B795] text-white rounded-lg',
+                                    day_today: 'font-bold text-[#00639E]'
+                                }}
                             />
                         </div>
 
                         {console.log(disponivel)}
 
-                        <p className="text-center text-verde-agua font-semibold mb-4">
+                        <p className="text-center text-[#00B795] font-semibold mb-4">
                             {disponivel.length} {disponivel.length === 1 ? 'dia selecionado' : 'dias selecionados'}
                         </p>
 
@@ -419,9 +485,12 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                     </div>
                 }
                 {step === 5 &&
-                    <div>
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
                         <form onSubmit={handlePrecosSubmit}>
-                            <h2 className='text-xl font-bold text-verde-escuro mb-6'>Preços e Condições</h2>
+                            <div className='mb-6'>
+                                <h2 className='text-xl font-bold text-[#1A1A1A]'>Preços e Condições</h2>
+                                <p className='text-gray-400 text-sm mt-1'>Defina quanto vai cobrar pela locação</p>
+                            </div>
 
                             <div className="flex gap-4 mb-4">
                                 <div className="flex-1">
@@ -447,6 +516,41 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                                 </div>
                             </div>
 
+                            <div className='flex items-center gap-2 mb-6'>
+                                <input
+                                    type='checkbox'
+                                    className="w-5 h-5 accent-[#00B795] cursor-pointer"
+                                    checked={precos.exigirCaucao}
+                                    onChange={(e) => setPrecos({...precos, exigirCaucao: e.target.checked})}
+                                />
+                                <label className='label-field mb-0'>Exigir caução</label>
+                            </div>
+
+                            <div className='border-t border-gray-100 pt-6 mb-2'>
+                                <h3 className='text-sm font-bold text-[#1A1A1A] uppercase tracking-wide mb-4'>Regras de Reserva</h3>
+                                <div className="flex gap-4">
+                                    <div className="flex-1">
+                                        <label className="label-field">Horário de retirada</label>
+                                        <input
+                                            type='time'
+                                            className='input-default'
+                                            value={precos.horarioRetirada}
+                                            onChange={(e) => setPrecos({...precos, horarioRetirada: e.target.value})}
+                                        />
+                                    </div>
+
+                                    <div className="flex-1">
+                                        <label className="label-field">Horário de devolução</label>
+                                        <input
+                                            type='time'
+                                            className='input-default'
+                                            value={precos.horarioDevolucao}
+                                            onChange={(e) => setPrecos({...precos, horarioDevolucao: e.target.value})}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className='flex justify-between mt-6'>
                                 <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
                                 <button type='submit' className='btn-next'>Concluir</button>
@@ -455,29 +559,35 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                     </div>
                 }
                 {step === 6 &&
-                    <div>
-                        <h2 className='text-xl font-bold text-verde-escuro mb-6'>Resumo do Anúncio</h2>
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
+                        <div className='mb-6'>
+                            <h2 className='text-xl font-bold text-[#1A1A1A]'>Resumo do Anúncio</h2>
+                            <p className='text-gray-400 text-sm mt-1'>Confira tudo antes de publicar</p>
+                        </div>
 
-                        <div className="space-y-3 mb-8">
-                            <p className="text-grafite"><strong>Produto:</strong> {titulo}</p>
-                            <p className="text-grafite"><strong>Descrição:</strong> {descricao}</p>
-                            <p className="text-grafite"><strong>Categoria:</strong> {categoria} / {subcategoria}</p>
-                            <p className="text-grafite"><strong>Fotos:</strong> {fotos.length} adicionadas</p>
-                            <p className="text-grafite"><strong>Endereço:</strong> {endereco.rua}, {endereco.numero}</p>        
+                        <div className="space-y-3 mb-8 bg-gray-50/50 rounded-xl p-5 border border-gray-100">
+                            <p className="text-[#1A1A1A]"><strong>Produto:</strong> {titulo}</p>
+                            <p className="text-[#1A1A1A]"><strong>Descrição:</strong> {descricao}</p>
+                            <p className="text-[#1A1A1A]"><strong>Categoria:</strong> {categoria} / {subcategoria}</p>
+                            <p className="text-[#1A1A1A]"><strong>Fotos:</strong> {fotos.length} adicionadas</p>
+                            <p className="text-[#1A1A1A]"><strong>Endereço:</strong> {endereco.rua}, {endereco.numero}</p>
+                            <p className="text-[#1A1A1A]"><strong>Disponibilidade:</strong> {disponivel.length} {disponivel.length === 1 ? 'dia selecionado' : 'dias selecionados'}</p>
+                            <p className="text-[#1A1A1A]"><strong>Preço por dia:</strong> R$ {precos.precoPorDia || '0,00'}{precos.exigirCaucao && precos.caucao ? ` (+ caução de R$ ${precos.caucao})` : ''}</p>
+                            <p className="text-[#1A1A1A]"><strong>Retirada/Devolução:</strong> {precos.horarioRetirada} às {precos.horarioDevolucao}</p>
                         </div>
                     
                         <div className="flex justify-between items-center">
                             <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
-                        <div className="flex gap-4">
-                            <button onClick={handleRascunho} className='bg-transparent border-2 border-verde-agua text-verde-agua hover:text-verde-escuro hover:border-verde-escuro px-6 py-2 rounded-lg font-bold transition-all cursor-pointer uppercase tracking-widest'>Salvar como rascunho</button>
-                            <button onClick={handlePublicar} className='btn-next'>Publicar Anúncio</button>
+                            <div className="flex gap-4">
+                                <button onClick={handleRascunho} className='bg-transparent border-2 border-[#00B795] text-[#00B795] hover:text-[#006861] hover:border-[#006861] px-6 py-2 rounded-lg font-bold transition-all cursor-pointer uppercase tracking-widest'>Salvar como rascunho</button>
+                                <button onClick={handlePublicar} className='btn-next'>Publicar Anúncio</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            }
+                }
+            </div>
             <Footer />
-        </div>
-    </div>    
+        </div>    
     )
 }
 
