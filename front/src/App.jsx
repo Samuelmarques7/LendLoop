@@ -20,7 +20,7 @@ function App() {
         <Route path="/busca" element={<ResultadosBusca />} />
         <Route path="/criar-anuncio" element={<CriarAnuncio />} />
         <Route path="/produto/:id" element={<DetalhesProduto />} />
-        <Route path="/painel-locatario" element={<PainelLocatario />} />
+        <Route path="/painellocatario" element={<PainelLocatario />} />
         <Route path="/painelLocador" element={<PainelLocador />} />
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/login" element={<Login />} />
