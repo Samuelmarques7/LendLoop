@@ -11,22 +11,17 @@ const Avaliacao = require('./models/Avaliacao');
 
 const app = express();
 
-// Middlewares
 app.use(cors());
 app.use(express.json());
 
-// ==========================================
-// ROTAS DA PLATAFORMA LENDLOOP
-// ==========================================
+// --- Rotas LendLoop ---
 
-// --- Usuário ---
-
+// Cadastro
 app.post('/api/usuarios', async (req, res) => {
   try {
     const { nome, email, senha, telefone } = req.body;
-
     const novoUsuario = new Usuario({ nome, email, senha, telefone });
-
+    
     await novoUsuario.save();
 
     res.status(201).json({
@@ -38,6 +33,7 @@ app.post('/api/usuarios', async (req, res) => {
   }
 });
 
+// Listagem
 app.get('/api/usuarios', async (req, res) => {
   try {
     const usuarios = await Usuario.find();
@@ -47,6 +43,7 @@ app.get('/api/usuarios', async (req, res) => {
   }
 });
 
+// Login
 app.post('/api/login', async (req, res) => {
   try {
     const { email, senha } = req.body;
@@ -60,13 +57,13 @@ app.post('/api/login', async (req, res) => {
       return res.status(401).json({ erro: 'Senha incorreta.' });
     }
 
-    res.status(200).json({
-      mensagem: 'Login realizado com sucesso!',
-      usuario: {
+    res.status(200).json({ 
+      mensagem: 'Login realizado com sucesso!', 
+      usuario: { 
         id: usuario._id,
-        nome: usuario.nome,
-        email: usuario.email
-      }
+        nome: usuario.nome, 
+        email: usuario.email 
+      } 
     });
   } catch (erro) {
     console.error("Erro no login:", erro);
@@ -295,7 +292,6 @@ mongoose.connect(MONGO_URI)
     console.log('📦 Conectado ao MongoDB com sucesso!');
     app.listen(PORT, () => {
       console.log(`🚀 Servidor rodando na porta ${PORT}`);
-      console.log(`👉 Teste a rota: http://localhost:${PORT}/api/usuarios`);
     });
   })
   .catch((erro) => console.error('❌ Erro ao conectar no MongoDB:', erro));

@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function Login() {
+  const navigate = useNavigate();
   const [credentials, setCredentials] = useState({
     email: '',
     senha: ''
   });
   
   const [mensagem, setMensagem] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
@@ -16,9 +18,36 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMensagem(null);
-    
-    console.log("Tentando logar com:", credentials);
-    setMensagem({ tipo: 'info', texto: 'A integração de Login com o back-end será feita em breve!' });
+    setLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:3000/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem('usuarioLogado', 'true');
+        localStorage.setItem('dadosUsuario', JSON.stringify(data.usuario));
+
+        setMensagem({ tipo: 'sucesso', texto: 'Bem-vindo de volta! Redirecionando...' });
+        
+        setTimeout(() => {
+          navigate('/');
+        }, 1000);
+      } else {
+        setMensagem({ tipo: 'erro', texto: data.erro || 'Erro ao fazer login.' });
+      }
+    } catch (error) {
+      setMensagem({ tipo: 'erro', texto: 'Erro de conexão. O servidor está rodando?' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -31,7 +60,7 @@ export default function Login() {
         </div>
 
         {mensagem && (
-          <div className="p-4 mb-6 rounded-lg font-medium bg-blue-50 text-[#00639E] border border-blue-200">
+          <div className={`p-4 mb-6 rounded-lg font-medium ${mensagem.tipo === 'sucesso' ? 'bg-[#00B795]/10 text-[#006861] border border-[#00B795]/30' : 'bg-red-50 text-red-700 border border-red-200'}`}>
             {mensagem.texto}
           </div>
         )}
@@ -64,11 +93,17 @@ export default function Login() {
           </div>
 
           <div className="flex justify-end">
-            <Link to="/esqueceu-senha" className="text-sm text-[#00B795] hover:text-[#006861] hover:underline transition-colors cursor-pointer">Esqueceu a senha?</Link>
+            <Link to="/esqueceu-senha" className="text-sm text-[#00B795] hover:text-[#006861] hover:underline transition-colors cursor-pointer">
+              Esqueceu a senha?
+            </Link>
           </div>
 
-          <button type="submit" className="w-full bg-[#00B795] hover:bg-[#006861] text-[#FFFFFF] font-bold py-3 rounded-lg transition-colors mt-6 shadow-md cursor-pointer">
-            Entrar
+          <button 
+            type="submit" 
+            disabled={loading}
+            className={`w-full text-[#FFFFFF] font-bold py-3 rounded-lg transition-colors mt-6 shadow-md cursor-pointer ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#00B795] hover:bg-[#006861]'}`}
+          >
+            {loading ? 'Entrando...' : 'Entrar'}
           </button>
 
           <p className="text-center text-sm text-[#1A1A1A] mt-6">

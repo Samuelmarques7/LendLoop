@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import logo from '../assets/logo.png';
 
 import {
   LuLayoutDashboard,
@@ -20,44 +21,25 @@ export default function PainelLocatario() {
   const [activeTab, setActiveTab] = useState('painel');
   const navigate = useNavigate();
 
-  // aba interna da seção "Meus Aluguéis" dentro do painel
   const [abaAlugueis, setAbaAlugueis] = useState('andamento');
-  // aba interna da seção "Pagamentos" dentro do painel
   const [abaPagamentos, setAbaPagamentos] = useState('pendentes');
 
-  const [solicitacoesEnviadas, setSolicitacoesEnviadas] = useState([
-    { id: 1, item: "Kit Câmera Profissional", periodo: "25 Jan - 27 Jan, 2025" },
-    { id: 2, item: "Barraca de Camping 4 Pessoas", periodo: "1 Fev - 3 Fev, 2025" }
-  ]);
-
-  const alugueis = {
-    andamento: [
-      { id: 1, item: "Kit Furadeira Elétrica", dono: "João Silva", periodo: "15 Jan - 17 Jan, 2025", precoTotal: 45, status: "Ativo" },
-      { id: 2, item: "Bicicleta Mountain Bike", dono: "Sarah Wilson", periodo: "20 Jan - 22 Jan, 2025", precoTotal: 60, status: "Ativo" }
-    ],
-    pendente: [
-      { id: 3, item: "Kit Câmera Profissional", dono: "Marcos Castro", periodo: "25 Jan - 27 Jan, 2025", precoTotal: 90, status: "Aguardando" }
-    ],
-    concluido: [
-      { id: 4, item: "Furadeira DeWalt 20V", dono: "João D.", periodo: "02 Jan - 04 Jan, 2025", precoTotal: 30, status: "Concluído" }
-    ]
-  };
-
-  const pagamentos = {
-    pendentes: [
-      { id: 1, item: "Kit Furadeira Elétrica", vencimento: "17 Jan, 2025", valor: 45, emAtraso: true },
-      { id: 2, item: "Bicicleta Mountain Bike", vencimento: "22 Jan, 2025", valor: 60, emAtraso: true }
-    ],
-    confirmados: [
-      { id: 3, item: "Furadeira DeWalt 20V", vencimento: "04 Jan, 2025", valor: 30, emAtraso: false }
-    ]
-  };
+  const [solicitacoesEnviadas, setSolicitacoesEnviadas] = useState([]);
+  const [alugueis, setAlugueis] = useState({
+    andamento: [],
+    pendente: [],
+    concluido: []
+  });
+  const [pagamentos, setPagamentos] = useState({
+    pendentes: [],
+    confirmados: []
+  });
 
   const stats = [
-    { id: 1, titulo: "Próximos Aluguéis", valor: "3", icon: LuCalendar, color: "text-[#00639E]", bg: "bg-blue-50" },
+    { id: 1, titulo: "Próximos Aluguéis", valor: "0", icon: LuCalendar, color: "text-[#00639E]", bg: "bg-blue-50" },
     { id: 2, titulo: "Solicitações Pendentes", valor: String(solicitacoesEnviadas.length), icon: LuMailWarning, color: "text-orange-500", bg: "bg-orange-50" },
     { id: 3, titulo: "Pagamentos Pendentes", valor: `R$ ${pagamentos.pendentes.reduce((soma, p) => soma + p.valor, 0)}`, icon: LuWallet, color: "text-[#00B795]", bg: "bg-[#00B795]/10" },
-    { id: 4, titulo: "Mensagens Não Lidas", valor: "3", icon: LuMessageSquare, color: "text-[#05BFBE]", bg: "bg-[#05BFBE]/10" }
+    { id: 4, titulo: "Mensagens Não Lidas", valor: "0", icon: LuMessageSquare, color: "text-[#05BFBE]", bg: "bg-[#05BFBE]/10" }
   ];
 
   const menuItems = [
@@ -102,12 +84,12 @@ export default function PainelLocatario() {
     <div className="min-h-screen bg-[#F8F9FA] font-sans flex text-[#1A1A1A]">
       <aside className="w-72 bg-white border-r border-gray-200 flex flex-col sticky top-0 h-screen shadow-sm z-10">
         <div className="h-20 flex items-center px-8 border-b border-gray-100">
-          <div
+          <img
+            src={logo}
+            alt="LendLoop"
+            className="h-18 w-auto cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => navigate('/')}
-            className="text-2xl font-black tracking-tighter text-[#1A1A1A] uppercase cursor-pointer hover:opacity-80"
-          >
-            PROJETO
-          </div>
+          />
         </div>
 
         <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
@@ -134,10 +116,10 @@ export default function PainelLocatario() {
         <div className="p-6 border-t border-gray-100">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[#00639E] text-white flex items-center justify-center font-bold text-lg">
-              C
+              U
             </div>
             <div>
-              <p className="text-sm font-bold text-[#1A1A1A]">Carlos Silva</p>
+              <p className="text-sm font-bold text-[#1A1A1A]">Usuário LendLoop</p>
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Locatário</p>
             </div>
           </div>
@@ -185,7 +167,6 @@ function SecaoPainel({ stats, alugueis, pagamentos, solicitacoesEnviadas, abaAlu
         })}
       </section>
 
-      {/* MEUS ALUGUÉIS */}
       <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
           <h2 className="text-lg font-bold text-[#1A1A1A]">Meus Aluguéis</h2>
@@ -251,7 +232,6 @@ function SecaoPainel({ stats, alugueis, pagamentos, solicitacoesEnviadas, abaAlu
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* SOLICITAÇÕES ENVIADAS */}
         <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
           <div className="p-6 border-b border-gray-100">
             <h2 className="text-lg font-bold text-[#1A1A1A]">Solicitações Enviadas</h2>
@@ -286,7 +266,6 @@ function SecaoPainel({ stats, alugueis, pagamentos, solicitacoesEnviadas, abaAlu
           </div>
         </section>
 
-        {/* PAGAMENTOS */}
         <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
           <div className="p-6 border-b border-gray-100 flex justify-between items-center">
             <h2 className="text-lg font-bold text-[#1A1A1A]">Pagamentos</h2>
