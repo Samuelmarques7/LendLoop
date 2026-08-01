@@ -34,7 +34,7 @@ export function Header() {
         {isLogado ? (
           <div className="flex items-center gap-4">       
             <button 
-              onClick={() => navigate('/painelLocador')}
+              onClick={() => navigate('/meu-perfil')}
               className="text-[#006861] hover:text-[#00B795] font-semibold transition-colors cursor-pointer"
             >
               Meu Perfil
