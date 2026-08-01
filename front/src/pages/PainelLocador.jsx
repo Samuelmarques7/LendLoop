@@ -23,22 +23,14 @@ export default function PainelLocador() {
   const [activeTab, setActiveTab] = useState('painel');
   const navigate = useNavigate(); 
 
-  const [solicitacoes, setSolicitacoes] = useState([
-    { id: 1, item: "Furadeira Profissional", cliente: "Roberto Oliveira", data: "28/01/2025" },
-    { id: 2, item: "Kit Câmera DSLR", cliente: "Marcos Castro", data: "20/01/2025" }
-  ]);
+  const [solicitacoes, setSolicitacoes] = useState([]);
+  const [meusAnuncios, setMeusAnuncios] = useState([]);
 
   const stats = [
-    { id: 1, titulo: "Ganhos Este Mês", valor: "R$ 1.240", icon: LuDollarSign, color: "text-[#00B795]", bg: "bg-[#00B795]/10" },
-    { id: 2, titulo: "Anúncios Ativos", valor: "8", icon: LuPackage, color: "text-[#1A1A1A]", bg: "bg-gray-100" },
+    { id: 1, titulo: "Ganhos Este Mês", valor: "R$ 0", icon: LuDollarSign, color: "text-[#00B795]", bg: "bg-[#00B795]/10" },
+    { id: 2, titulo: "Anúncios Ativos", valor: String(meusAnuncios.length), icon: LuPackage, color: "text-[#1A1A1A]", bg: "bg-gray-100" },
     { id: 3, titulo: "Solicitações Pendentes", valor: String(solicitacoes.length), icon: LuInfo, color: "text-orange-500", bg: "bg-orange-50" },
-    { id: 4, titulo: "Mensagens Não Lidas", valor: "2", icon: LuMessageSquare, color: "text-[#00639E]", bg: "bg-blue-50" }
-  ];
-
-  const meusAnuncios = [
-    { id: 1, nome: "Furadeira Profissional", preco: "R$ 15/dia", reservas: 5, status: "Ativo" },
-    { id: 2, nome: "Kit Câmera DSLR", preco: "R$ 35/dia", reservas: 7, status: "Ativo" },
-    { id: 3, nome: "Barraca de Camping 4 Pessoas", preco: "R$ 25/dia", reservas: 3, status: "Pausado" }
+    { id: 4, titulo: "Mensagens Não Lidas", valor: "0", icon: LuMessageSquare, color: "text-[#00639E]", bg: "bg-blue-50" }
   ];
 
   const menuItems = [
@@ -84,13 +76,14 @@ export default function PainelLocador() {
   return (
     <div className="min-h-screen bg-[#F8F9FA] font-sans flex text-[#1A1A1A]">
       <aside className="w-72 bg-white border-r border-gray-200 flex flex-col sticky top-0 h-screen shadow-sm z-10">
+        
         <div className="h-20 flex items-center px-8 border-b border-gray-100">
-          <div 
-            onClick={() => navigate('/')} 
-            className="text-2xl font-black tracking-tighter text-[#1A1A1A] uppercase cursor-pointer hover:opacity-80"
-          >
-            PROJETO
-          </div>
+          <img
+            src={logo}
+            alt="LendLoop"
+            className="h-18 w-auto cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => navigate('/')}
+          />
         </div>
 
         <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
@@ -117,11 +110,11 @@ export default function PainelLocador() {
         <div className="p-6 border-t border-gray-100">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[#00B795] text-white flex items-center justify-center font-bold text-lg">
-              C
+              U
             </div>
             <div>
-              <p className="text-sm font-bold text-[#1A1A1A]">Carlos Silva</p>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Locador</p>
+              <p className="text-sm font-bold text-[#1A1A1A]">Usuário LendLoop</p>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Membro</p>
             </div>
           </div>
         </div>
@@ -180,22 +173,32 @@ function SecaoPainel({ stats, meusAnuncios, solicitacoes, onAceitar, onRecusar, 
             </button>
           </div>
           <div className="p-2 flex-grow">
-            {meusAnuncios.map((anuncio) => (
-              <div key={anuncio.id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-colors cursor-pointer group">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gray-200 rounded-xl flex-shrink-0"></div>
-                  <div>
-                    <h3 className="font-bold text-[#1A1A1A] text-sm group-hover:text-[#00B795] transition-colors">{anuncio.nome}</h3>
-                    <p className="text-xs text-gray-400 font-medium mt-0.5">{anuncio.preco} • {anuncio.reservas} reservas</p>
-                  </div>
-                </div>
-                <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-md ${
-                  anuncio.status === 'Ativo' ? 'bg-[#00B795]/10 text-[#00B795]' : 'bg-gray-100 text-gray-500'
-                }`}>
-                  {anuncio.status}
-                </span>
+            
+            {meusAnuncios.length === 0 ? (
+              <div className="p-8 text-center text-gray-400 flex flex-col items-center justify-center h-full">
+                <LuPackage size={32} className="mx-auto mb-2 opacity-30" />
+                <p className="text-sm font-bold">Nenhum anúncio ativo</p>
+                <p className="text-xs mt-1">Clique em "Novo Anúncio" para começar.</p>
               </div>
-            ))}
+            ) : (
+              meusAnuncios.map((anuncio) => (
+                <div key={anuncio.id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-colors cursor-pointer group">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-gray-200 rounded-xl flex-shrink-0"></div>
+                    <div>
+                      <h3 className="font-bold text-[#1A1A1A] text-sm group-hover:text-[#00B795] transition-colors">{anuncio.nome}</h3>
+                      <p className="text-xs text-gray-400 font-medium mt-0.5">{anuncio.preco} • {anuncio.reservas} reservas</p>
+                    </div>
+                  </div>
+                  <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-md ${
+                    anuncio.status === 'Ativo' ? 'bg-[#00B795]/10 text-[#00B795]' : 'bg-gray-100 text-gray-500'
+                  }`}>
+                    {anuncio.status}
+                  </span>
+                </div>
+              ))
+            )}
+
           </div>
         </section>
 
@@ -213,7 +216,7 @@ function SecaoSolicitacoes({ solicitacoes, onAceitar, onRecusar }) {
       </div>
       <div className="p-2 flex-grow">
         {solicitacoes.length === 0 ? (
-          <div className="p-8 text-center text-gray-400">
+          <div className="p-8 text-center text-gray-400 flex flex-col items-center justify-center h-full">
             <LuCheck size={32} className="mx-auto mb-2 opacity-30" />
             <p className="text-sm font-bold">Nenhuma solicitação pendente</p>
           </div>

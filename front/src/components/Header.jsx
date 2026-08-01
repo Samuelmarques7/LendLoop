@@ -3,30 +3,60 @@ import logo from '../assets/logo.png';
 
 export function Header() {
   const navigate = useNavigate();
+  
+  const isLogado = localStorage.getItem('usuarioLogado') === 'true';
+
+  const handleCriarAnuncio = () => {
+    if (isLogado) {
+      navigate('/criar-anuncio');
+    } else {
+      navigate('/login');
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('usuarioLogado');
+    window.location.reload(); 
+  };
 
   return (
     <header className="bg-white border-b border-gray-100 px-8 py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
+      
       <img
         src={logo}
         alt="LendLoop"
-        className="h-12 w-auto cursor-pointer"
+        className="h-19 w-auto cursor-pointer"
         onClick={() => navigate('/')}
       />
-      <div className="flex items-center gap-4">
-        <button 
-          onClick={() => navigate('/painelLocador')}
-          className="text-verde-escuro hover:text-verde-agua font-semibold transition-colors cursor-pointer"
-        >
-          Entrar
-        </button>
+
+      <nav className="flex items-center gap-6">
         
+        {isLogado ? (
+          <div className="flex items-center gap-4">       
+            <button 
+              onClick={() => navigate('/painelLocador')}
+              className="text-[#006861] hover:text-[#00B795] font-semibold transition-colors cursor-pointer"
+            >
+              Meu Perfil
+            </button>
+          </div>
+        ) : (
+          <button 
+            onClick={() => navigate('/login')}
+            className="text-[#006861] hover:text-[#00B795] font-semibold transition-colors cursor-pointer"
+          >
+            Entrar
+          </button>
+        )}
+
         <button 
-          onClick={() => navigate('/criar-anuncio')}
-          className="bg-verde-agua text-white px-5 py-2 rounded-lg font-semibold hover:bg-verde-escuro transition-colors cursor-pointer"
+          onClick={handleCriarAnuncio}
+          className="bg-[#00B795] text-white px-5 py-2 rounded-lg font-semibold hover:bg-[#006861] transition-colors cursor-pointer"
         >
           Criar Anúncio
         </button>
-      </div>
+
+      </nav>
     </header>
   );
 }
