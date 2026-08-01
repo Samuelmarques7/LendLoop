@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function Cadastro() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
@@ -36,8 +37,15 @@ export default function Cadastro() {
       const data = await response.json();
 
       if (response.ok) {
-        setMensagem({ tipo: 'sucesso', texto: 'Conta criada com sucesso! Bem-vindo ao LendLoop.' });
+        localStorage.setItem('usuarioLogado', 'true');
+        
+        setMensagem({ tipo: 'sucesso', texto: 'Conta criada com sucesso! Redirecionando...' });
         setFormData({ nome: '', email: '', senha: '', telefone: '', objetivo: 'ambos' });
+        
+        setTimeout(() => {
+          navigate(-1);
+        }, 1000);
+
       } else {
         setMensagem({ tipo: 'erro', texto: data.erro || 'Erro ao cadastrar.' });
       }

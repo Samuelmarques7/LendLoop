@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from "react-router-dom";
 import {
   LuSearch,
@@ -9,73 +10,23 @@ import {
   LuHeart,
   LuStar,
   LuChevronLeft,
-  LuChevronRight
+  LuChevronRight,
+  LuPackageX
 } from "react-icons/lu";
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 
 export function ResultadosBusca() {
   const navigate = useNavigate(); 
-
-  const produtos = [
-    {
-      id: 1,
-      nome: "Furadeira DeWalt 20V MAX sem Fio",
-      descricao: "Furadeira profissional sem fio com 2 baterias e carregador. Perfeita para projetos de casa.",
-      preco: 15,
-      avaliacao: 4.8,
-      reviews: 23,
-      distancia: "1,2 km",
-      dono: "João D.",
-      status: "Disponível hoje",
-      imagem: "https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&q=80&w=400"
-    },
-    {
-      id: 2,
-      nome: "Kit Furadeira e Parafusadeira Makita 18V",
-      descricao: "Kit completo com furadeira e parafusadeira com maleta. Inclui múltiplas brocas e acessórios.",
-      preco: 25,
-      avaliacao: 4.9,
-      reviews: 41,
-      distancia: "2,8 km",
-      dono: "Sarah M.",
-      status: "Reserva instantânea",
-      imagem: "https://images.unsplash.com/photo-1581147036324-c17ac41dfa6c?auto=format&fit=crop&q=80&w=400"
-    },
-    {
-      id: 3,
-      nome: "Black & Decker Cordless Drill",
-      descricao: "Lightweight cordless drill perfect for light to medium duty tasks. Easy to use for beginners.",
-      preco: 10,
-      avaliacao: 4.3,
-      reviews: 12,
-      distancia: "0,8 miles",
-      dono: "Mike R.",
-      status: "Available tomorrow",
-      imagem: "https://images.unsplash.com/photo-1572981779307-38b8cabb2407?auto=format&fit=crop&q=80&w=400"
-    },
-    {
-      id: 4,
-      nome: "Milwaukee M18 Fuel Drill Kit",
-      descricao: "Heavy-duty drill kit with brushless motor. Includes 2 batteries, charger, and premium carrying case.",
-      preco: 35,
-      avaliacao: 5.0,
-      reviews: 8,
-      distancia: "3,5 miles",
-      dono: "David L.",
-      status: "Available Jan 16",
-      imagem: "https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&q=80&w=400"
-    }
-  ];
+  
+  const [produtos, setProdutos] = useState([]);
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] font-sans text-[#1A1A1A] flex flex-col">
       <Header />
 
-      {/* Espaçamento entre Header e Pesquisa */}
       <main className="max-w-7xl mx-auto w-full flex-grow p-6 pt-10">
         
-        {/* SEÇÃO DE BUSCA */}
         <section className="mb-8 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
           <div className="flex justify-between items-end mb-6">
             <div>
@@ -83,7 +34,7 @@ export function ResultadosBusca() {
               <p className="text-gray-400 text-sm mt-1">Ferramentas disponíveis na sua região</p>
             </div>
             <span className="text-[#00639E] text-[10px] font-bold bg-blue-50 px-3 py-1.5 rounded-full uppercase tracking-wider">
-              347 itens encontrados
+              {produtos.length} itens encontrados
             </span>
           </div>
 
@@ -92,7 +43,7 @@ export function ResultadosBusca() {
               <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5 ml-1">O que você busca?</label>
               <div className="relative">
                 <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type="text" defaultValue="Furadeira elétrica" className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm focus:ring-2 focus:ring-[#00B795]/20 focus:border-[#00B795] outline-none transition-all" />
+                <input type="text" placeholder="Ex: Furadeira, Barraca..." className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm focus:ring-2 focus:ring-[#00B795]/20 focus:border-[#00B795] outline-none transition-all" />
               </div>
             </div>
 
@@ -100,7 +51,7 @@ export function ResultadosBusca() {
               <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5 ml-1">Início</label>
               <div className="relative">
                 <LuCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                <input type="date" defaultValue="2025-01-15" className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm outline-none focus:border-[#00B795] cursor-pointer" />
+                <input type="date" className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm outline-none focus:border-[#00B795] cursor-pointer" />
               </div>
             </div>
 
@@ -108,7 +59,7 @@ export function ResultadosBusca() {
               <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5 ml-1">Fim</label>
               <div className="relative">
                 <LuCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                <input type="date" defaultValue="2025-01-18" className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm outline-none focus:border-[#00B795] cursor-pointer" />
+                <input type="date" className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm outline-none focus:border-[#00B795] cursor-pointer" />
               </div>
             </div>
 
@@ -128,7 +79,6 @@ export function ResultadosBusca() {
 
         <div className="flex gap-8 flex-col lg:flex-row">
           
-          {/* ASIDE FILTROS */}
           <aside className="w-full lg:w-64 shrink-0">
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
@@ -139,7 +89,6 @@ export function ResultadosBusca() {
                 </div>
 
                 <div className="space-y-6">
-                {/* Preço */}
                 <div className="border-b border-gray-50 pb-4">
                     <h4 className="text-sm font-bold text-[#1A1A1A] mb-3">Faixa de Preço</h4>
                     <div className="flex items-center gap-2">
@@ -149,7 +98,6 @@ export function ResultadosBusca() {
                     <p className="text-[10px] text-gray-300 mt-2 uppercase tracking-widest">Por dia</p>
                 </div>
 
-                {/* NOVO: Filtro de Distância */}
                 <div className="border-b border-gray-50 pb-4">
                     <h4 className="text-sm font-bold text-[#1A1A1A] mb-3">Distância Máxima</h4>
                     <input 
@@ -165,20 +113,18 @@ export function ResultadosBusca() {
                     </div>
                 </div>
 
-                {/* Categoria */}
                 <div className="border-b border-gray-50 pb-4">
                     <h4 className="text-sm font-bold text-[#1A1A1A] mb-3">Categoria</h4>
                     <div className="space-y-2">
                     {['Ferramentas', 'Eletrônicos', 'Casa & Jardim', 'Esportes'].map((cat, idx) => (
                         <label key={cat} className="flex items-center gap-3 text-sm text-gray-500 cursor-pointer group">
-                        <input type="checkbox" defaultChecked={idx === 0} className="w-4 h-4 rounded border-gray-300 accent-[#00B795] cursor-pointer" />
+                        <input type="checkbox" className="w-4 h-4 rounded border-gray-300 accent-[#00B795] cursor-pointer" />
                         <span className="group-hover:text-[#1A1A1A] transition-colors">{cat}</span>
                         </label>
                     ))}
                     </div>
                 </div>
 
-                {/* Avaliação */}
                 <div className="border-b border-gray-50 pb-4">
                     <h4 className="text-sm font-bold text-[#1A1A1A] mb-3">Avaliação</h4>
                     <div className="space-y-2">
@@ -193,7 +139,6 @@ export function ResultadosBusca() {
                     </div>
                 </div>
 
-                {/* Disponibilidade */}
                 <div>
                     <h4 className="text-sm font-bold text-[#1A1A1A] mb-3">Disponibilidade</h4>
                     <div className="space-y-2">
@@ -211,75 +156,91 @@ export function ResultadosBusca() {
             </div>
             </aside>
 
-          {/* LISTA DE RESULTADOS */}
           <section className="flex-grow space-y-4">
-            {produtos.map((produto) => (
-              <div key={produto.id} className="bg-white flex flex-col md:flex-row border border-gray-100 rounded-3xl overflow-hidden hover:shadow-lg transition-all group cursor-pointer">
-                <div className="w-full md:w-72 h-48 bg-gray-50 relative overflow-hidden">
-                  <img src={produto.imagem} alt={produto.nome} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                  <button className="absolute top-4 right-4 p-2.5 bg-white/90 backdrop-blur-sm rounded-full text-gray-400 hover:text-red-500 shadow-sm transition-colors cursor-pointer active:scale-90">
-                    <LuHeart size={18} />
-                  </button>
+            
+            {produtos.length === 0 ? (
+              <div className="bg-white rounded-3xl border border-gray-100 p-16 flex flex-col items-center justify-center text-center h-full min-h-[400px]">
+                <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6 border border-gray-100">
+                  <LuSearch size={40} className="text-gray-300" />
                 </div>
-                
-                <div className="p-6 flex-grow flex flex-col justify-between">
-                  <div>
-                    <div className="flex justify-between items-start gap-4">
-                      <h2 className="text-xl font-bold text-[#1A1A1A] group-hover:text-[#00B795] transition-colors leading-tight">
-                        {produto.nome}
-                      </h2>
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-gray-600 bg-gray-50 border border-gray-100 px-2.5 py-1.5 rounded-lg shrink-0">
-                        <LuStar className="text-yellow-400" fill="currentColor" /> {produto.avaliacao}
+                <h2 className="text-2xl font-bold text-[#1A1A1A] mb-2">Nenhum item encontrado</h2>
+                <p className="text-gray-400 max-w-md">
+                  Ainda não temos itens disponíveis com esses filtros na sua região. Tente buscar por outra categoria ou limpar os filtros atuais.
+                </p>
+                <button className="mt-6 border-2 border-[#00B795] text-[#00B795] px-6 py-2.5 rounded-xl font-bold hover:bg-[#00B795]/10 transition-colors cursor-pointer">
+                  Limpar Filtros
+                </button>
+              </div>
+            ) : (
+              <>
+                {produtos.map((produto) => (
+                  <div key={produto.id} className="bg-white flex flex-col md:flex-row border border-gray-100 rounded-3xl overflow-hidden hover:shadow-lg transition-all group cursor-pointer">
+                    <div className="w-full md:w-72 h-48 bg-gray-50 relative overflow-hidden">
+                      <img src={produto.imagem} alt={produto.nome} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                      <button className="absolute top-4 right-4 p-2.5 bg-white/90 backdrop-blur-sm rounded-full text-gray-400 hover:text-red-500 shadow-sm transition-colors cursor-pointer active:scale-90">
+                        <LuHeart size={18} />
+                      </button>
+                    </div>
+                    
+                    <div className="p-6 flex-grow flex flex-col justify-between">
+                      <div>
+                        <div className="flex justify-between items-start gap-4">
+                          <h2 className="text-xl font-bold text-[#1A1A1A] group-hover:text-[#00B795] transition-colors leading-tight">
+                            {produto.nome}
+                          </h2>
+                          <div className="flex items-center gap-1.5 text-xs font-bold text-gray-600 bg-gray-50 border border-gray-100 px-2.5 py-1.5 rounded-lg shrink-0">
+                            <LuStar className="text-yellow-400" fill="currentColor" /> {produto.avaliacao}
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-400 mt-2 line-clamp-2 leading-relaxed italic">
+                          {produto.descricao}
+                        </p>
+                      </div>
+                      
+                      <div className="mt-4 flex flex-wrap gap-5 text-[10px] font-bold text-[#00639E] uppercase tracking-wider">
+                        <span className="flex items-center gap-1.5"><LuMapPin size={15} className="text-[#00B795]"/> {produto.distancia}</span>
+                        <span className="flex items-center gap-1.5"><LuUser size={15} className="text-[#00B795]"/> {produto.dono}</span>
+                        <span className="text-[#05BFBE] flex items-center gap-1.5"><LuZap size={15}/> {produto.status}</span>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-400 mt-2 line-clamp-2 leading-relaxed italic">
-                      {produto.descricao}
-                    </p>
+                    
+                    <div className="p-6 bg-gray-50/50 md:border-l border-gray-100 flex flex-col justify-center items-center min-w-[180px]">
+                      <div className="text-3xl font-black text-[#1A1A1A]">
+                        R$ {produto.preco} <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">/dia</span>
+                      </div>
+                      <div className="w-full space-y-2 mt-4">
+                        <button 
+                          onClick={() => navigate(`/produto/${produto.id}`)}
+                          className="w-full bg-[#1A1A1A] text-white text-[11px] font-black py-3 rounded-xl hover:bg-black transition-all uppercase tracking-widest cursor-pointer active:scale-95 shadow-sm"
+                        >
+                          Reservar
+                        </button>
+                        <button 
+                          onClick={() => navigate(`/produto/${produto.id}`)}
+                          className="w-full bg-white border border-gray-200 text-[#1A1A1A] text-[10px] font-bold py-2 rounded-lg hover:border-[#00B795] hover:text-[#00B795] transition-all uppercase tracking-wider cursor-pointer"
+                        >
+                          Ver detalhes
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  
-                  <div className="mt-4 flex flex-wrap gap-5 text-[10px] font-bold text-[#00639E] uppercase tracking-wider">
-                    <span className="flex items-center gap-1.5"><LuMapPin size={15} className="text-[#00B795]"/> {produto.distancia}</span>
-                    <span className="flex items-center gap-1.5"><LuUser size={15} className="text-[#00B795]"/> {produto.dono}</span>
-                    <span className="text-[#05BFBE] flex items-center gap-1.5"><LuZap size={15}/> {produto.status}</span>
-                  </div>
-                </div>
-                
-                <div className="p-6 bg-gray-50/50 md:border-l border-gray-100 flex flex-col justify-center items-center min-w-[180px]">
-                  <div className="text-3xl font-black text-[#1A1A1A]">
-                    R$ {produto.preco} <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">/dia</span>
-                  </div>
-                  <div className="w-full space-y-2 mt-4">
-                    <button 
-                      onClick={() => navigate(`/produto/1`)}
-                      className="w-full bg-[#1A1A1A] text-white text-[11px] font-black py-3 rounded-xl hover:bg-black transition-all uppercase tracking-widest cursor-pointer active:scale-95 shadow-sm"
-                    >
-                      Reservar
-                    </button>
-                    <button 
-                      onClick={() => navigate(`/produto/1`)}
-                      className="w-full bg-white border border-gray-200 text-[#1A1A1A] text-[10px] font-bold py-2 rounded-lg hover:border-[#00B795] hover:text-[#00B795] transition-all uppercase tracking-wider cursor-pointer"
-                    >
-                      Ver detalhes
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+                ))}
 
-            {/* PAGINAÇÃO COMPACTA */}
-            <div className="flex justify-center items-center gap-2 mt-6 py-4">
-              <button className="p-2 border border-gray-200 rounded-xl hover:bg-white hover:border-[#00B795] text-gray-400 hover:text-[#00B795] transition-all cursor-pointer">
-                <LuChevronLeft size={18} />
-              </button>
-              <button className="w-10 h-10 bg-[#1A1A1A] text-white rounded-xl font-bold shadow-lg active:scale-95 cursor-pointer">1</button>
-              <button className="w-10 h-10 border border-gray-100 bg-white text-gray-400 rounded-xl font-bold hover:border-[#00B795] hover:text-[#00B795] transition-all active:scale-95 cursor-pointer">2</button>
-              <button className="w-10 h-10 border border-gray-100 bg-white text-gray-400 rounded-xl font-bold hover:border-[#00B795] hover:text-[#00B795] transition-all active:scale-95 cursor-pointer">3</button>
-              <span className="text-gray-300 font-bold px-1">...</span>
-              <button className="w-10 h-10 border border-gray-100 bg-white text-gray-400 rounded-xl font-bold hover:border-[#00B795] hover:text-[#00B795] transition-all active:scale-95 cursor-pointer">12</button>
-              <button className="p-2 border border-gray-200 rounded-xl hover:bg-white hover:border-[#00B795] text-gray-400 hover:text-[#00B795] transition-all cursor-pointer">
-                <LuChevronRight size={18} />
-              </button>
-            </div>
+                <div className="flex justify-center items-center gap-2 mt-6 py-4">
+                  <button className="p-2 border border-gray-200 rounded-xl hover:bg-white hover:border-[#00B795] text-gray-400 hover:text-[#00B795] transition-all cursor-pointer">
+                    <LuChevronLeft size={18} />
+                  </button>
+                  <button className="w-10 h-10 bg-[#1A1A1A] text-white rounded-xl font-bold shadow-lg active:scale-95 cursor-pointer">1</button>
+                  <button className="w-10 h-10 border border-gray-100 bg-white text-gray-400 rounded-xl font-bold hover:border-[#00B795] hover:text-[#00B795] transition-all active:scale-95 cursor-pointer">2</button>
+                  <button className="w-10 h-10 border border-gray-100 bg-white text-gray-400 rounded-xl font-bold hover:border-[#00B795] hover:text-[#00B795] transition-all active:scale-95 cursor-pointer">3</button>
+                  <span className="text-gray-300 font-bold px-1">...</span>
+                  <button className="w-10 h-10 border border-gray-100 bg-white text-gray-400 rounded-xl font-bold hover:border-[#00B795] hover:text-[#00B795] transition-all active:scale-95 cursor-pointer">12</button>
+                  <button className="p-2 border border-gray-200 rounded-xl hover:bg-white hover:border-[#00B795] text-gray-400 hover:text-[#00B795] transition-all cursor-pointer">
+                    <LuChevronRight size={18} />
+                  </button>
+                </div>
+              </>
+            )}
           </section>
         </div>
       </main>
