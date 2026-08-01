@@ -9,7 +9,6 @@ import {
   LuClock
 } from "react-icons/lu";
 
-// IMPORTAÇÃO DOS COMPONENTES (Ajuste o caminho '../components/...' se a sua pasta tiver outro nome)
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 
@@ -17,12 +16,10 @@ export function DetalhesProduto() {
   return (
     <div className="min-h-screen bg-[#F8F9FA] font-sans text-[#1A1A1A] flex flex-col">
       
-      {/* HEADER COMPONENTE */}
       <Header />
 
       <main className="max-w-7xl mx-auto w-full flex-grow p-6 pt-8">
         
-        {/* BREADCRUMB (Navegação no topo) */}
         <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-6">
           <span className="cursor-pointer hover:text-[#00B795]">Início</span>
           <LuChevronRight size={14} />
@@ -31,7 +28,6 @@ export function DetalhesProduto() {
           <span className="text-[#1A1A1A]">Kit de Furadeira Profissional</span>
         </div>
 
-        {/* TÍTULO E INFOS BÁSICAS */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-[#1A1A1A] mb-3">Kit de Furadeira Profissional com Brocas</h1>
           <div className="flex items-center gap-6 text-sm text-gray-500 font-medium">
@@ -45,7 +41,6 @@ export function DetalhesProduto() {
           </div>
         </div>
 
-        {/* GALERIA DE IMAGENS */}
         <div className="grid grid-cols-4 grid-rows-2 gap-4 h-[400px] mb-12 rounded-3xl overflow-hidden">
           <div className="col-span-2 row-span-2 bg-gray-200 relative group cursor-pointer">
             <img src="https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&q=80&w=800" alt="Principal" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -59,13 +54,10 @@ export function DetalhesProduto() {
           </div>
         </div>
 
-        {/* CONTEÚDO PRINCIPAL DIVIDIDO EM 2 COLUNAS */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 relative">
           
-          {/* COLUNA ESQUERDA (Detalhes do Produto) */}
           <div className="lg:col-span-2 space-y-12">
             
-            {/* Descrição */}
             <section>
               <h2 className="text-xl font-bold text-[#1A1A1A] mb-4">Descrição</h2>
               <p className="text-gray-500 leading-relaxed text-sm">
@@ -75,7 +67,6 @@ export function DetalhesProduto() {
               </p>
             </section>
 
-            {/* O que está incluído */}
             <section>
               <h2 className="text-xl font-bold text-[#1A1A1A] mb-4">O que está incluído</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 text-sm text-gray-600 font-medium">
@@ -88,7 +79,6 @@ export function DetalhesProduto() {
               </div>
             </section>
 
-            {/* Diretrizes */}
             <section className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
               <h2 className="text-lg font-bold text-[#1A1A1A] mb-4">Diretrizes de Aluguel</h2>
               <ul className="space-y-3 text-sm text-gray-600 font-medium">
@@ -99,7 +89,6 @@ export function DetalhesProduto() {
               </ul>
             </section>
 
-            {/* Anfitrião */}
             <section className="border-t border-gray-200 pt-10">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-4">
@@ -124,7 +113,6 @@ export function DetalhesProduto() {
 
           </div>
 
-          {/* COLUNA DIREITA (Sidebar Card de Reserva) */}
           <div className="lg:col-span-1">
             <div className="sticky top-28 bg-white border border-gray-100 rounded-3xl p-6 shadow-xl">
               
@@ -138,7 +126,6 @@ export function DetalhesProduto() {
                 </div>
               </div>
 
-              {/* Inputs de Data e Hora */}
               <div className="space-y-3 mb-6">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="border border-gray-200 rounded-xl p-3 relative">
@@ -156,7 +143,6 @@ export function DetalhesProduto() {
                 </div>
               </div>
 
-              {/* Cálculos */}
               <div className="space-y-4 text-sm font-medium text-gray-600 mb-6">
                 <div className="flex justify-between">
                   <span>R$ 45 x 3 dias</span>
@@ -193,8 +179,6 @@ export function DetalhesProduto() {
 
         </div>
       </main>
-
-      {/* FOOTER COMPONENTE */}
       <Footer />
       
     </div>

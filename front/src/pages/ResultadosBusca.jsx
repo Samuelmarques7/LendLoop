@@ -250,13 +250,13 @@ export function ResultadosBusca() {
                   </div>
                   <div className="w-full space-y-2 mt-4">
                     <button 
-                      onClick={() => navigate(`/produto/${produto.id}`)}
+                      onClick={() => navigate(`/produto/1`)}
                       className="w-full bg-[#1A1A1A] text-white text-[11px] font-black py-3 rounded-xl hover:bg-black transition-all uppercase tracking-widest cursor-pointer active:scale-95 shadow-sm"
                     >
                       Reservar
                     </button>
                     <button 
-                      onClick={() => navigate(`/produto/${produto.id}`)}
+                      onClick={() => navigate(`/produto/1`)}
                       className="w-full bg-white border border-gray-200 text-[#1A1A1A] text-[10px] font-bold py-2 rounded-lg hover:border-[#00B795] hover:text-[#00B795] transition-all uppercase tracking-wider cursor-pointer"
                     >
                       Ver detalhes

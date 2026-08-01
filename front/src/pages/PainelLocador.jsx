@@ -1,25 +1,27 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import logo from '../assets/logo.png'; 
+
 import { 
   LuLayoutDashboard, 
   LuPackage, 
   LuInbox, 
-  LuCalendarDays, 
-  LuCircleDollarSign, 
+  LuCalendar, 
+  LuDollarSign, 
   LuMessageSquare, 
   LuUser, 
   LuSettings,
   LuTrendingUp,
-  LuAlertCircle,
-  LuCheckCircle2,
-  LuXCircle,
+  LuInfo,
+  LuCheck,
+  LuX,
   LuPlus,
   LuBell
 } from "react-icons/lu";
 
-export function PainelLocador() {
+export default function PainelLocador() {
   const [activeTab, setActiveTab] = useState('painel');
-  const navigate = useNavigate();
+  const navigate = useNavigate(); 
 
   const [solicitacoes, setSolicitacoes] = useState([
     { id: 1, item: "Furadeira Profissional", cliente: "Roberto Oliveira", data: "28/01/2025" },
@@ -27,9 +29,9 @@ export function PainelLocador() {
   ]);
 
   const stats = [
-    { id: 1, titulo: "Ganhos Este Mês", valor: "R$ 1.240", icon: LuCircleDollarSign, color: "text-[#00B795]", bg: "bg-[#00B795]/10" },
+    { id: 1, titulo: "Ganhos Este Mês", valor: "R$ 1.240", icon: LuDollarSign, color: "text-[#00B795]", bg: "bg-[#00B795]/10" },
     { id: 2, titulo: "Anúncios Ativos", valor: "8", icon: LuPackage, color: "text-[#1A1A1A]", bg: "bg-gray-100" },
-    { id: 3, titulo: "Solicitações Pendentes", valor: String(solicitacoes.length), icon: LuAlertCircle, color: "text-orange-500", bg: "bg-orange-50" },
+    { id: 3, titulo: "Solicitações Pendentes", valor: String(solicitacoes.length), icon: LuInfo, color: "text-orange-500", bg: "bg-orange-50" },
     { id: 4, titulo: "Mensagens Não Lidas", valor: "2", icon: LuMessageSquare, color: "text-[#00639E]", bg: "bg-blue-50" }
   ];
 
@@ -43,7 +45,7 @@ export function PainelLocador() {
     { id: 'painel', label: 'Painel', icon: LuLayoutDashboard },
     { id: 'anuncios', label: 'Meus Anúncios', icon: LuPackage },
     { id: 'solicitacoes', label: 'Solicitações Recebidas', icon: LuInbox },
-    { id: 'calendario', label: 'Calendário', icon: LuCalendarDays },
+    { id: 'calendario', label: 'Calendário', icon: LuCalendar },
     { id: 'ganhos', label: 'Ganhos', icon: LuTrendingUp },
     { id: 'mensagens', label: 'Mensagens', icon: LuMessageSquare },
     { id: 'perfil', label: 'Perfil', icon: LuUser },
@@ -69,43 +71,11 @@ export function PainelLocador() {
           onRecusar={recusarSolicitacao}
           onNovoAnuncio={() => navigate('/criar-anuncio')}
         />;
-      case 'anuncios':
-        return (
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 text-center text-gray-400">
-            <LuPackage size={40} className="mx-auto mb-3 opacity-30" />
-            <p className="font-bold">Seção de Anúncios</p>
-            <p className="text-sm mt-1">Conteúdo a implementar</p>
-          </div>
-        );
-      case 'solicitacoes':
-        return (
-          <SecaoSolicitacoes
-            solicitacoes={solicitacoes}
-            onAceitar={aceitarSolicitacao}
-            onRecusar={recusarSolicitacao}
-          />
-        );
-      case 'ganhos':
-        return (
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 text-center text-gray-400">
-            <LuTrendingUp size={40} className="mx-auto mb-3 opacity-30" />
-            <p className="font-bold">Seção de Ganhos</p>
-            <p className="text-sm mt-1">Conteúdo a implementar</p>
-          </div>
-        );
-      case 'mensagens':
-        return (
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 text-center text-gray-400">
-            <LuMessageSquare size={40} className="mx-auto mb-3 opacity-30" />
-            <p className="font-bold">Seção de Mensagens</p>
-            <p className="text-sm mt-1">Conteúdo a implementar</p>
-          </div>
-        );
       default:
         return (
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 text-center text-gray-400">
-            <p className="font-bold capitalize">{menuItems.find(i => i.id === activeTab)?.label}</p>
-            <p className="text-sm mt-1">Conteúdo a implementar</p>
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-12 text-center text-gray-400">
+            <p className="font-bold text-lg capitalize">{menuItems.find(i => i.id === activeTab)?.label}</p>
+            <p className="text-sm mt-2">Conteúdo desta seção será implementado em breve.</p>
           </div>
         );
     }
@@ -115,7 +85,10 @@ export function PainelLocador() {
     <div className="min-h-screen bg-[#F8F9FA] font-sans flex text-[#1A1A1A]">
       <aside className="w-72 bg-white border-r border-gray-200 flex flex-col sticky top-0 h-screen shadow-sm z-10">
         <div className="h-20 flex items-center px-8 border-b border-gray-100">
-          <div className="text-2xl font-black tracking-tighter text-[#1A1A1A] uppercase">
+          <div 
+            onClick={() => navigate('/')} 
+            className="text-2xl font-black tracking-tighter text-[#1A1A1A] uppercase cursor-pointer hover:opacity-80"
+          >
             PROJETO
           </div>
         </div>
@@ -177,7 +150,7 @@ export function PainelLocador() {
 
 function SecaoPainel({ stats, meusAnuncios, solicitacoes, onAceitar, onRecusar, onNovoAnuncio }) {
   return (
-    <>
+    <div className="animate-fade-in space-y-8">
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat) => {
           const Icon = stat.icon;
@@ -228,7 +201,7 @@ function SecaoPainel({ stats, meusAnuncios, solicitacoes, onAceitar, onRecusar, 
 
         <SecaoSolicitacoes solicitacoes={solicitacoes} onAceitar={onAceitar} onRecusar={onRecusar} />
       </div>
-    </>
+    </div>
   );
 }
 
@@ -241,7 +214,7 @@ function SecaoSolicitacoes({ solicitacoes, onAceitar, onRecusar }) {
       <div className="p-2 flex-grow">
         {solicitacoes.length === 0 ? (
           <div className="p-8 text-center text-gray-400">
-            <LuCheckCircle2 size={32} className="mx-auto mb-2 opacity-30" />
+            <LuCheck size={32} className="mx-auto mb-2 opacity-30" />
             <p className="text-sm font-bold">Nenhuma solicitação pendente</p>
           </div>
         ) : (
@@ -264,13 +237,13 @@ function SecaoSolicitacoes({ solicitacoes, onAceitar, onRecusar }) {
                   onClick={() => onAceitar(req.id)}
                   className="flex-1 flex items-center justify-center gap-2 bg-[#1A1A1A] text-white text-xs font-bold py-2.5 rounded-xl hover:bg-black transition-colors cursor-pointer shadow-sm"
                 >
-                  <LuCheckCircle2 size={14} className="text-[#00B795]" /> Aceitar
+                  <LuCheck size={14} className="text-[#00B795]" /> Aceitar
                 </button>
                 <button
                   onClick={() => onRecusar(req.id)}
                   className="flex-1 flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 text-xs font-bold py-2.5 rounded-xl hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors cursor-pointer shadow-sm"
                 >
-                  <LuXCircle size={14} /> Recusar
+                  <LuX size={14} /> Recusar
                 </button>
               </div>
             </div>
