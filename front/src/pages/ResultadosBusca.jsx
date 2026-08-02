@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
+import { apiRequest } from '../services/api';
 import {
   LuSearch,
   LuCalendar,
@@ -20,6 +21,14 @@ export function ResultadosBusca() {
   const navigate = useNavigate(); 
   
   const [produtos, setProdutos] = useState([]);
+
+  useEffect(() => {
+    async function buscarAnuncios() {
+      const dados = await apiRequest('/api/anuncios');
+      setProdutos(dados);
+    }
+    buscarAnuncios();
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] font-sans text-[#1A1A1A] flex flex-col">

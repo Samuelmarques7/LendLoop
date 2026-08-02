@@ -102,7 +102,7 @@ app.post('/api/anuncios', async (req, res) => {
 // Listar todos os anúncios (usado em ResultadosBusca)
 app.get('/api/anuncios', async (req, res) => {
   try {
-    const anuncios = await Anuncio.find().populate('locador', 'nome email');
+    const anuncios = await Anuncio.find({status: 'publicado'}).populate('locador', 'nome email');
     res.status(200).json(anuncios);
   } catch (erro) {
     res.status(500).json({ erro: 'Erro ao buscar anúncios' });
