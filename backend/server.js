@@ -29,6 +29,10 @@ app.post('/api/usuarios', async (req, res) => {
       usuario: novoUsuario
     });
   } catch (erro) {
+
+    if(erro.code === 11000) {
+      return res.status(409).json({erro: 'Este e-mail já está cadastrado.'});
+    }
     res.status(500).json({ erro: 'Erro ao criar usuário', detalhes: erro.message });
   }
 });

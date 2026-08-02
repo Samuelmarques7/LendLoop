@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import {apiRequest } from '../services/api';
 
 export default function Cadastro() {
   const navigate = useNavigate();
@@ -26,31 +27,22 @@ export default function Cadastro() {
     setMensagem(null);
 
     try {
-      const response = await fetch('http://localhost:3000/api/usuarios', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData)
-      });
+      const data = await apiRequest('/api/usuarios', {
+              method: 'POST',
+              body: formData
+            });
 
-      const data = await response.json();
+      localStorage.setItem('usuarioLogado', 'true');
+      localStorage.setItem('dadosUsuario', JSON.stringify(data.usuario));
 
-      if (response.ok) {
-        localStorage.setItem('usuarioLogado', 'true');
+      setMensagem({ tipo: 'sucesso', texto: 'Conta criada com sucesso! Redirecionando...' });
+      setFormData({ nome: '', email: '', senha: '', telefone: '', objetivo: 'ambos' });
         
-        setMensagem({ tipo: 'sucesso', texto: 'Conta criada com sucesso! Redirecionando...' });
-        setFormData({ nome: '', email: '', senha: '', telefone: '', objetivo: 'ambos' });
-        
-        setTimeout(() => {
-          navigate(-1);
-        }, 1000);
-
-      } else {
-        setMensagem({ tipo: 'erro', texto: data.erro || 'Erro ao cadastrar.' });
-      }
+      setTimeout(() => {
+        navigate(-1);
+      }, 1000);
     } catch (error) {
-      setMensagem({ tipo: 'erro', texto: 'Erro de conexão. O servidor está rodando?' });
+      setMensagem({ tipo: 'erro', texto: error.message });
     }
   };
 
