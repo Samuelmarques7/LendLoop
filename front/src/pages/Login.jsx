@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import {apiRequest } from '../services/api';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -21,30 +22,21 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/api/login', {
+      const data = await apiRequest('/api/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(credentials)
+        body: credentials
       });
 
-      const data = await response.json();
+      localStorage.setItem('usuarioLogado', 'true');
+      localStorage.setItem('dadosUsuario', JSON.stringify(data.usuario));
 
-      if (response.ok) {
-        localStorage.setItem('usuarioLogado', 'true');
-        localStorage.setItem('dadosUsuario', JSON.stringify(data.usuario));
+      setMensagem({ tipo: 'sucesso', texto: 'Bem-vindo de volta! Redirecionando...' });
 
-        setMensagem({ tipo: 'sucesso', texto: 'Bem-vindo de volta! Redirecionando...' });
-        
-        setTimeout(() => {
-          navigate('/');
-        }, 1000);
-      } else {
-        setMensagem({ tipo: 'erro', texto: data.erro || 'Erro ao fazer login.' });
-      }
+      setTimeout(() => {
+        navigate('/');
+      }, 1000);
     } catch (error) {
-      setMensagem({ tipo: 'erro', texto: 'Erro de conexão. O servidor está rodando?' });
+      setMensagem({ tipo: 'erro', texto: error.message });
     } finally {
       setLoading(false);
     }
