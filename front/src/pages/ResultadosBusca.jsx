@@ -183,7 +183,7 @@ export function ResultadosBusca() {
             ) : (
               <>
                 {produtos.map((produto) => (
-                  <div key={produto.id} className="bg-white flex flex-col md:flex-row border border-gray-100 rounded-3xl overflow-hidden hover:shadow-lg transition-all group cursor-pointer">
+                  <div key={produto._id} className="bg-white flex flex-col md:flex-row border border-gray-100 rounded-3xl overflow-hidden hover:shadow-lg transition-all group cursor-pointer">
                     <div className="w-full md:w-72 h-48 bg-gray-50 relative overflow-hidden">
                       <img src={produto.imagem} alt={produto.nome} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                       <button className="absolute top-4 right-4 p-2.5 bg-white/90 backdrop-blur-sm rounded-full text-gray-400 hover:text-red-500 shadow-sm transition-colors cursor-pointer active:scale-90">
@@ -195,7 +195,7 @@ export function ResultadosBusca() {
                       <div>
                         <div className="flex justify-between items-start gap-4">
                           <h2 className="text-xl font-bold text-[#1A1A1A] group-hover:text-[#00B795] transition-colors leading-tight">
-                            {produto.nome}
+                            {produto.titulo}
                           </h2>
                           <div className="flex items-center gap-1.5 text-xs font-bold text-gray-600 bg-gray-50 border border-gray-100 px-2.5 py-1.5 rounded-lg shrink-0">
                             <LuStar className="text-yellow-400" fill="currentColor" /> {produto.avaliacao}
@@ -208,24 +208,24 @@ export function ResultadosBusca() {
                       
                       <div className="mt-4 flex flex-wrap gap-5 text-[10px] font-bold text-[#00639E] uppercase tracking-wider">
                         <span className="flex items-center gap-1.5"><LuMapPin size={15} className="text-[#00B795]"/> {produto.distancia}</span>
-                        <span className="flex items-center gap-1.5"><LuUser size={15} className="text-[#00B795]"/> {produto.dono}</span>
+                        <span className="flex items-center gap-1.5"><LuUser size={15} className="text-[#00B795]"/> {produto.locador.nome}</span>
                         <span className="text-[#05BFBE] flex items-center gap-1.5"><LuZap size={15}/> {produto.status}</span>
                       </div>
                     </div>
                     
                     <div className="p-6 bg-gray-50/50 md:border-l border-gray-100 flex flex-col justify-center items-center min-w-[180px]">
                       <div className="text-3xl font-black text-[#1A1A1A]">
-                        R$ {produto.preco} <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">/dia</span>
+                        R$ {produto.precos.precoPorDia} <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">/dia</span>
                       </div>
                       <div className="w-full space-y-2 mt-4">
                         <button 
-                          onClick={() => navigate(`/produto/${produto.id}`)}
+                          onClick={() => navigate(`/produto/${produto._id}`)}
                           className="w-full bg-[#1A1A1A] text-white text-[11px] font-black py-3 rounded-xl hover:bg-black transition-all uppercase tracking-widest cursor-pointer active:scale-95 shadow-sm"
                         >
                           Reservar
                         </button>
                         <button 
-                          onClick={() => navigate(`/produto/${produto.id}`)}
+                          onClick={() => navigate(`/produto/${produto._id}`)}
                           className="w-full bg-white border border-gray-200 text-[#1A1A1A] text-[10px] font-bold py-2 rounded-lg hover:border-[#00B795] hover:text-[#00B795] transition-all uppercase tracking-wider cursor-pointer"
                         >
                           Ver detalhes
