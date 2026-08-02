@@ -1,6 +1,8 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { DayPicker } from 'react-day-picker'
+import { useNavigate } from 'react-router-dom'
 import 'react-day-picker/dist/style.css'
+import { apiRequest } from '../services/api'
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
 
@@ -8,6 +10,15 @@ import { Footer } from '../components/Footer'
 // 'function' estamos criando uma parte da interface (uma tela)
 function CriarAnuncio () // componente inicia com letra maiúscula
 {
+    const navigate = useNavigate()
+    const usuarioLogado = JSON.parse(localStorage.getItem('dadosUsuario'))
+
+    useEffect(() => {
+        if (!usuarioLogado) {
+            navigate('/login')
+        }
+    }, [])
+
     const [step, setStep] = useState(1)
     const steps = ['Detalhes', 'Fotos', 'Localização', 'Disponibilidade', 'Preços', 'Resumo']
 
@@ -45,6 +56,8 @@ function CriarAnuncio () // componente inicia com letra maiúscula
         horarioRetirada: '09:00',
         horarioDevolucao: '17:00'
     })
+
+    const [mensagem, setMensagem] = useState(null)
 
     function handleDetalhesSubmit (e) // 'e' é o evento de submit do formulario, essa função será chamada
     {
@@ -92,32 +105,62 @@ function CriarAnuncio () // componente inicia com letra maiúscula
         console.log('Preços e Condições:', precos)
     }
 
-    function handlePublicar()
+    async function handlePublicar()
     {
-        console.log('Anúncio publicado!', {
-            titulo,
-            descricao,
-            categoria,
-            subcategoria,
-            fotos,
-            endereco,
-            disponivel,
-            precos
-        })
+        try {
+            const data = await apiRequest('/api/anuncios', {
+                method: 'POST',
+                body: {
+                    titulo,
+                    descricao,
+                    categoria,
+                    subcategoria,
+                    fotos: [],
+                    endereco,
+                    disponivel,
+                    precos,
+                    status: 'publicado',
+                    locador: usuarioLogado.id
+                }
+            });
+
+        setMensagem({ tipo: 'sucesso', texto: 'Anúncio publicado com sucesso!' });
+
+        setTimeout(() => {
+            navigate('/painelLocador');
+        }, 1000);
+        } catch (error) {
+            setMensagem({ tipo: 'erro', texto: error.message });
+        }
     }
 
-    function handleRascunho()
+    async function handleRascunho()
     {
-        console.log('Anúncio salvo como rascunho!', {
-            titulo,
-            descricao,
-            categoria,
-            subcategoria,
-            fotos,
-            endereco,
-            disponivel,
-            precos
-        })
+        try {
+            const data = await apiRequest('/api/anuncios', {
+                method: 'POST',
+                body: {
+                    titulo,
+                    descricao,
+                    categoria,
+                    subcategoria,
+                    fotos: [],
+                    endereco,
+                    disponivel,
+                    precos,
+                    status: 'rascunho',
+                    locador: usuarioLogado.id
+                }
+            });
+
+            setMensagem({ tipo: 'sucesso', texto: 'Anúncio salvo como rascunho!' });
+
+            setTimeout(() => {
+                navigate('/painelLocador');
+            }, 1000);
+        } catch (error) {
+            setMensagem({ tipo: 'erro', texto: error.message });
+        }
     }
     // função para manter todas as fotos cujo indice for diferente do indice da foto que queremos remover
     // revome a foto do array, função que recebe como parametro o indice da foto a ser removida
