@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiRequest } from '../services/api';
 import logo from '../assets/logo.png'; 
 
 import { 
@@ -16,7 +17,8 @@ import {
   LuCheck,
   LuX,
   LuPlus,
-  LuBell
+  LuBell,
+  LuPackageX
 } from "react-icons/lu";
 
 export default function PainelLocador() {
@@ -25,6 +27,16 @@ export default function PainelLocador() {
 
   const [solicitacoes, setSolicitacoes] = useState([]);
   const [meusAnuncios, setMeusAnuncios] = useState([]);
+
+  const usuarioLogado = JSON.parse(localStorage.getItem('dadosUsuario'));
+
+  useEffect(() => {
+    async function buscarMeusAnuncios() {
+      const dados = await apiRequest(`/api/anuncios/locador/${usuarioLogado.id}`);
+      setMeusAnuncios(dados);
+    }
+    buscarMeusAnuncios();
+  }, []);
 
   const stats = [
     { id: 1, titulo: "Ganhos Este Mês", valor: "R$ 0", icon: LuDollarSign, color: "text-[#00B795]", bg: "bg-[#00B795]/10" },
@@ -182,16 +194,22 @@ function SecaoPainel({ stats, meusAnuncios, solicitacoes, onAceitar, onRecusar, 
               </div>
             ) : (
               meusAnuncios.map((anuncio) => (
-                <div key={anuncio.id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-colors cursor-pointer group">
+                <div key={anuncio._id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-colors cursor-pointer group">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gray-200 rounded-xl flex-shrink-0"></div>
+                    {anuncio.fotos && anuncio.fotos.length > 0 ? (
+                      <img src={anuncio.fotos[0]} alt={anuncio.titulo} className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
+                    ) : (
+                      <div className="w-12 h-12 bg-gray-200 rounded-xl flex-shrink-0 flex items-center justify-center ">
+                        <LuPackageX size={20} className="text-gray-400" />
+                      </div>
+                    )}
                     <div>
-                      <h3 className="font-bold text-[#1A1A1A] text-sm group-hover:text-[#00B795] transition-colors">{anuncio.nome}</h3>
-                      <p className="text-xs text-gray-400 font-medium mt-0.5">{anuncio.preco} • {anuncio.reservas} reservas</p>
+                      <h3 className="font-bold text-[#1A1A1A] text-sm group-hover:text-[#00B795] transition-colors">{anuncio.titulo}</h3>
+                      <p className="text-xs text-gray-400 font-medium mt-0.5">{anuncio.precos.precoPorDia}/dia • 0 reservas</p> {/* TODO: trocar 0 fixo por contagem real de reservas quando existir */}
                     </div>
                   </div>
                   <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-md ${
-                    anuncio.status === 'Ativo' ? 'bg-[#00B795]/10 text-[#00B795]' : 'bg-gray-100 text-gray-500'
+                    anuncio.status === 'publicado' ? 'bg-[#00B795]/10 text-[#00B795]' : 'bg-gray-100 text-gray-500'
                   }`}>
                     {anuncio.status}
                   </span>
