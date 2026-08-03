@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { DayPicker } from 'react-day-picker'
 import { useNavigate } from 'react-router-dom'
 import 'react-day-picker/dist/style.css'
-import { apiRequest } from '../services/api'
+import { apiRequest, API_URL } from '../services/api'
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
 
@@ -105,9 +105,35 @@ function CriarAnuncio () // componente inicia com letra maiúscula
         console.log('Preços e Condições:', precos)
     }
 
+    async function handleUploadFotos()
+    {
+        if (fotos.length === 0) return []
+
+        const formData = new FormData()
+        fotos.forEach(foto => {
+            formData.append('fotos', foto)
+        })
+
+        const resposta = await fetch(`${API_URL}/api/upload`, {
+            method: 'POST',
+            body: formData
+        })
+
+        const dados = await resposta.json()
+
+        if(!resposta.ok){
+            throw new Error(dados.erro || 'Erro ao enviar fotos')
+        }
+
+        return dados.urls
+    }
+
+
     async function handlePublicar()
     {
         try {
+            const urlsFotos = await handleUploadFotos()
+
             const data = await apiRequest('/api/anuncios', {
                 method: 'POST',
                 body: {
@@ -115,7 +141,7 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                     descricao,
                     categoria,
                     subcategoria,
-                    fotos: [],
+                    fotos: urlsFotos,
                     endereco,
                     disponivel,
                     precos,
@@ -137,6 +163,8 @@ function CriarAnuncio () // componente inicia com letra maiúscula
     async function handleRascunho()
     {
         try {
+            const urlsFotos = await handleUploadFotos()
+
             const data = await apiRequest('/api/anuncios', {
                 method: 'POST',
                 body: {
@@ -144,7 +172,7 @@ function CriarAnuncio () // componente inicia com letra maiúscula
                     descricao,
                     categoria,
                     subcategoria,
-                    fotos: [],
+                    fotos: urlsFotos,
                     endereco,
                     disponivel,
                     precos,
