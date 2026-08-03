@@ -23,6 +23,11 @@ export function DetalhesProduto() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState(null);
 
+  const [dataInicio, setDataInicio] = useState("");
+  const [dataFim, setDataFim] = useState("");
+  const [horarioRetirada, setHorarioRetirada] = useState("09:00");
+  const [enviando, setEnviando] = useState(false);
+
   useEffect(() => {
     async function buscarAnuncio() {
       try {
@@ -61,6 +66,51 @@ export function DetalhesProduto() {
       </div>
     );
   }
+
+  async function handleSolicitarAluguel() {
+    const dadosUsuarioRaw = localStorage.getItem("dadosUsuario");
+
+    if (!dadosUsuarioRaw) {
+      alert("Você precisa estar logado para solicitar o aluguel.");
+      return;
+    }
+
+    const usuarioLogado = JSON.parse(dadosUsuarioRaw);
+
+    try {
+      setEnviando(true);
+
+      await apiRequest ("/api/alugueis", {
+        method: "POST",
+        body: {
+          anuncio: anuncio._id,
+          locatario: usuarioLogado.id,
+          locador: anuncio.locador._id,
+          dataInicio,
+          dataFim,
+          horarioRetirada,
+          precoTotal: total,
+          taxaServico,
+          caucao: anuncio.precos.caucao,
+        },
+      });
+
+      alert("Solicitação de aluguel enviada com sucesso!");
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  const dias = dataInicio && dataFim 
+    ? Math.ceil((new Date(dataFim) - new Date(dataInicio)) / (1000 * 60 * 60 * 24)) : 0;
+
+  const diasValidos = dias > 0 ? dias : 0;
+  const subtotal = diasValidos * anuncio.precos.precoPorDia;
+  const taxaServico = subtotal * 0.03;
+  const caucao = anuncio.precos.caucao || 0;
+  const total = subtotal + taxaServico + caucao;
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] font-sans text-[#1A1A1A] flex flex-col">
@@ -192,27 +242,40 @@ export function DetalhesProduto() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="border border-gray-200 rounded-xl p-3 relative">
                     <label className="block text-[9px] font-bold text-gray-400 uppercase mb-1">Data de Início</label>
-                    <input type="date" className="w-full text-sm font-bold outline-none bg-transparent cursor-pointer" />
+                    <input 
+                      type="date"
+                      value={dataInicio}
+                      onChange={(e) => setDataInicio(e.target.value)} 
+                      className="w-full text-sm font-bold outline-none bg-transparent cursor-pointer" />
                   </div>
                   <div className="border border-gray-200 rounded-xl p-3 relative">
                     <label className="block text-[9px] font-bold text-gray-400 uppercase mb-1">Data de Término</label>
-                    <input type="date" className="w-full text-sm font-bold outline-none bg-transparent cursor-pointer" />
+                    <input
+                      type = 'date'
+                      value={dataFim}
+                      onChange={(e) => setDataFim(e.target.value)}
+                      className="w-full text-sm font-bold outline-none bg-transparent cursor-pointer"
+                    />
                   </div>
                 </div>
                 <div className="border border-gray-200 rounded-xl p-3 relative">
                   <label className="block text-[9px] font-bold text-gray-400 uppercase mb-1">Horário de Retirada</label>
-                  <input type="time" defaultValue="09:00" className="w-full text-sm font-bold outline-none bg-transparent cursor-pointer" />
+                  <input 
+                    type="time" 
+                    value={horarioRetirada} 
+                    onChange={(e) => setHorarioRetirada(e.target.value)}
+                    className="w-full text-sm font-bold outline-none bg-transparent cursor-pointer" />
                 </div>
               </div>
 
               <div className="space-y-4 text-sm font-medium text-gray-600 mb-6">
                 <div className="flex justify-between">
-                  <span>R$ 45 x 3 dias</span>
-                  <span className="text-[#1A1A1A] font-bold">R$ 135.00</span>
+                  <span>R$ {anuncio.precos.precoPorDia} x {diasValidos} dias</span>
+                  <span className="text-[#1A1A1A] font-bold">R$ {subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Taxa de Serviço</span>
-                  <span className="text-[#1A1A1A] font-bold">R$ 4.50</span>
+                  <span className="text-[#1A1A1A] font-bold">R$ {taxaServico.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="underline cursor-pointer">Depósito de Segurança</span>
@@ -222,11 +285,14 @@ export function DetalhesProduto() {
 
               <div className="border-t border-gray-100 pt-4 flex justify-between items-center mb-6">
                 <span className="font-bold text-[#1A1A1A]">Total</span>
-                <span className="text-xl font-black text-[#1A1A1A]">R$ 289.50</span>
+                <span className="text-xl font-black text-[#1A1A1A]">R$ {total.toFixed(2)}</span>
               </div>
 
-              <button className="w-full bg-[#1A1A1A] text-white font-black py-4 rounded-xl hover:bg-black transition-all uppercase tracking-widest cursor-pointer shadow-lg active:scale-95 mb-3">
-                Solicitar Aluguel
+              <button 
+                onClick={handleSolicitarAluguel}
+                disabled={enviando}
+                className="w-full bg-[#1A1A1A] text-white font-black py-4 rounded-xl hover:bg-black transition-all uppercase tracking-widest cursor-pointer shadow-lg active:scale-95 mb-3">
+                {enviando ? "Enviando..." : "Solicitar Aluguel"}
               </button>
 
               <div className="text-center space-y-2">
