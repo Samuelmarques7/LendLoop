@@ -185,10 +185,16 @@ export function ResultadosBusca() {
                 {produtos.map((produto) => (
                   <div key={produto._id} className="bg-white flex flex-col md:flex-row border border-gray-100 rounded-3xl overflow-hidden hover:shadow-lg transition-all group cursor-pointer">
                     <div className="w-full md:w-72 h-48 bg-gray-50 relative overflow-hidden">
-                      <img src={produto.imagem} alt={produto.nome} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                      <button className="absolute top-4 right-4 p-2.5 bg-white/90 backdrop-blur-sm rounded-full text-gray-400 hover:text-red-500 shadow-sm transition-colors cursor-pointer active:scale-90">
-                        <LuHeart size={18} />
-                      </button>
+                      {produto.fotos && produto.fotos.length > 0 ? (  
+                        <img src={produto.fotos[0]} alt={produto.titulo} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                          <LuPackageX size={40} className="text-gray-300" />
+                        </div>
+                      )}
+                        <button className="absolute top-4 right-4 p-2.5 bg-white/90 backdrop-blur-sm rounded-full text-gray-400 hover:text-red-500 shadow-sm transition-colors cursor-pointer active:scale-90">
+                          <LuHeart size={18} />
+                        </button>
                     </div>
                     
                     <div className="p-6 flex-grow flex flex-col justify-between">
