@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
+const upload = require('./config/upload');
 
 const Usuario = require('./models/Usuario');
 const Anuncio = require('./models/Anuncio');
@@ -72,6 +73,21 @@ app.post('/api/login', async (req, res) => {
   } catch (erro) {
     console.error("Erro no login:", erro);
     res.status(500).json({ erro: 'Erro interno no servidor.' });
+  }
+});
+
+// --- Upload de Fotos ---
+app.post('/api/upload', upload.array('fotos', 6), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ erro: 'Nenhuma foto enviada.' });
+    }
+
+    const urls = req.files.map(arquivo => arquivo.path);
+
+    res.status(200).json({ urls });
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao enviar fotos', detalhes: erro.message });
   }
 });
 
