@@ -21,12 +21,28 @@ export function ResultadosBusca() {
   const navigate = useNavigate(); 
   
   const [produtos, setProdutos] = useState([]);
+  const [busca, setBusca] = useState('');
+  const [dataInicio, setDataInicio] = useState('');
+  const [dataFim, setDataFim] = useState('');
+
+  async function buscarAnuncios() {
+    const params = new URLSearchParams();
+    
+    if (busca) params.append('busca', busca);
+    if (dataInicio) params.append('dataInicio', dataInicio);
+    if (dataFim) params.append('dataFim', dataFim);
+
+    const query = params.toString();
+    const dados = await apiRequest(`/api/anuncios${query ? `?${query}` : ''}`);
+    setProdutos(dados);
+  }
+
+  function handleSubmitBusca(e){
+    e.preventDefault();
+    buscarAnuncios();
+  }
 
   useEffect(() => {
-    async function buscarAnuncios() {
-      const dados = await apiRequest('/api/anuncios');
-      setProdutos(dados);
-    }
     buscarAnuncios();
   }, []);
 
@@ -47,12 +63,17 @@ export function ResultadosBusca() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+          <form onSubmit={handleSubmitBusca} className="grid grid-cols-1 md:grid-cols-12 gap-3">
             <div className="md:col-span-4 relative">
               <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5 ml-1">O que você busca?</label>
               <div className="relative">
                 <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type="text" placeholder="Ex: Furadeira, Barraca..." className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm focus:ring-2 focus:ring-[#00B795]/20 focus:border-[#00B795] outline-none transition-all" />
+                <input 
+                  type="text" 
+                  placeholder="Ex: Furadeira, Barraca..." 
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm focus:ring-2 focus:ring-[#00B795]/20 focus:border-[#00B795] outline-none transition-all" />
               </div>
             </div>
 
@@ -60,7 +81,11 @@ export function ResultadosBusca() {
               <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5 ml-1">Início</label>
               <div className="relative">
                 <LuCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                <input type="date" className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm outline-none focus:border-[#00B795] cursor-pointer" />
+                <input 
+                  type="date" 
+                  value={dataInicio}
+                  onChange={(e) => setDataInicio(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm outline-none focus:border-[#00B795] cursor-pointer" />
               </div>
             </div>
 
@@ -68,22 +93,30 @@ export function ResultadosBusca() {
               <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5 ml-1">Fim</label>
               <div className="relative">
                 <LuCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                <input type="date" className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm outline-none focus:border-[#00B795] cursor-pointer" />
+                <input 
+                  type="date" 
+                  value={dataFim}
+                  onChange={(e) => setDataFim(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm outline-none focus:border-[#00B795] cursor-pointer" />
               </div>
             </div>
 
             <div className="md:col-span-3 flex items-end">
-              <button className="w-full bg-[#00B795] text-white font-bold py-3.5 rounded-xl hover:bg-[#006861] transition-all shadow-sm active:scale-[0.98] cursor-pointer">
+              <button 
+                type="submit"
+                className="w-full bg-[#00B795] text-white font-bold py-3.5 rounded-xl hover:bg-[#006861] transition-all shadow-sm active:scale-[0.98] cursor-pointer">
                 Atualizar Busca
               </button>
             </div>
 
             <div className="md:col-span-1 flex items-end">
-              <button className="w-full flex justify-center items-center bg-gray-50 border border-gray-100 text-gray-500 h-[46px] rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
+              <button
+                type="button" 
+                className="w-full flex justify-center items-center bg-gray-50 border border-gray-100 text-gray-500 h-[46px] rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
                 <LuSettings2 size={20} />
               </button>
             </div>
-          </div>
+          </form>
         </section>
 
         <div className="flex gap-8 flex-col lg:flex-row">
