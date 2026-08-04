@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiRequest } from '../services/api';
 import logo from '../assets/logo.png';
 
 import {
@@ -20,6 +21,8 @@ import {
 export default function PainelLocatario() {
   const [activeTab, setActiveTab] = useState('painel');
   const navigate = useNavigate();
+
+  const usuarioLogado = JSON.parse(localStorage.getItem('dadosUsuario'));
 
   const [abaAlugueis, setAbaAlugueis] = useState('andamento');
   const [abaPagamentos, setAbaPagamentos] = useState('pendentes');
@@ -52,9 +55,25 @@ export default function PainelLocatario() {
     { id: 'config', label: 'Configurações', icon: LuSettings },
   ];
 
-  function cancelarSolicitacao(id) {
-    setSolicitacoesEnviadas(prev => prev.filter(s => s.id !== id));
+  useEffect(() => {
+    async function buscarSolicitacoesEnviadas() {
+      const dados = await apiRequest(`/api/alugueis/locatario/${usuarioLogado.id}`);
+      setSolicitacoesEnviadas(dados.filter(s => s.status === 'pendente'));
+    }
+    buscarSolicitacoesEnviadas();
+  }, []);
+
+ async function cancelarSolicitacao(id) {
+    try {
+      await apiRequest(`/api/alugueis/${id}/status`, {
+        method: 'PATCH',
+        body: {status: 'cancelado'}
+      })
+    setSolicitacoesEnviadas(prev => prev.filter(s => s._id !== id));
+  } catch (e) {
+    alert(e.message);
   }
+ }
 
   function renderConteudo() {
     switch (activeTab) {
@@ -199,12 +218,12 @@ function SecaoPainel({ stats, alugueis, pagamentos, solicitacoesEnviadas, abaAlu
             </div>
           ) : (
             alugueis[abaAlugueis].map((aluguel) => (
-              <div key={aluguel.id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-colors group">
+              <div key={aluguel._id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-colors group">
                 <div className="flex items-center gap-4 min-w-0">
                   <div className="w-12 h-12 bg-gray-200 rounded-xl flex-shrink-0"></div>
                   <div className="min-w-0">
-                    <h3 className="font-bold text-[#1A1A1A] text-sm group-hover:text-[#00B795] transition-colors truncate">{aluguel.item}</h3>
-                    <p className="text-xs text-gray-400 font-medium mt-0.5">por {aluguel.dono} • {aluguel.periodo}</p>
+                    <h3 className="font-bold text-[#1A1A1A] text-sm group-hover:text-[#00B795] transition-colors truncate">{aluguel.anuncio.titulo}</h3>
+                    <p className="text-xs text-gray-400 font-medium mt-0.5">por {aluguel.locatario.nome} • {aluguel.periodo}</p>
                   </div>
                 </div>
 
@@ -244,10 +263,10 @@ function SecaoPainel({ stats, alugueis, pagamentos, solicitacoesEnviadas, abaAlu
               </div>
             ) : (
               solicitacoesEnviadas.map((solicitacao) => (
-                <div key={solicitacao.id} className="p-4 hover:bg-gray-50 rounded-2xl transition-colors border border-transparent hover:border-gray-100 mb-2">
+                <div key={solicitacao._id} className="p-4 hover:bg-gray-50 rounded-2xl transition-colors border border-transparent hover:border-gray-100 mb-2">
                   <div className="flex justify-between items-start mb-3">
                     <div>
-                      <h3 className="font-bold text-[#1A1A1A] text-sm">{solicitacao.item}</h3>
+                      <h3 className="font-bold text-[#1A1A1A] text-sm">{solicitacao.anuncio.titulo}</h3>
                       <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">{solicitacao.periodo}</p>
                     </div>
                     <span className="text-[10px] font-bold uppercase tracking-widest bg-orange-50 text-orange-500 px-3 py-1.5 rounded-md shrink-0">
@@ -255,7 +274,7 @@ function SecaoPainel({ stats, alugueis, pagamentos, solicitacoesEnviadas, abaAlu
                     </span>
                   </div>
                   <button
-                    onClick={() => onCancelarSolicitacao(solicitacao.id)}
+                    onClick={() => onCancelarSolicitacao(solicitacao._id)}
                     className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 text-xs font-bold py-2.5 rounded-xl hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors cursor-pointer shadow-sm"
                   >
                     <LuX size={14} /> Cancelar Solicitação
