@@ -118,7 +118,26 @@ app.post('/api/anuncios', async (req, res) => {
 // Listar todos os anúncios (usado em ResultadosBusca)
 app.get('/api/anuncios', async (req, res) => {
   try {
-    const anuncios = await Anuncio.find({status: 'publicado'}).populate('locador', 'nome email');
+    const { busca, dataInicio, dataFim } = req.query;
+    const filtro = { status: 'publicado' };
+
+    if (busca) {
+      const regex = new RegExp(busca, 'i'); // 'i' para case-insensitive
+      filtro.$or = [
+        {titulo: regex},
+        {descricao: regex},
+      ];
+    }
+
+    if (dataInicio || dataFim) {
+      const condicaoData = {};
+      
+      if (dataInicio) condicaoData.$gte = new Date(dataInicio);
+      if (dataFim) condicaoData.$lte = new Date(dataFim);
+      filtro.disponivel = {$elemMatch: condicaoData };
+    }
+
+    const anuncios = await Anuncio.find(filtro).populate('locador', 'nome email');
     res.status(200).json(anuncios);
   } catch (erro) {
     res.status(500).json({ erro: 'Erro ao buscar anúncios' });
