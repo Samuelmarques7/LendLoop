@@ -42,7 +42,7 @@ export default function PainelLocador() {
     async function buscarSolicitacoes() {
       const dados = await apiRequest(`/api/alugueis/locador/${usuarioLogado.id}`);
       console.log(dados);
-      setSolicitacoes(dados);
+      setSolicitacoes(dados.filter(s => s.status === 'pendente'));
     }
     buscarSolicitacoes();
   }, []);
@@ -65,12 +65,30 @@ export default function PainelLocador() {
     { id: 'config', label: 'Configurações', icon: LuSettings },
   ];
 
-  function aceitarSolicitacao(id) {
-    setSolicitacoes(prev => prev.filter(s => s.id !== id));
+  async function aceitarSolicitacao(id) {
+    try {
+      await apiRequest(`/api/alugueis/${id}/status`, {
+        method: 'PATCH',
+        body: {status: 'aceito'}
+      })
+
+      setSolicitacoes(prev => prev.filter(s => s._id !== id));
+    } catch (e) {
+      alert(e.message);
+    }
   }
 
-  function recusarSolicitacao(id) {
-    setSolicitacoes(prev => prev.filter(s => s.id !== id));
+  async function recusarSolicitacao(id) {
+    try {
+      await apiRequest(`/api/alugueis/${id}/status`, {
+        method: 'PATCH',
+        body: {status: 'recusado'}
+      })
+
+      setSolicitacoes(prev => prev.filter(s => s._id !== id));
+    } catch (e) {
+      alert(e.message);
+    }
   }
 
   function renderConteudo() {
