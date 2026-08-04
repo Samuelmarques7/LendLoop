@@ -38,6 +38,15 @@ export default function PainelLocador() {
     buscarMeusAnuncios();
   }, []);
 
+  useEffect(() => {
+    async function buscarSolicitacoes() {
+      const dados = await apiRequest(`/api/alugueis/locador/${usuarioLogado.id}`);
+      console.log(dados);
+      setSolicitacoes(dados);
+    }
+    buscarSolicitacoes();
+  }, []);
+
   const stats = [
     { id: 1, titulo: "Ganhos Este Mês", valor: "R$ 0", icon: LuDollarSign, color: "text-[#00B795]", bg: "bg-[#00B795]/10" },
     { id: 2, titulo: "Anúncios Ativos", valor: String(meusAnuncios.length), icon: LuPackage, color: "text-[#1A1A1A]", bg: "bg-gray-100" },
@@ -240,14 +249,14 @@ function SecaoSolicitacoes({ solicitacoes, onAceitar, onRecusar }) {
           </div>
         ) : (
           solicitacoes.map((req) => (
-            <div key={req.id} className="p-4 hover:bg-gray-50 rounded-2xl transition-colors border border-transparent hover:border-gray-100 mb-2">
+            <div key={req._id} className="p-4 hover:bg-gray-50 rounded-2xl transition-colors border border-transparent hover:border-gray-100 mb-2">
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <h3 className="font-bold text-[#1A1A1A] text-sm">{req.item}</h3>
+                  <h3 className="font-bold text-[#1A1A1A] text-sm">{req.anuncio.titulo}</h3>
                   <p className="text-xs text-gray-500 font-medium mt-1">
-                    Solicitado por <span className="font-bold text-[#1A1A1A]">{req.cliente}</span>
+                    Solicitado por <span className="font-bold text-[#1A1A1A]">{req.locatario.nome}</span>
                   </p>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Data: {req.data}</p>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Data: {new Date(req.dataInicio).toLocaleDateString('pt-BR')}</p>
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-widest bg-orange-50 text-orange-500 px-3 py-1.5 rounded-md">
                   Pendente
@@ -255,13 +264,13 @@ function SecaoSolicitacoes({ solicitacoes, onAceitar, onRecusar }) {
               </div>
               <div className="flex gap-2 mt-4">
                 <button
-                  onClick={() => onAceitar(req.id)}
+                  onClick={() => onAceitar(req._id)}
                   className="flex-1 flex items-center justify-center gap-2 bg-[#1A1A1A] text-white text-xs font-bold py-2.5 rounded-xl hover:bg-black transition-colors cursor-pointer shadow-sm"
                 >
                   <LuCheck size={14} className="text-[#00B795]" /> Aceitar
                 </button>
                 <button
-                  onClick={() => onRecusar(req.id)}
+                  onClick={() => onRecusar(req._id)}
                   className="flex-1 flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 text-xs font-bold py-2.5 rounded-xl hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors cursor-pointer shadow-sm"
                 >
                   <LuX size={14} /> Recusar
