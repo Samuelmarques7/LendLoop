@@ -27,6 +27,7 @@ export function DetalhesProduto() {
   const [dataFim, setDataFim] = useState("");
   const [horarioRetirada, setHorarioRetirada] = useState("09:00");
   const [enviando, setEnviando] = useState(false);
+  const [mensagem, setMensagem] = useState(null);
 
   useEffect(() => {
     async function buscarAnuncio() {
@@ -68,10 +69,22 @@ export function DetalhesProduto() {
   }
 
   async function handleSolicitarAluguel() {
+    setMensagem (null);
+
     const dadosUsuarioRaw = localStorage.getItem("dadosUsuario");
 
     if (!dadosUsuarioRaw) {
-      alert("Você precisa estar logado para solicitar o aluguel.");
+      setMensagem({tipo: 'erro', texto: 'Você precisa estar logado para solicitar o aluguel.'});
+      return;
+    }
+
+    if (!dataInicio || !dataFim) {
+      setMensagem({tipo: 'erro', texto: 'Selecione a data de início e a data de término.'});
+      return;
+    }
+
+    if (diasValidos <= 0) {
+      setMensagem({tipo: 'erro', texto: 'A data de término deve ser depois da data de início.'});
       return;
     }
 
@@ -95,9 +108,9 @@ export function DetalhesProduto() {
         },
       });
 
-      alert("Solicitação de aluguel enviada com sucesso!");
+      setMensagem({tipo: 'sucesso', texto: 'Solicitação de aluguel enviada com sucesso!'});
     } catch (e) {
-      alert(e.message);
+      setMensagem({tipo: 'erro', texto: e.message});g
     } finally {
       setEnviando(false);
     }
@@ -287,6 +300,12 @@ export function DetalhesProduto() {
                 <span className="font-bold text-[#1A1A1A]">Total</span>
                 <span className="text-xl font-black text-[#1A1A1A]">R$ {total.toFixed(2)}</span>
               </div>
+
+              {mensagem && (
+                <div className={`p-3 mb-3 rounded-lg text-sm font-medium ${mensagem.tipo === 'sucesso' ? 'bg-[#00B795]/10 text-[#006861] border border-[#00B795]/30' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                  {mensagem.texto}
+                </div>
+              )}
 
               <button 
                 onClick={handleSolicitarAluguel}
