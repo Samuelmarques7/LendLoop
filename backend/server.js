@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const upload = require('./config/upload');
+const bcrypt = require('bcrypt');
 
 const Usuario = require('./models/Usuario');
 const Anuncio = require('./models/Anuncio');
@@ -21,13 +22,18 @@ app.use(express.json());
 app.post('/api/usuarios', async (req, res) => {
   try {
     const { nome, email, senha, telefone } = req.body;
-    const novoUsuario = new Usuario({ nome, email, senha, telefone });
+    const senhaCriptografada = await bcrypt.hash(senha, 10);
+    const novoUsuario = new Usuario({ nome, email, senha: senhaCriptografada, telefone });
     
     await novoUsuario.save();
 
     res.status(201).json({
       mensagem: 'Usuário criado com sucesso no LendLoop!',
-      usuario: novoUsuario
+      usuario: {
+        id: novoUsuario._id,
+        nome: novoUsuario.nome,
+        email: novoUsuario.email
+      }
     });
   } catch (erro) {
 
@@ -41,10 +47,38 @@ app.post('/api/usuarios', async (req, res) => {
 // Listagem
 app.get('/api/usuarios', async (req, res) => {
   try {
-    const usuarios = await Usuario.find();
+    const usuarios = await Usuario.find().select('-senha');
     res.status(200).json(usuarios);
   } catch (erro) {
     res.status(500).json({ erro: 'Erro ao buscar usuários' });
+  }
+});
+
+// Excluir conta (soft delete: anonimiza o usuário e apaga seus anúncios)
+app.delete('/api/usuarios/:id', async (req, res) => {
+  try {
+    const usuario = await Usuario.findById(req.params.id);
+
+    if (!usuario) {
+      return res.status(404).json({ erro: 'Usuário não encontrado' });
+    }
+
+    // Apaga de fato os anúncios do usuário (só afetam o próprio dono)
+    await Anuncio.deleteMany({ locador: usuario._id });
+
+    // Anonimiza o usuário em vez de apagar, preservando histórico de terceiros
+    usuario.nome = 'Usuário removido';
+    usuario.email = `removido_${usuario._id}@lendloop.com`;
+    usuario.senha = await bcrypt.hash(Math.random().toString(36), 10);
+    usuario.telefone = '';
+    usuario.avatar = '';
+    usuario.ativo = false;
+
+    await usuario.save();
+
+    res.status(200).json({ mensagem: 'Conta excluída com sucesso.' });
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao excluir conta', detalhes: erro.message });
   }
 });
 
@@ -58,7 +92,9 @@ app.post('/api/login', async (req, res) => {
       return res.status(404).json({ erro: 'Usuário não encontrado. Verifique seu e-mail.' });
     }
 
-    if (usuario.senha !== senha) {
+    const senhaCorreta = await bcrypt.compare(senha, usuario.senha);
+
+    if (!senhaCorreta) {
       return res.status(401).json({ erro: 'Senha incorreta.' });
     }
 
