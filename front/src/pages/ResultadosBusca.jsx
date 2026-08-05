@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { apiRequest } from '../services/api';
 import {
   LuSearch,
@@ -19,11 +19,12 @@ import { Footer } from '../components/Footer';
 
 export function ResultadosBusca() {
   const navigate = useNavigate(); 
+  const [searchParams] = useSearchParams();
   
   const [produtos, setProdutos] = useState([]);
-  const [busca, setBusca] = useState('');
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
+  const [busca, setBusca] = useState(searchParams.get('busca') || '');
+  const [dataInicio, setDataInicio] = useState(searchParams.get('dataInicio') || '');
+  const [dataFim, setDataFim] = useState(searchParams.get('dataFim') || '');
 
   async function buscarAnuncios() {
     const params = new URLSearchParams();
