@@ -248,7 +248,7 @@ export function ResultadosBusca() {
                       
                       <div className="mt-4 flex flex-wrap gap-5 text-[10px] font-bold text-[#00639E] uppercase tracking-wider">
                         <span className="flex items-center gap-1.5"><LuMapPin size={15} className="text-[#00B795]"/> {produto.distancia}</span>
-                        <span className="flex items-center gap-1.5"><LuUser size={15} className="text-[#00B795]"/> {produto.locador.nome}</span>
+                        <span className="flex items-center gap-1.5"><LuUser size={15} className="text-[#00B795]"/> {produto.locador?.nome || 'Anunciante removido'}</span>
                         <span className="text-[#05BFBE] flex items-center gap-1.5"><LuZap size={15}/> {produto.status}</span>
                       </div>
                     </div>
