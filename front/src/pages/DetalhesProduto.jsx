@@ -67,6 +67,15 @@ export function DetalhesProduto() {
       </div>
     );
   }
+  
+  const dias = dataInicio && dataFim 
+    ? Math.ceil((new Date(dataFim) - new Date(dataInicio)) / (1000 * 60 * 60 * 24)) : 0;
+
+  const diasValidos = dias > 0 ? dias : 0;
+  const subtotal = diasValidos * anuncio.precos.precoPorDia;
+  const taxaServico = subtotal * 0.03;
+  const caucao = anuncio.precos.caucao || 0;
+  const total = subtotal + taxaServico + caucao;
 
   async function handleSolicitarAluguel() {
     setMensagem (null);
@@ -110,20 +119,11 @@ export function DetalhesProduto() {
 
       setMensagem({tipo: 'sucesso', texto: 'Solicitação de aluguel enviada com sucesso!'});
     } catch (e) {
-      setMensagem({tipo: 'erro', texto: e.message});g
+      setMensagem({tipo: 'erro', texto: e.message});
     } finally {
       setEnviando(false);
     }
   }
-
-  const dias = dataInicio && dataFim 
-    ? Math.ceil((new Date(dataFim) - new Date(dataInicio)) / (1000 * 60 * 60 * 24)) : 0;
-
-  const diasValidos = dias > 0 ? dias : 0;
-  const subtotal = diasValidos * anuncio.precos.precoPorDia;
-  const taxaServico = subtotal * 0.03;
-  const caucao = anuncio.precos.caucao || 0;
-  const total = subtotal + taxaServico + caucao;
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] font-sans text-[#1A1A1A] flex flex-col">
