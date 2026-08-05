@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; 
 import { LuWrench, LuMonitor, LuDumbbell, LuFlower2, LuCar, LuPartyPopper, LuSearch } from 'react-icons/lu';
 import { Header } from '../components/Header';
@@ -26,8 +27,18 @@ const passosAnfitriao = [
 
 export function PaginaInicial() {
   const navigate = useNavigate(); 
+  const [buscaHome, setBuscaHome] = useState('');
 
   const isLogado = localStorage.getItem('usuarioLogado') === 'true';
+
+  function handleBuscarHome() {
+    if (!buscaHome.trim()) return;
+
+    const params = new URLSearchParams();
+
+    params.append('busca', buscaHome);
+    navigate(`/busca?${params.toString()}`);
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -52,10 +63,13 @@ export function PaginaInicial() {
             <input
               type="text"
               placeholder="O que você quer alugar?"
+              value={buscaHome}
+              onChange={(e) => setBuscaHome(e.target.value)}
+              onKeyDown={(e) => {if (e.key === 'Enter') handleBuscarHome();}}
               className="flex-1 py-4 text-[#1A1A1A] outline-none text-base"
             />
             <button 
-              onClick={() => navigate('/busca')} 
+              onClick={handleBuscarHome}
               className="bg-[#00B795] hover:bg-[#006861] text-white px-6 font-semibold transition-colors cursor-pointer"
             >
               Buscar
