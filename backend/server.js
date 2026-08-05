@@ -85,11 +85,11 @@ app.delete('/api/usuarios/:id', async (req, res) => {
 // Atualizar dados do usuário (avatar, bio, localização, etc.)
 app.patch('/api/usuarios/:id', async (req, res) => {
   try {
-    const { avatar } = req.body;
+    const { avatar, bio, localizacao } = req.body;
 
     const usuario = await Usuario.findByIdAndUpdate(
       req.params.id,
-      { avatar },
+      { avatar, bio, localizacao },
       { new: true }
     ).select('-senha');
 
