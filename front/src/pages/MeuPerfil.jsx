@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_URL, apiRequest } from '../services/api';
 import { 
   LuCamera, 
   LuMapPin, 
@@ -47,7 +48,7 @@ export default function MeuPerfil() {
         ...prev,
         nome: dados.nome,
         email: dados.email,
-        avatar: `https://ui-avatars.com/api/?name=${dados.nome.replace(' ', '+')}&background=00B795&color=fff&size=150`,
+        avatar: dados.avatar || `https://ui-avatars.com/api/?name=${dados.nome.replace(' ', '+')}&background=00B795&color=fff&size=150`,
         membroDesde: formatarMembroDesde(dados.createdAt)
       }));
     }
@@ -62,11 +63,43 @@ export default function MeuPerfil() {
     fileInputRef.current.click();
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setUsuario(prev => ({ ...prev, avatar: imageUrl }));
+    if (!file) return;
+
+    try {
+      const formData = new FormData();
+      formData.append('fotos', file);
+
+      const respostaUpload = await fetch(`${API_URL}/api/upload`, {
+        method: 'POST',
+        body: formData
+      });
+
+      const dadosUpload = await respostaUpload.json();
+
+      if (!respostaUpload.ok) {
+        throw new Error(dadosUpload.erro || 'Erro ao enviar foto');
+      }
+
+      const novaUrlAvatar = dadosUpload.urls[0];
+
+      const dadosSalvos = JSON.parse(localStorage.getItem('dadosUsuario'));
+
+      const resultado = await apiRequest(`/api/usuarios/${dadosSalvos.id}`, {
+        method: 'PATCH',
+        body: { avatar: novaUrlAvatar }
+      });
+
+      setUsuario(prev => ({ ...prev, avatar: resultado.usuario.avatar }));
+
+      localStorage.setItem('dadosUsuario', JSON.stringify({
+        ...dadosSalvos,
+        avatar: resultado.usuario.avatar
+      }));
+
+    } catch (erro) {
+      console.error('Erro ao atualizar avatar:', erro);
     }
   };
 
