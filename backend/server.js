@@ -82,6 +82,30 @@ app.delete('/api/usuarios/:id', async (req, res) => {
   }
 });
 
+// Atualizar dados do usuário (avatar, bio, localização, etc.)
+app.patch('/api/usuarios/:id', async (req, res) => {
+  try {
+    const { avatar } = req.body;
+
+    const usuario = await Usuario.findByIdAndUpdate(
+      req.params.id,
+      { avatar },
+      { new: true }
+    ).select('-senha');
+
+    if (!usuario) {
+      return res.status(404).json({ erro: 'Usuário não encontrado' });
+    }
+
+    res.status(200).json({
+      mensagem: 'Perfil atualizado com sucesso!',
+      usuario
+    });
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao atualizar perfil', detalhes: erro.message });
+  }
+});
+
 // Login
 app.post('/api/login', async (req, res) => {
   try {
@@ -103,7 +127,8 @@ app.post('/api/login', async (req, res) => {
       usuario: { 
         id: usuario._id,
         nome: usuario.nome, 
-        email: usuario.email 
+        email: usuario.email,
+        createdAt: usuario.createdAt,
       } 
     });
   } catch (erro) {

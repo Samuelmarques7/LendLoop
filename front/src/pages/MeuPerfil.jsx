@@ -14,6 +14,18 @@ import {
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 
+function formatarMembroDesde(dataCriacao) {
+  const data = new Date(dataCriacao);
+  const anoAtual = new Date().getFullYear();
+  const anoCadastro = data.getFullYear();
+
+  if (anoCadastro === anoAtual) {
+    return data.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  }
+
+  return String(anoCadastro);
+}
+
 export default function MeuPerfil() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -35,7 +47,8 @@ export default function MeuPerfil() {
         ...prev,
         nome: dados.nome,
         email: dados.email,
-        avatar: `https://ui-avatars.com/api/?name=${dados.nome.replace(' ', '+')}&background=00B795&color=fff&size=150`
+        avatar: `https://ui-avatars.com/api/?name=${dados.nome.replace(' ', '+')}&background=00B795&color=fff&size=150`,
+        membroDesde: formatarMembroDesde(dados.createdAt)
       }));
     }
   }, []);
