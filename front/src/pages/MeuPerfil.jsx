@@ -49,6 +49,7 @@ export default function MeuPerfil() {
         nome: dados.nome,
         email: dados.email,
         avatar: dados.avatar || `https://ui-avatars.com/api/?name=${dados.nome.replace(' ', '+')}&background=00B795&color=fff&size=150`,
+        localizacao: dados.localizacao || 'Localização não informada',
         membroDesde: formatarMembroDesde(dados.createdAt)
       }));
     }

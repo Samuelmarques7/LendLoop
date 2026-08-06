@@ -9,10 +9,30 @@ export default function Cadastro() {
     email: '',
     senha: '',
     telefone: '',
+    cep: '',
+    localizacao: '',
     objetivo: 'ambos'
   });
   
   const [mensagem, setMensagem] = useState(null);
+
+  const handleCepChange = (e) => {
+    const cepDigitado = e.target.value;
+    setFormData(prev => ({ ...prev, cep: cepDigitado }));
+
+    const cepLimpo = cepDigitado.replace(/\D/g, '');
+
+    if (cepLimpo.length === 8) {
+      fetch(`https://brasilapi.com.br/api/cep/v1/${cepLimpo}`)
+        .then(resposta => resposta.json())
+        .then(dados => {
+          setFormData(prev => ({ ...prev, localizacao: `${dados.city}, ${dados.state}` }));
+        })
+        .catch(() => {
+          setMensagem({ tipo: 'erro', texto: 'CEP não encontrado. Verifique e tente novamente.' });
+        });
+    }
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -36,7 +56,7 @@ export default function Cadastro() {
       localStorage.setItem('dadosUsuario', JSON.stringify(data.usuario));
 
       setMensagem({ tipo: 'sucesso', texto: 'Conta criada com sucesso! Redirecionando...' });
-      setFormData({ nome: '', email: '', senha: '', telefone: '', objetivo: 'ambos' });
+      setFormData({ nome: '', email: '', senha: '', telefone: '',cep: '', localizacao: '', objetivo: 'ambos' });
         
       setTimeout(() => {
         navigate(-1);
@@ -79,6 +99,34 @@ export default function Cadastro() {
             <input type="password" name="senha" value={formData.senha} onChange={handleChange} required
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#05BFBE] outline-none text-[#1A1A1A]" placeholder="••••••••"/>
           </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-[#1A1A1A]">CEP</label>
+              <a
+                href="https://buscacepinter.correios.com.br/app/endereco/index.php"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-[#00639E] hover:text-[#006861] hover:underline"
+              >
+                Não sei meu CEP
+              </a>
+            </div>
+            <input
+              type="text"
+              name="cep"
+              value={formData.cep}
+              onChange={handleCepChange}
+              maxLength={9}
+              required
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#05BFBE] outline-none text-[#1A1A1A]"
+              placeholder="00000-000"
+            />
+            {formData.localizacao && (
+              <p className="text-xs text-[#006861] mt-1">📍 {formData.localizacao}</p>
+            )}
+          </div>
+
 
           <div>
             <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Qual seu principal objetivo?</label>

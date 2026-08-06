@@ -21,9 +21,9 @@ app.use(express.json());
 // Cadastro
 app.post('/api/usuarios', async (req, res) => {
   try {
-    const { nome, email, senha, telefone } = req.body;
+    const { nome, email, senha, telefone,localizacao } = req.body;
     const senhaCriptografada = await bcrypt.hash(senha, 10);
-    const novoUsuario = new Usuario({ nome, email, senha: senhaCriptografada, telefone });
+    const novoUsuario = new Usuario({ nome, email, senha: senhaCriptografada, telefone, localizacao });
     
     await novoUsuario.save();
 
@@ -32,7 +32,9 @@ app.post('/api/usuarios', async (req, res) => {
       usuario: {
         id: novoUsuario._id,
         nome: novoUsuario.nome,
-        email: novoUsuario.email
+        email: novoUsuario.email,
+        localizacao: novoUsuario.localizacao,
+        createdAt: novoUsuario.createdAt
       }
     });
   } catch (erro) {
