@@ -130,6 +130,8 @@ app.post('/api/login', async (req, res) => {
         id: usuario._id,
         nome: usuario.nome, 
         email: usuario.email,
+        avatar: usuario.avatar,
+        localizacao: usuario.localizacao,
         createdAt: usuario.createdAt,
       } 
     });
