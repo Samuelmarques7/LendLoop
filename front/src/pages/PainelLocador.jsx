@@ -18,17 +18,40 @@ import {
   LuX,
   LuPlus,
   LuBell,
-  LuPackageX
+  LuPackageX,
+  LuTrash2
 } from "react-icons/lu";
 
+const PAINEIS_DISPONIVEIS = [
+  { id: 'painel', label: 'Painel Locador' },
+  { id: 'anuncios', label: 'Meus Anúncios' },
+  { id: 'solicitacoes', label: 'Solicitações Recebidas' },
+  { id: 'calendario', label: 'Calendário' },
+  { id: 'ganhos', label: 'Ganhos' },
+  { id: 'mensagens', label: 'Mensagens' },
+];
+
 export default function PainelLocador() {
-  const [activeTab, setActiveTab] = useState('painel');
+  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('painelPadrao') || 'painel');
   const navigate = useNavigate(); 
 
   const [solicitacoes, setSolicitacoes] = useState([]);
   const [meusAnuncios, setMeusAnuncios] = useState([]);
+  const [dadosLocador, setDadosLocador] = useState(null);
 
   const usuarioLogado = JSON.parse(localStorage.getItem('dadosUsuario'));
+
+  useEffect(() => {
+    document.title = 'Painel Locador';
+  }, []);
+
+  useEffect(() => {
+    async function buscarDadosLocador() {
+      const dados = await apiRequest(`/api/usuarios/${usuarioLogado.id}`);
+      setDadosLocador(dados);
+    }
+    buscarDadosLocador();
+  }, []);
 
   useEffect(() => {
     async function buscarMeusAnuncios() {
@@ -55,7 +78,7 @@ export default function PainelLocador() {
   ];
 
   const menuItems = [
-    { id: 'painel', label: 'Painel', icon: LuLayoutDashboard },
+    { id: 'painel', label: 'Painel Locador', icon: LuLayoutDashboard },
     { id: 'anuncios', label: 'Meus Anúncios', icon: LuPackage },
     { id: 'solicitacoes', label: 'Solicitações Recebidas', icon: LuInbox },
     { id: 'calendario', label: 'Calendário', icon: LuCalendar },
@@ -64,6 +87,14 @@ export default function PainelLocador() {
     { id: 'perfil', label: 'Perfil', icon: LuUser },
     { id: 'config', label: 'Configurações', icon: LuSettings },
   ];
+
+  function handleMenuClick(item) {
+    if (item.id === 'perfil') {
+      navigate('/meu-perfil');
+      return;
+    }
+    setActiveTab(item.id);
+  }
 
   async function aceitarSolicitacao(id) {
     try {
@@ -91,6 +122,40 @@ export default function PainelLocador() {
     }
   }
 
+  async function excluirAnuncio(id) {
+    const confirmar = window.confirm('Tem certeza que deseja excluir este anúncio? Essa ação não pode ser desfeita.');
+    if (!confirmar) return;
+
+    try {
+      await apiRequest(`/api/anuncios/${id}`, {
+        method: 'DELETE'
+      });
+
+      setMeusAnuncios(prev => prev.filter(a => a._id !== id));
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  function salvarPainelPadrao(painelId) {
+    localStorage.setItem('painelPadrao', painelId);
+  }
+
+  async function excluirConta() {
+    const confirmar = window.confirm('Tem certeza que deseja excluir sua conta? Essa ação não pode ser desfeita.');
+    if (!confirmar) return;
+
+    try {
+      await apiRequest(`/api/usuarios/${usuarioLogado.id}`, {
+        method: 'DELETE'
+      });
+      localStorage.removeItem('dadosUsuario');
+      navigate('/login');
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
   function renderConteudo() {
     switch (activeTab) {
       case 'painel':
@@ -101,6 +166,21 @@ export default function PainelLocador() {
           onAceitar={aceitarSolicitacao}
           onRecusar={recusarSolicitacao}
           onNovoAnuncio={() => navigate('/criar-anuncio')}
+          onAbrirAnuncio={(id) => navigate(`/produto/${id}`)}
+          onExcluirAnuncio={excluirAnuncio}
+        />;
+      case 'anuncios':
+        return <SecaoAnuncios
+          meusAnuncios={meusAnuncios}
+          onNovoAnuncio={() => navigate('/criar-anuncio')}
+          onAbrirAnuncio={(id) => navigate(`/produto/${id}`)}
+          onExcluirAnuncio={excluirAnuncio}
+        />;
+      case 'config':
+        return <SecaoConfiguracoes
+          activeTab={activeTab}
+          onSalvarPainelPadrao={salvarPainelPadrao}
+          onExcluirConta={excluirConta}
         />;
       default:
         return (
@@ -132,7 +212,7 @@ export default function PainelLocador() {
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => handleMenuClick(item)}
                 className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
                   isActive
                     ? 'bg-[#1A1A1A] text-white shadow-md'
@@ -146,16 +226,23 @@ export default function PainelLocador() {
           })}
         </nav>
 
-        <div className="p-6 border-t border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#00B795] text-white flex items-center justify-center font-bold text-lg">
-              U
+        <div className="p-4 border-t border-gray-100">
+          <button
+            onClick={() => navigate('/meu-perfil')}
+            className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
+          >
+            <div className="w-10 h-10 rounded-full bg-[#00B795] text-white flex items-center justify-center font-bold text-lg overflow-hidden flex-shrink-0">
+              {dadosLocador?.avatar ? (
+                <img src={dadosLocador.avatar} alt={dadosLocador.nome} className="w-full h-full object-cover" />
+              ) : (
+                dadosLocador?.nome?.charAt(0).toUpperCase() || 'U'
+              )}
             </div>
-            <div>
-              <p className="text-sm font-bold text-[#1A1A1A]">Usuário LendLoop</p>
+            <div className="text-left">
+              <p className="text-sm font-bold text-[#1A1A1A]">{dadosLocador?.nome || 'Carregando...'}</p>
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Membro</p>
             </div>
-          </div>
+          </button>
         </div>
       </aside>
 
@@ -180,7 +267,47 @@ export default function PainelLocador() {
   );
 }
 
-function SecaoPainel({ stats, meusAnuncios, solicitacoes, onAceitar, onRecusar, onNovoAnuncio }) {
+function CardAnuncio({ anuncio, onAbrirAnuncio, onExcluirAnuncio }) {
+  return (
+    <div className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-colors group">
+      <div
+        onClick={() => onAbrirAnuncio(anuncio._id)}
+        className="flex items-center gap-4 flex-1 min-w-0 cursor-pointer"
+      >
+        {anuncio.fotos && anuncio.fotos.length > 0 ? (
+          <img src={anuncio.fotos[0]} alt={anuncio.titulo} className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
+        ) : (
+          <div className="w-12 h-12 bg-gray-200 rounded-xl flex-shrink-0 flex items-center justify-center ">
+            <LuPackageX size={20} className="text-gray-400" />
+          </div>
+        )}
+        <div className="min-w-0">
+          <h3 className="font-bold text-[#1A1A1A] text-sm group-hover:text-[#00B795] transition-colors truncate">{anuncio.titulo}</h3>
+          <p className="text-xs text-gray-400 font-medium mt-0.5">{anuncio.precos.precoPorDia}/dia • 0 reservas</p> {/* TODO: trocar 0 fixo por contagem real de reservas quando existir */}
+        </div>
+      </div>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-md ${
+          anuncio.status === 'publicado' ? 'bg-[#00B795]/10 text-[#00B795]' : 'bg-gray-100 text-gray-500'
+        }`}>
+          {anuncio.status}
+        </span>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onExcluirAnuncio(anuncio._id);
+          }}
+          title="Excluir anúncio"
+          className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+        >
+          <LuTrash2 size={16} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SecaoPainel({ stats, meusAnuncios, solicitacoes, onAceitar, onRecusar, onNovoAnuncio, onAbrirAnuncio, onExcluirAnuncio }) {
   return (
     <div className="animate-fade-in space-y-8">
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -221,26 +348,7 @@ function SecaoPainel({ stats, meusAnuncios, solicitacoes, onAceitar, onRecusar, 
               </div>
             ) : (
               meusAnuncios.map((anuncio) => (
-                <div key={anuncio._id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-colors cursor-pointer group">
-                  <div className="flex items-center gap-4">
-                    {anuncio.fotos && anuncio.fotos.length > 0 ? (
-                      <img src={anuncio.fotos[0]} alt={anuncio.titulo} className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
-                    ) : (
-                      <div className="w-12 h-12 bg-gray-200 rounded-xl flex-shrink-0 flex items-center justify-center ">
-                        <LuPackageX size={20} className="text-gray-400" />
-                      </div>
-                    )}
-                    <div>
-                      <h3 className="font-bold text-[#1A1A1A] text-sm group-hover:text-[#00B795] transition-colors">{anuncio.titulo}</h3>
-                      <p className="text-xs text-gray-400 font-medium mt-0.5">{anuncio.precos.precoPorDia}/dia • 0 reservas</p> {/* TODO: trocar 0 fixo por contagem real de reservas quando existir */}
-                    </div>
-                  </div>
-                  <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-md ${
-                    anuncio.status === 'publicado' ? 'bg-[#00B795]/10 text-[#00B795]' : 'bg-gray-100 text-gray-500'
-                  }`}>
-                    {anuncio.status}
-                  </span>
-                </div>
+                <CardAnuncio key={anuncio._id} anuncio={anuncio} onAbrirAnuncio={onAbrirAnuncio} onExcluirAnuncio={onExcluirAnuncio} />
               ))
             )}
 
@@ -249,6 +357,37 @@ function SecaoPainel({ stats, meusAnuncios, solicitacoes, onAceitar, onRecusar, 
 
         <SecaoSolicitacoes solicitacoes={solicitacoes} onAceitar={onAceitar} onRecusar={onRecusar} />
       </div>
+    </div>
+  );
+}
+
+function SecaoAnuncios({ meusAnuncios, onNovoAnuncio, onAbrirAnuncio, onExcluirAnuncio }) {
+  return (
+    <div className="animate-fade-in space-y-8">
+      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+          <h2 className="text-lg font-bold text-[#1A1A1A]">Meus Anúncios</h2>
+          <button
+            onClick={onNovoAnuncio}
+            className="flex items-center gap-2 text-xs font-bold text-[#00B795] bg-[#00B795]/10 px-4 py-2 rounded-lg hover:bg-[#00B795]/20 transition-colors cursor-pointer uppercase tracking-widest"
+          >
+            <LuPlus size={14} /> Novo Anúncio
+          </button>
+        </div>
+        <div className="p-2 flex-grow">
+          {meusAnuncios.length === 0 ? (
+            <div className="p-8 text-center text-gray-400 flex flex-col items-center justify-center h-full">
+              <LuPackage size={32} className="mx-auto mb-2 opacity-30" />
+              <p className="text-sm font-bold">Nenhum anúncio ativo</p>
+              <p className="text-xs mt-1">Clique em "Novo Anúncio" para começar.</p>
+            </div>
+          ) : (
+            meusAnuncios.map((anuncio) => (
+              <CardAnuncio key={anuncio._id} anuncio={anuncio} onAbrirAnuncio={onAbrirAnuncio} onExcluirAnuncio={onExcluirAnuncio} />
+            ))
+          )}
+        </div>
+      </section>
     </div>
   );
 }
@@ -299,5 +438,56 @@ function SecaoSolicitacoes({ solicitacoes, onAceitar, onRecusar }) {
         )}
       </div>
     </section>
+  );
+}
+
+function SecaoConfiguracoes({ onSalvarPainelPadrao, onExcluirConta }) {
+  const [painelPadrao, setPainelPadrao] = useState(() => localStorage.getItem('painelPadrao') || 'painel');
+
+  function handleChangePainelPadrao(e) {
+    const valor = e.target.value;
+    setPainelPadrao(valor);
+    onSalvarPainelPadrao(valor);
+  }
+
+  return (
+    <div className="animate-fade-in space-y-8">
+      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-gray-100">
+          <h2 className="text-lg font-bold text-[#1A1A1A]">Preferências</h2>
+        </div>
+        <div className="p-6 space-y-3">
+          <label className="text-sm font-bold text-[#1A1A1A]">Painel exibido ao entrar</label>
+          <p className="text-xs text-gray-400">Escolha qual seção abrir automaticamente quando você acessa o Painel Locador.</p>
+          <select
+            value={painelPadrao}
+            onChange={handleChangePainelPadrao}
+            className="w-full max-w-sm mt-2 px-4 py-3 rounded-xl border border-gray-200 text-sm font-bold text-[#1A1A1A] focus:outline-none focus:border-[#00B795] cursor-pointer"
+          >
+            {PAINEIS_DISPONIVEIS.map((p) => (
+              <option key={p.id} value={p.id}>{p.label}</option>
+            ))}
+          </select>
+        </div>
+      </section>
+
+      <section className="bg-white rounded-3xl border border-red-100 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-red-100">
+          <h2 className="text-lg font-bold text-red-500">Zona de Perigo</h2>
+        </div>
+        <div className="p-6 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-bold text-[#1A1A1A]">Excluir minha conta</p>
+            <p className="text-xs text-gray-400 mt-1">Essa ação é permanente e remove seus anúncios.</p>
+          </div>
+          <button
+            onClick={onExcluirConta}
+            className="flex items-center gap-2 bg-red-50 text-red-500 text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-red-100 transition-colors cursor-pointer uppercase tracking-widest"
+          >
+            <LuTrash2 size={14} /> Excluir Conta
+          </button>
+        </div>
+      </section>
+    </div>
   );
 }

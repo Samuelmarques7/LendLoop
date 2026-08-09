@@ -5,7 +5,12 @@ const anuncioSchema = new mongoose.Schema({
   titulo: { type: String, required: true },
   descricao: { type: String, required: true },
   categoria: { type: String, required: true },
-  subcategoria: { type: String, required: false },
+  subcategorias: [{ type: String }],
+
+  especificacoes: [{
+    chave: { type: String, required: true },
+    valor: { type: String, default: "" }
+  }],
  
   fotos: [{ type: String }],
 
