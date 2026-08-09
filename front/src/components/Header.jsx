@@ -1,23 +1,14 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { LuShoppingBag, LuPackage } from 'react-icons/lu';
 import logo from '../assets/logo.png';
 
 export function Header() {
   const navigate = useNavigate();
-  
+  const location = useLocation();
+
   const isLogado = localStorage.getItem('usuarioLogado') === 'true';
-
-  const handleCriarAnuncio = () => {
-    if (isLogado) {
-      navigate('/criar-anuncio');
-    } else {
-      navigate('/login');
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('usuarioLogado');
-    window.location.reload(); 
-  };
+  const noPainelLocatario = location.pathname.toLowerCase() === '/painellocatario';
+  const noPainelLocador = location.pathname.toLowerCase() === '/painellocador';
 
   return (
     <header className="bg-white border-b border-gray-100 px-8 py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
@@ -49,12 +40,35 @@ export function Header() {
           </button>
         )}
 
-        <button 
-          onClick={handleCriarAnuncio}
-          className="bg-[#00B795] text-white px-5 py-2 rounded-lg font-semibold hover:bg-[#006861] transition-colors cursor-pointer"
-        >
-          Criar Anúncio
-        </button>
+        {isLogado && (
+        <div className="flex items-center bg-[#05BFBE]/10 border border-[#05BFBE]/30 rounded-full p-1">
+          <button
+            onClick={() => navigate('/painellocatario')}
+            title="Modo Locatário"
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-semibold transition-colors cursor-pointer ${
+              noPainelLocatario
+                ? 'bg-white text-[#00639E] shadow-sm'
+                : 'text-[#006861]/70 hover:text-[#00B795]'
+            }`}
+          >
+            <LuShoppingBag size={16} /> Locatário
+          </button>
+
+          <div className="w-px h-5 bg-[#05BFBE]/40" />
+
+          <button
+            onClick={() => navigate('/painelLocador')}
+            title="Modo Locador"
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-semibold transition-colors cursor-pointer ${
+              noPainelLocador
+                ? 'bg-white text-[#00639E] shadow-sm'
+                : 'text-[#006861]/70 hover:text-[#00B795]'
+            }`}
+          >
+            <LuPackage size={16} /> Locador
+          </button>
+        </div>
+      )}
 
       </nav>
     </header>

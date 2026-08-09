@@ -5,6 +5,7 @@ const usuarioSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   senha: { type: String, required: true },
   telefone: { type: String, required: false },
+  bio: { type: String, default: "" },
   avatar: { type: String, default: "" },
   ativo: { type: Boolean, default: true}
 }, {

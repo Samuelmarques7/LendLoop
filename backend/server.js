@@ -54,6 +54,43 @@ app.get('/api/usuarios', async (req, res) => {
   }
 });
 
+// Buscar um usuário específico (usado em MeuPerfil)
+app.get('/api/usuarios/:id', async (req, res) => {
+  try {
+    const usuario = await Usuario.findById(req.params.id).select('-senha');
+    if (!usuario) {
+      return res.status(404).json({ erro: 'Usuário não encontrado' });
+    }
+    res.status(200).json(usuario);
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao buscar usuário' });
+  }
+});
+
+// Atualizar perfil (nome, telefone, bio, avatar)
+app.put('/api/usuarios/:id', async (req, res) => {
+  try {
+    const { nome, telefone, bio, avatar } = req.body;
+
+    const usuario = await Usuario.findByIdAndUpdate(
+      req.params.id,
+      { nome, telefone, bio, avatar },
+      { new: true, runValidators: true }
+    ).select('-senha');
+
+    if (!usuario) {
+      return res.status(404).json({ erro: 'Usuário não encontrado' });
+    }
+
+    res.status(200).json({
+      mensagem: 'Perfil atualizado com sucesso!',
+      usuario
+    });
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao atualizar perfil', detalhes: erro.message });
+  }
+});
+
 // Excluir conta (soft delete: anonimiza o usuário e apaga seus anúncios)
 app.delete('/api/usuarios/:id', async (req, res) => {
   try {
@@ -132,10 +169,10 @@ app.post('/api/upload', upload.array('fotos', 6), async (req, res) => {
 // Criar anúncio
 app.post('/api/anuncios', async (req, res) => {
   try {
-    const { titulo, descricao, categoria, subcategoria, fotos, endereco, disponivel, precos, status, locador } = req.body;
+    const { titulo, descricao, categoria, subcategorias, especificacoes, fotos, endereco, disponivel, precos, status, locador } = req.body;
 
     const novoAnuncio = new Anuncio({
-      titulo, descricao, categoria, subcategoria,
+      titulo, descricao, categoria, subcategorias, especificacoes,
       fotos, endereco, disponivel, precos,
       status, locador
     });
@@ -193,13 +230,29 @@ app.get('/api/anuncios/:id', async (req, res) => {
   }
 });
 
-// Listar anúncios de um locador específico (usado em PainelLocador)
 app.get('/api/anuncios/locador/:locadorId', async (req, res) => {
   try {
     const anuncios = await Anuncio.find({ locador: req.params.locadorId });
     res.status(200).json(anuncios);
   } catch (erro) {
     res.status(500).json({ erro: 'Erro ao buscar anúncios do locador' });
+  }
+});
+
+// Excluir anúncio (usado em PainelLocador)
+app.delete('/api/anuncios/:id', async (req, res) => {
+  try {
+    const anuncio = await Anuncio.findById(req.params.id);
+
+    if (!anuncio) {
+      return res.status(404).json({ erro: 'Anúncio não encontrado' });
+    }
+
+    await Anuncio.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({ mensagem: 'Anúncio excluído com sucesso.' });
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao excluir anúncio', detalhes: erro.message });
   }
 });
 
