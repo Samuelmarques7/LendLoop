@@ -22,7 +22,7 @@ function formatarMesAno(dataISO) {
 
 function urlAvatarPadrao(nome) {
   const nomeSeguro = (nome || 'Usuário').trim() || 'Usuário';
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(nomeSeguro)}&background=00B795&color=fff&size=150`;
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(nomeSeguro)}&background=29C354&color=fff&size=150`;
 }
 
 export default function MeuPerfil() {
@@ -207,7 +207,7 @@ export default function MeuPerfil() {
             <div className="flex flex-col gap-2">
               <button
                 onClick={abrirModalEdicao}
-                className="flex items-center gap-2 bg-white border border-gray-200 text-[#1A1A1A] font-bold px-6 py-2.5 rounded-xl hover:border-[#00B795] hover:text-[#00B795] transition-colors shadow-sm cursor-pointer"
+                className="flex items-center gap-2 bg-white border border-gray-200 text-[#1A1A1A] font-bold px-6 py-2.5 rounded-xl hover:border-[#29C354] hover:text-[#29C354] transition-colors shadow-sm cursor-pointer"
               >
                 <LuSettings size={16} /> Editar Perfil
               </button>
@@ -232,9 +232,9 @@ export default function MeuPerfil() {
               <div className="space-y-3">
                 <button
                   onClick={() => navigate('/painellocatario')}
-                  className="w-full flex items-center p-4 rounded-2xl border-2 border-transparent hover:border-[#00B795] bg-gray-50 hover:bg-[#00B795]/5 transition-all text-left group cursor-pointer"
+                  className="w-full flex items-center p-4 rounded-2xl border-2 border-transparent hover:border-[#29C354] bg-gray-50 hover:bg-[#29C354]/5 transition-all text-left group cursor-pointer"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-blue-100 text-[#00639E] flex items-center justify-center shrink-0 mr-4 group-hover:bg-[#00B795] group-hover:text-white transition-colors">
+                  <div className="w-12 h-12 rounded-xl bg-blue-100 text-[#0068F3] flex items-center justify-center shrink-0 mr-4 group-hover:bg-[#29C354] group-hover:text-white transition-colors">
                     <LuShoppingBag size={24} />
                   </div>
                   <div>
@@ -245,9 +245,9 @@ export default function MeuPerfil() {
 
                 <button
                   onClick={() => navigate('/painelLocador')}
-                  className="w-full flex items-center p-4 rounded-2xl border-2 border-transparent hover:border-[#00B795] bg-gray-50 hover:bg-[#00B795]/5 transition-all text-left group cursor-pointer"
+                  className="w-full flex items-center p-4 rounded-2xl border-2 border-transparent hover:border-[#29C354] bg-gray-50 hover:bg-[#29C354]/5 transition-all text-left group cursor-pointer"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-orange-100 text-orange-500 flex items-center justify-center shrink-0 mr-4 group-hover:bg-[#00B795] group-hover:text-white transition-colors">
+                  <div className="w-12 h-12 rounded-xl bg-orange-100 text-orange-500 flex items-center justify-center shrink-0 mr-4 group-hover:bg-[#29C354] group-hover:text-white transition-colors">
                     <LuPackage size={24} />
                   </div>
                   <div>
@@ -263,7 +263,7 @@ export default function MeuPerfil() {
               <ul className="space-y-4">
                 {usuario.telefone && (
                   <li className="flex items-center gap-3 text-sm text-[#1A1A1A] font-medium">
-                    <LuPhone className="text-[#00B795]" size={18} /> {usuario.telefone}
+                    <LuPhone className="text-[#29C354]" size={18} /> {usuario.telefone}
                   </li>
                 )}
               </ul>
@@ -318,7 +318,7 @@ export default function MeuPerfil() {
                   value={formEdicao.nome}
                   onChange={(e) => setFormEdicao({ ...formEdicao, nome: e.target.value })}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#05BFBE] outline-none text-[#1A1A1A]"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0297AA] outline-none text-[#1A1A1A]"
                 />
               </div>
 
@@ -329,7 +329,7 @@ export default function MeuPerfil() {
                   value={formEdicao.telefone}
                   onChange={(e) => setFormEdicao({ ...formEdicao, telefone: e.target.value })}
                   placeholder="(35) 99999-9999"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#05BFBE] outline-none text-[#1A1A1A]"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0297AA] outline-none text-[#1A1A1A]"
                 />
               </div>
 
@@ -340,14 +340,14 @@ export default function MeuPerfil() {
                   onChange={(e) => setFormEdicao({ ...formEdicao, bio: e.target.value })}
                   rows={4}
                   placeholder="Conte um pouco sobre você..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#05BFBE] outline-none text-[#1A1A1A] resize-none"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0297AA] outline-none text-[#1A1A1A] resize-none"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={salvando}
-                className={`w-full text-white font-bold py-3 rounded-lg transition-colors mt-2 shadow-md cursor-pointer ${salvando ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#00B795] hover:bg-[#006861]'}`}
+                className={`w-full text-white font-bold py-3 rounded-lg transition-colors mt-2 shadow-md cursor-pointer ${salvando ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#29C354] hover:bg-[#032D54]'}`}
               >
                 {salvando ? 'Salvando...' : 'Salvar Alterações'}
               </button>

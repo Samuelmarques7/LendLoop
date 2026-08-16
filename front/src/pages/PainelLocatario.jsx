@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiRequest } from '../services/api';
 import logo from '../assets/logo.png';
@@ -15,7 +15,8 @@ import {
   LuMailWarning,
   LuBell,
   LuX,
-  LuCircleCheckBig
+  LuCircleCheckBig,
+  LuArrowLeft
 } from "react-icons/lu";
 
 export default function PainelLocatario() {
@@ -24,29 +25,70 @@ export default function PainelLocatario() {
 
   const usuarioLogado = JSON.parse(localStorage.getItem('dadosUsuario'));
 
+  const [dadosLocatario, setDadosLocatario] = useState(null);
+
   const [abaAlugueis, setAbaAlugueis] = useState('andamento');
   const [abaPagamentos, setAbaPagamentos] = useState('pendentes');
 
-  const [solicitacoesEnviadas, setSolicitacoesEnviadas] = useState([]);
-  const [alugueis, setAlugueis] = useState({
-    andamento: [],
-    pendente: [],
-    concluido: []
-  });
-  const [pagamentos, setPagamentos] = useState({
-    pendentes: [],
-    confirmados: []
-  });
+  const [todosAlugueis, setTodosAlugueis] = useState([]);
+  const [pagamentos, setPagamentos] = useState([]);
+
+  useEffect(() => {
+    document.title = 'Painel Locatário';
+    return () => {
+      document.title = 'LendLoop';
+    };
+  }, []);
+
+  useEffect(() => {
+    async function buscarDadosLocatario() {
+      const dados = await apiRequest(`/api/usuarios/${usuarioLogado.id}`);
+      setDadosLocatario(dados);
+    }
+    buscarDadosLocatario();
+  }, []);
+
+  useEffect(() => {
+    async function buscarAlugueis() {
+      const dados = await apiRequest(`/api/alugueis/locatario/${usuarioLogado.id}`);
+      setTodosAlugueis(dados);
+    }
+    buscarAlugueis();
+  }, []);
+
+  useEffect(() => {
+    async function buscarPagamentos() {
+      const dados = await apiRequest(`/api/pagamentos/locatario/${usuarioLogado.id}`);
+      setPagamentos(dados);
+    }
+    buscarPagamentos();
+  }, []);
+
+  const solicitacoesEnviadas = useMemo(
+    () => todosAlugueis.filter(a => a.status === 'pendente'),
+    [todosAlugueis]
+  );
+
+  const alugueis = useMemo(() => ({
+    andamento: todosAlugueis.filter(a => a.status === 'aceito' || a.status === 'andamento'),
+    pendente: todosAlugueis.filter(a => a.status === 'pendente'),
+    concluido: todosAlugueis.filter(a => a.status === 'concluido'),
+  }), [todosAlugueis]);
+
+  const pagamentosPorAba = useMemo(() => ({
+    pendentes: pagamentos.filter(p => p.status === 'pendente' || p.status === 'atrasado'),
+    confirmados: pagamentos.filter(p => p.status === 'confirmado'),
+  }), [pagamentos]);
 
   const stats = [
-    { id: 1, titulo: "Próximos Aluguéis", valor: "0", icon: LuCalendar, color: "text-[#00639E]", bg: "bg-blue-50" },
+    { id: 1, titulo: "Próximos Aluguéis", valor: String(alugueis.andamento.length), icon: LuCalendar, color: "text-[#0068F3]", bg: "bg-blue-50" },
     { id: 2, titulo: "Solicitações Pendentes", valor: String(solicitacoesEnviadas.length), icon: LuMailWarning, color: "text-orange-500", bg: "bg-orange-50" },
-    { id: 3, titulo: "Pagamentos Pendentes", valor: `R$ ${pagamentos.pendentes.reduce((soma, p) => soma + p.valor, 0)}`, icon: LuWallet, color: "text-[#00B795]", bg: "bg-[#00B795]/10" },
-    { id: 4, titulo: "Mensagens Não Lidas", valor: "0", icon: LuMessageSquare, color: "text-[#05BFBE]", bg: "bg-[#05BFBE]/10" }
+    { id: 3, titulo: "Pagamentos Pendentes", valor: `R$ ${pagamentosPorAba.pendentes.reduce((soma, p) => soma + p.valor, 0).toFixed(2)}`, icon: LuWallet, color: "text-[#29C354]", bg: "bg-[#29C354]/10" },
+    { id: 4, titulo: "Mensagens Não Lidas", valor: "0", icon: LuMessageSquare, color: "text-[#0297AA]", bg: "bg-[#0297AA]/10" }
   ];
 
   const menuItems = [
-    { id: 'painel', label: 'Painel', icon: LuLayoutDashboard },
+    { id: 'painel', label: 'Painel Locatário', icon: LuLayoutDashboard },
     { id: 'alugueis', label: 'Meus Aluguéis', icon: LuPackage },
     { id: 'solicitacoes', label: 'Solicitações Enviadas', icon: LuSend },
     { id: 'pagamentos', label: 'Pagamentos', icon: LuWallet },
@@ -55,25 +97,37 @@ export default function PainelLocatario() {
     { id: 'config', label: 'Configurações', icon: LuSettings },
   ];
 
-  useEffect(() => {
-    async function buscarSolicitacoesEnviadas() {
-      const dados = await apiRequest(`/api/alugueis/locatario/${usuarioLogado.id}`);
-      setSolicitacoesEnviadas(dados.filter(s => s.status === 'pendente'));
+  function handleMenuClick(item) {
+    if (item.id === 'perfil') {
+      navigate('/meu-perfil');
+      return;
     }
-    buscarSolicitacoesEnviadas();
-  }, []);
+    setActiveTab(item.id);
+  }
 
- async function cancelarSolicitacao(id) {
+  async function cancelarSolicitacao(id) {
     try {
       await apiRequest(`/api/alugueis/${id}/status`, {
         method: 'PATCH',
-        body: {status: 'cancelado'}
+        body: { status: 'cancelado' }
       })
-    setSolicitacoesEnviadas(prev => prev.filter(s => s._id !== id));
-  } catch (e) {
-    alert(e.message);
+      setTodosAlugueis(prev => prev.filter(s => s._id !== id));
+    } catch (e) {
+      alert(e.message);
+    }
   }
- }
+
+  async function pagarAgora(id) {
+    try {
+      await apiRequest(`/api/pagamentos/${id}/status`, {
+        method: 'PATCH',
+        body: { status: 'confirmado' }
+      })
+      setPagamentos(prev => prev.map(p => p._id === id ? { ...p, status: 'confirmado' } : p));
+    } catch (e) {
+      alert(e.message);
+    }
+  }
 
   function renderConteudo() {
     switch (activeTab) {
@@ -81,14 +135,21 @@ export default function PainelLocatario() {
         return <SecaoPainel
           stats={stats}
           alugueis={alugueis}
-          pagamentos={pagamentos}
+          pagamentos={pagamentosPorAba}
           solicitacoesEnviadas={solicitacoesEnviadas}
           abaAlugueis={abaAlugueis}
           setAbaAlugueis={setAbaAlugueis}
           abaPagamentos={abaPagamentos}
           setAbaPagamentos={setAbaPagamentos}
           onCancelarSolicitacao={cancelarSolicitacao}
+          onPagarAgora={pagarAgora}
         />;
+      case 'alugueis':
+        return <SecaoAlugueis alugueis={alugueis} abaAlugueis={abaAlugueis} setAbaAlugueis={setAbaAlugueis} />;
+      case 'solicitacoes':
+        return <SecaoSolicitacoesEnviadas solicitacoesEnviadas={solicitacoesEnviadas} onCancelarSolicitacao={cancelarSolicitacao} />;
+      case 'pagamentos':
+        return <SecaoPagamentos pagamentos={pagamentosPorAba} abaPagamentos={abaPagamentos} setAbaPagamentos={setAbaPagamentos} onPagarAgora={pagarAgora} />;
       default:
         return (
           <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-12 text-center text-gray-400">
@@ -101,8 +162,9 @@ export default function PainelLocatario() {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] font-sans flex text-[#1A1A1A]">
-      <aside className="w-72 bg-white border-r border-gray-200 flex flex-col sticky top-0 h-screen shadow-sm z-10">
-        <div className="h-20 flex items-center px-8 border-b border-gray-100">
+      <aside className="w-72 bg-white border-r border-gray-100 flex flex-col sticky top-0 h-screen shadow-sm z-10">
+
+        <div className="h-20 flex items-center px-6 border-b border-gray-100">
           <img
             src={logo}
             alt="LendLoop"
@@ -111,37 +173,60 @@ export default function PainelLocatario() {
           />
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+        <div className="px-4 pt-4">
+          <button
+            onClick={() => navigate('/')}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-[#1A1A1A] hover:bg-gray-50 transition-all cursor-pointer"
+          >
+            <LuArrowLeft size={15} />
+            Voltar ao site
+          </button>
+        </div>
+
+        <nav className="flex-1 px-4 pt-2 pb-6 space-y-1 overflow-y-auto">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+                onClick={() => handleMenuClick(item)}
+                className={`group w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-bold transition-all cursor-pointer ${
                   isActive
-                    ? 'bg-[#1A1A1A] text-white shadow-md'
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-[#00B795]'
+                    ? 'bg-[#1A1A1A] text-white shadow-md shadow-black/10'
+                    : 'text-gray-500 hover:bg-gray-50 hover:text-[#1A1A1A]'
                 }`}
               >
-                <Icon size={18} className={isActive ? 'text-[#00B795]' : ''} />
+                <span className={`flex items-center justify-center w-8 h-8 rounded-xl transition-colors flex-shrink-0 ${
+                  isActive ? 'bg-[#0068F3] text-white' : 'bg-gray-100 text-gray-400 group-hover:bg-[#0068F3]/10 group-hover:text-[#0068F3]'
+                }`}>
+                  <Icon size={16} />
+                </span>
                 {item.label}
               </button>
             );
           })}
         </nav>
 
-        <div className="p-6 border-t border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#00639E] text-white flex items-center justify-center font-bold text-lg">
-              U
+        <div className="p-4 border-t border-gray-100">
+          <button
+            onClick={() => navigate('/meu-perfil')}
+            className="w-full flex items-center gap-3 p-2 rounded-2xl hover:bg-gray-50 transition-colors cursor-pointer"
+          >
+            <div className="w-11 h-11 rounded-full bg-[#0068F3] text-white flex items-center justify-center font-bold text-lg overflow-hidden flex-shrink-0 ring-2 ring-[#0068F3]/20">
+              {dadosLocatario?.avatar ? (
+                <img src={dadosLocatario.avatar} alt={dadosLocatario.nome} className="w-full h-full object-cover" />
+              ) : (
+                dadosLocatario?.nome?.charAt(0).toUpperCase() || 'U'
+              )}
             </div>
-            <div>
-              <p className="text-sm font-bold text-[#1A1A1A]">Usuário LendLoop</p>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Locatário</p>
+            <div className="text-left min-w-0">
+              <p className="text-sm font-bold text-[#1A1A1A] truncate">{dadosLocatario?.nome || 'Carregando...'}</p>
+              <span className="inline-block mt-0.5 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-[#0068F3]/10 text-[#0068F3]">
+                Locatário
+              </span>
             </div>
-          </div>
+          </button>
         </div>
       </aside>
 
@@ -151,7 +236,7 @@ export default function PainelLocatario() {
             {menuItems.find(i => i.id === activeTab)?.label}
           </h1>
           <div className="flex items-center gap-4">
-            <button className="p-2.5 rounded-full bg-gray-50 text-gray-500 hover:text-[#00B795] transition-colors relative cursor-pointer">
+            <button className="p-2.5 rounded-full bg-gray-50 text-gray-500 hover:text-[#29C354] transition-colors relative cursor-pointer">
               <LuBell size={20} />
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
@@ -166,7 +251,191 @@ export default function PainelLocatario() {
   );
 }
 
-function SecaoPainel({ stats, alugueis, pagamentos, solicitacoesEnviadas, abaAlugueis, setAbaAlugueis, abaPagamentos, setAbaPagamentos, onCancelarSolicitacao }) {
+function AbaFiltro({ abas, atual, onChange }) {
+  return (
+    <div className="flex gap-2">
+      {abas.map((aba) => (
+        <button
+          key={aba.key}
+          onClick={() => onChange(aba.key)}
+          className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
+            atual === aba.key
+              ? 'bg-[#1A1A1A] text-white'
+              : 'bg-gray-50 text-gray-400 hover:text-[#1A1A1A]'
+          }`}
+        >
+          {aba.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function ListaAlugueis({ alugueis, aba }) {
+  if (alugueis.length === 0) {
+    return (
+      <div className="p-8 text-center text-gray-400">
+        <LuCircleCheckBig size={32} className="mx-auto mb-2 opacity-30" />
+        <p className="text-sm font-bold">Nenhum aluguel nesta categoria</p>
+      </div>
+    );
+  }
+
+  return alugueis.map((aluguel) => (
+    <div key={aluguel._id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-colors group">
+      <div className="flex items-center gap-4 min-w-0">
+        {aluguel.anuncio?.fotos?.[0] ? (
+          <img src={aluguel.anuncio.fotos[0]} alt={aluguel.anuncio.titulo} className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
+        ) : (
+          <div className="w-12 h-12 bg-gray-200 rounded-xl flex-shrink-0"></div>
+        )}
+        <div className="min-w-0">
+          <h3 className="font-bold text-[#1A1A1A] text-sm group-hover:text-[#29C354] transition-colors truncate">{aluguel.anuncio?.titulo}</h3>
+          <p className="text-xs text-gray-400 font-medium mt-0.5">
+            {new Date(aluguel.dataInicio).toLocaleDateString('pt-BR')} - {new Date(aluguel.dataFim).toLocaleDateString('pt-BR')}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-4 shrink-0">
+        <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-md ${
+          aba === 'andamento' ? 'bg-[#29C354]/10 text-[#29C354]' :
+          aba === 'concluido' ? 'bg-gray-100 text-gray-500' :
+          'bg-orange-50 text-orange-500'
+        }`}>
+          {aluguel.status}
+        </span>
+
+        <span className="font-black text-[#1A1A1A] text-sm w-16 text-right">R$ {aluguel.precoTotal}</span>
+      </div>
+    </div>
+  ));
+}
+
+function SecaoAlugueis({ alugueis, abaAlugueis, setAbaAlugueis }) {
+  return (
+    <div className="animate-fade-in">
+      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+          <h2 className="text-lg font-bold text-[#1A1A1A]">Meus Aluguéis</h2>
+          <AbaFiltro
+            abas={[
+              { key: 'andamento', label: 'Em Andamento' },
+              { key: 'pendente', label: 'Pendente' },
+              { key: 'concluido', label: 'Concluído' }
+            ]}
+            atual={abaAlugueis}
+            onChange={setAbaAlugueis}
+          />
+        </div>
+        <div className="p-2">
+          <ListaAlugueis alugueis={alugueis[abaAlugueis]} aba={abaAlugueis} />
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function SecaoSolicitacoesEnviadas({ solicitacoesEnviadas, onCancelarSolicitacao }) {
+  return (
+    <div className="animate-fade-in">
+      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+        <div className="p-6 border-b border-gray-100">
+          <h2 className="text-lg font-bold text-[#1A1A1A]">Solicitações Enviadas</h2>
+        </div>
+        <div className="p-2 flex-grow">
+          {solicitacoesEnviadas.length === 0 ? (
+            <div className="p-8 text-center text-gray-400">
+              <LuCircleCheckBig size={32} className="mx-auto mb-2 opacity-30" />
+              <p className="text-sm font-bold">Nenhuma solicitação enviada</p>
+            </div>
+          ) : (
+            solicitacoesEnviadas.map((solicitacao) => (
+              <div key={solicitacao._id} className="p-4 hover:bg-gray-50 rounded-2xl transition-colors border border-transparent hover:border-gray-100 mb-2">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h3 className="font-bold text-[#1A1A1A] text-sm">{solicitacao.anuncio.titulo}</h3>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">
+                      {new Date(solicitacao.dataInicio).toLocaleDateString('pt-BR')} - {new Date(solicitacao.dataFim).toLocaleDateString('pt-BR')}
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest bg-orange-50 text-orange-500 px-3 py-1.5 rounded-md shrink-0">
+                    Pendente
+                  </span>
+                </div>
+                <button
+                  onClick={() => onCancelarSolicitacao(solicitacao._id)}
+                  className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 text-xs font-bold py-2.5 rounded-xl hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors cursor-pointer shadow-sm"
+                >
+                  <LuX size={14} /> Cancelar Solicitação
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function SecaoPagamentos({ pagamentos, abaPagamentos, setAbaPagamentos, onPagarAgora }) {
+  return (
+    <div className="animate-fade-in">
+      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+          <h2 className="text-lg font-bold text-[#1A1A1A]">Pagamentos</h2>
+          <AbaFiltro
+            abas={[
+              { key: 'pendentes', label: 'Pendentes' },
+              { key: 'confirmados', label: 'Confirmados' }
+            ]}
+            atual={abaPagamentos}
+            onChange={setAbaPagamentos}
+          />
+        </div>
+
+        <div className="p-2 flex-grow">
+          {pagamentos[abaPagamentos].length === 0 ? (
+            <div className="p-8 text-center text-gray-400">
+              <LuCircleCheckBig size={32} className="mx-auto mb-2 opacity-30" />
+              <p className="text-sm font-bold">Nenhum pagamento nesta categoria</p>
+            </div>
+          ) : (
+            pagamentos[abaPagamentos].map((pagamento) => (
+              <div key={pagamento._id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-colors">
+                <div className="min-w-0">
+                  <h3 className="font-bold text-[#1A1A1A] text-sm truncate">{pagamento.aluguel?.anuncio?.titulo || 'Aluguel'}</h3>
+                  <p className="text-xs text-gray-400 font-medium mt-0.5">Vencimento: {new Date(pagamento.vencimento).toLocaleDateString('pt-BR')}</p>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="font-black text-[#1A1A1A] text-sm">R$ {pagamento.valor}</span>
+
+                  {pagamento.status === 'atrasado' && (
+                    <span className="text-[10px] font-bold uppercase tracking-widest bg-red-50 text-red-500 px-2.5 py-1.5 rounded-md">
+                      Em atraso
+                    </span>
+                  )}
+
+                  {abaPagamentos === 'pendentes' && (
+                    <button
+                      onClick={() => onPagarAgora(pagamento._id)}
+                      className="bg-[#29C354] text-white text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-xl hover:bg-[#032D54] transition-colors cursor-pointer shadow-sm"
+                    >
+                      Pagar Agora
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function SecaoPainel({ stats, alugueis, pagamentos, solicitacoesEnviadas, abaAlugueis, setAbaAlugueis, abaPagamentos, setAbaPagamentos, onCancelarSolicitacao, onPagarAgora }) {
   return (
     <div className="animate-fade-in space-y-8">
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -189,64 +458,19 @@ function SecaoPainel({ stats, alugueis, pagamentos, solicitacoesEnviadas, abaAlu
       <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
           <h2 className="text-lg font-bold text-[#1A1A1A]">Meus Aluguéis</h2>
-          <div className="flex gap-2">
-            {[
+          <AbaFiltro
+            abas={[
               { key: 'andamento', label: 'Em Andamento' },
               { key: 'pendente', label: 'Pendente' },
               { key: 'concluido', label: 'Concluído' }
-            ].map((aba) => (
-              <button
-                key={aba.key}
-                onClick={() => setAbaAlugueis(aba.key)}
-                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
-                  abaAlugueis === aba.key
-                    ? 'bg-[#1A1A1A] text-white'
-                    : 'bg-gray-50 text-gray-400 hover:text-[#1A1A1A]'
-                }`}
-              >
-                {aba.label}
-              </button>
-            ))}
-          </div>
+            ]}
+            atual={abaAlugueis}
+            onChange={setAbaAlugueis}
+          />
         </div>
 
         <div className="p-2">
-          {alugueis[abaAlugueis].length === 0 ? (
-            <div className="p-8 text-center text-gray-400">
-              <LuCircleCheckBig size={32} className="mx-auto mb-2 opacity-30" />
-              <p className="text-sm font-bold">Nenhum aluguel nesta categoria</p>
-            </div>
-          ) : (
-            alugueis[abaAlugueis].map((aluguel) => (
-              <div key={aluguel._id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-colors group">
-                <div className="flex items-center gap-4 min-w-0">
-                  <div className="w-12 h-12 bg-gray-200 rounded-xl flex-shrink-0"></div>
-                  <div className="min-w-0">
-                    <h3 className="font-bold text-[#1A1A1A] text-sm group-hover:text-[#00B795] transition-colors truncate">{aluguel.anuncio.titulo}</h3>
-                    <p className="text-xs text-gray-400 font-medium mt-0.5">por {aluguel.locatario.nome} • {aluguel.periodo}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4 shrink-0">
-                  <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-md ${
-                    aluguel.status === 'Ativo' ? 'bg-[#00B795]/10 text-[#00B795]' :
-                    aluguel.status === 'Concluído' ? 'bg-gray-100 text-gray-500' :
-                    'bg-orange-50 text-orange-500'
-                  }`}>
-                    {aluguel.status}
-                  </span>
-
-                  <span className="font-black text-[#1A1A1A] text-sm w-16 text-right">R$ {aluguel.precoTotal}</span>
-
-                  {abaAlugueis === 'andamento' && (
-                    <button className="bg-[#1A1A1A] text-white text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-xl hover:bg-black transition-colors cursor-pointer shadow-sm">
-                      Item Devolvido
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))
-          )}
+          <ListaAlugueis alugueis={alugueis[abaAlugueis]} aba={abaAlugueis} />
         </div>
       </section>
 
@@ -267,7 +491,9 @@ function SecaoPainel({ stats, alugueis, pagamentos, solicitacoesEnviadas, abaAlu
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <h3 className="font-bold text-[#1A1A1A] text-sm">{solicitacao.anuncio.titulo}</h3>
-                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">{solicitacao.periodo}</p>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">
+                        {new Date(solicitacao.dataInicio).toLocaleDateString('pt-BR')}
+                      </p>
                     </div>
                     <span className="text-[10px] font-bold uppercase tracking-widest bg-orange-50 text-orange-500 px-3 py-1.5 rounded-md shrink-0">
                       Pendente
@@ -288,24 +514,14 @@ function SecaoPainel({ stats, alugueis, pagamentos, solicitacoesEnviadas, abaAlu
         <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
           <div className="p-6 border-b border-gray-100 flex justify-between items-center">
             <h2 className="text-lg font-bold text-[#1A1A1A]">Pagamentos</h2>
-            <div className="flex gap-2">
-              {[
+            <AbaFiltro
+              abas={[
                 { key: 'pendentes', label: 'Pendentes' },
                 { key: 'confirmados', label: 'Confirmados' }
-              ].map((aba) => (
-                <button
-                  key={aba.key}
-                  onClick={() => setAbaPagamentos(aba.key)}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
-                    abaPagamentos === aba.key
-                      ? 'bg-[#1A1A1A] text-white'
-                      : 'bg-gray-50 text-gray-400 hover:text-[#1A1A1A]'
-                  }`}
-                >
-                  {aba.label}
-                </button>
-              ))}
-            </div>
+              ]}
+              atual={abaPagamentos}
+              onChange={setAbaPagamentos}
+            />
           </div>
 
           <div className="p-2 flex-grow">
@@ -316,23 +532,26 @@ function SecaoPainel({ stats, alugueis, pagamentos, solicitacoesEnviadas, abaAlu
               </div>
             ) : (
               pagamentos[abaPagamentos].map((pagamento) => (
-                <div key={pagamento.id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-colors">
+                <div key={pagamento._id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-colors">
                   <div className="min-w-0">
-                    <h3 className="font-bold text-[#1A1A1A] text-sm truncate">{pagamento.item}</h3>
-                    <p className="text-xs text-gray-400 font-medium mt-0.5">Vencimento: {pagamento.vencimento}</p>
+                    <h3 className="font-bold text-[#1A1A1A] text-sm truncate">{pagamento.aluguel?.anuncio?.titulo || 'Aluguel'}</h3>
+                    <p className="text-xs text-gray-400 font-medium mt-0.5">Vencimento: {new Date(pagamento.vencimento).toLocaleDateString('pt-BR')}</p>
                   </div>
 
                   <div className="flex items-center gap-3 shrink-0">
                     <span className="font-black text-[#1A1A1A] text-sm">R$ {pagamento.valor}</span>
 
-                    {pagamento.emAtraso && (
+                    {pagamento.status === 'atrasado' && (
                       <span className="text-[10px] font-bold uppercase tracking-widest bg-red-50 text-red-500 px-2.5 py-1.5 rounded-md">
                         Em atraso
                       </span>
                     )}
 
                     {abaPagamentos === 'pendentes' && (
-                      <button className="bg-[#00B795] text-white text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-xl hover:bg-[#006861] transition-colors cursor-pointer shadow-sm">
+                      <button
+                        onClick={() => onPagarAgora(pagamento._id)}
+                        className="bg-[#29C354] text-white text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-xl hover:bg-[#032D54] transition-colors cursor-pointer shadow-sm"
+                      >
                         Pagar Agora
                       </button>
                     )}
