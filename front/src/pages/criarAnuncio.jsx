@@ -287,11 +287,11 @@ function CriarAnuncio ()
                             <div key={index} className='flex items-start'>
                                 <div className='flex flex-col items-center min-w-16'>
                                 
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold transition-all ${active ? 'bg-[#00B795]' : complete ? 'bg-[#1A1A1A]' : 'bg-gray-200'}`}>
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold transition-all ${active ? 'bg-[#29C354]' : complete ? 'bg-[#1A1A1A]' : 'bg-gray-200'}`}>
                                         {index + 1}
                                     </div>
 
-                                    <span className={`text-[10px] font-bold uppercase tracking-wider mt-1.5 ${active ? 'text-[#00B795]' : complete ? 'text-[#1A1A1A]' : 'text-gray-300'}`}>
+                                    <span className={`text-[10px] font-bold uppercase tracking-wider mt-1.5 ${active ? 'text-[#29C354]' : complete ? 'text-[#1A1A1A]' : 'text-gray-300'}`}>
                                         {nome}
                                     </span>
                                 </div>
@@ -367,7 +367,7 @@ function CriarAnuncio ()
                                         <button
                                             type='button'
                                             onClick={adicionarSubcategoria}
-                                            className='px-4 rounded-xl bg-[#00B795]/10 text-[#00B795] font-bold hover:bg-[#00B795]/20 transition-colors cursor-pointer'
+                                            className='px-4 rounded-xl bg-[#29C354]/10 text-[#29C354] font-bold hover:bg-[#29C354]/20 transition-colors cursor-pointer'
                                         >
                                             +
                                         </button>
@@ -444,7 +444,7 @@ function CriarAnuncio ()
                             <button
                                 type='button'
                                 onClick={adicionarEspecificacao}
-                                className='text-sm font-bold text-[#00B795] hover:text-[#006861] transition-colors cursor-pointer'
+                                className='text-sm font-bold text-[#29C354] hover:text-[#032D54] transition-colors cursor-pointer'
                             >
                                 + Adicionar especificação
                             </button>
@@ -475,7 +475,7 @@ function CriarAnuncio ()
                                 }}
                             />
 
-                            <div className="border-2 border-dashed border-gray-200 hover:border-[#00B795] rounded-2xl p-4 transition-all">
+                            <div className="border-2 border-dashed border-gray-200 hover:border-[#29C354] rounded-2xl p-4 transition-all">
     
                                 {fotos.length > 0 ? (
                                     <div className="grid grid-cols-3 gap-3 mb-4">
@@ -501,7 +501,7 @@ function CriarAnuncio ()
                                             <div
                                                 key={`vazio-${i}`}
                                                 onClick={() => inputFotoRef.current.click()}
-                                                className="h-32 rounded-xl border border-dashed border-gray-200 flex items-center justify-center text-gray-300 text-xl cursor-pointer hover:border-[#00B795] hover:text-[#00B795] transition-all"
+                                                className="h-32 rounded-xl border border-dashed border-gray-200 flex items-center justify-center text-gray-300 text-xl cursor-pointer hover:border-[#29C354] hover:text-[#29C354] transition-all"
                                             >
                                                 +
                                             </div>
@@ -513,7 +513,7 @@ function CriarAnuncio ()
                                             <div
                                                 key={`vazio-${i}`}
                                                 onClick={() => inputFotoRef.current.click()}
-                                                className="h-32 rounded-xl border border-dashed border-gray-200 flex items-center justify-center text-gray-300 text-xl cursor-pointer hover:border-[#00B795] hover:text-[#00B795] transition-all"
+                                                className="h-32 rounded-xl border border-dashed border-gray-200 flex items-center justify-center text-gray-300 text-xl cursor-pointer hover:border-[#29C354] hover:text-[#29C354] transition-all"
                                             >
                                                 +
                                             </div>
@@ -523,9 +523,9 @@ function CriarAnuncio ()
 
                                 <div 
                                     onClick={() => inputFotoRef.current.click()}
-                                    className="flex flex-col items-center justify-center py-4 cursor-pointer hover:bg-[#00B795]/5 rounded-xl transition-all"
+                                    className="flex flex-col items-center justify-center py-4 cursor-pointer hover:bg-[#29C354]/5 rounded-xl transition-all"
                                 >
-                                    <p className="text-[#006861] font-semibold text-sm">
+                                    <p className="text-[#032D54] font-semibold text-sm">
                                         {fotos.length > 0 ? '+ Adicionar mais fotos' : 'Clique em qualquer quadro para adicionar fotos'}
                                     </p>
                                     <p className="text-gray-400 text-xs mt-1">PNG, JPG até 5MB</p>
@@ -608,7 +608,7 @@ function CriarAnuncio ()
                                     <div className = 'flex items-center gap-2 mt-2'>    
                                         <input 
                                             type='checkbox'
-                                            className="w-5 h-5 accent-[#00B795] cursor-pointer"
+                                            className="w-5 h-5 accent-[#29C354] cursor-pointer"
                                             checked={endereco.semComplemento}
                                             onChange={(e) => setEndereco({
                                                 ...endereco, semComplemento: e.target.checked,
@@ -661,7 +661,7 @@ function CriarAnuncio ()
                                         backgroundSize: '24px 24px'
                                     }}></div>
                                     <div className="relative flex flex-col items-center gap-2 text-center px-4">
-                                        <div className="w-10 h-10 rounded-full bg-[#00B795] flex items-center justify-center shadow-lg">
+                                        <div className="w-10 h-10 rounded-full bg-[#29C354] flex items-center justify-center shadow-lg">
                                             <div className="w-3 h-3 rounded-full bg-white"></div>
                                         </div>
                                         <p className="text-sm font-bold text-[#1A1A1A]">
@@ -692,15 +692,15 @@ function CriarAnuncio ()
                                 selected={disponivel}
                                 onSelect={setDisponivel}
                                 classNames={{
-                                    day_selected: 'bg-[#00B795] text-white rounded-lg',
-                                    day_today: 'font-bold text-[#00639E]'
+                                    day_selected: 'bg-[#29C354] text-white rounded-lg',
+                                    day_today: 'font-bold text-[#0068F3]'
                                 }}
                             />
                         </div>
 
                         {console.log(disponivel)}
 
-                        <p className="text-center text-[#00B795] font-semibold mb-4">
+                        <p className="text-center text-[#29C354] font-semibold mb-4">
                             {disponivel.length} {disponivel.length === 1 ? 'dia selecionado' : 'dias selecionados'}
                         </p>
 
@@ -745,7 +745,7 @@ function CriarAnuncio ()
                             <div className='flex items-center gap-2 mb-6'>
                                 <input
                                     type='checkbox'
-                                    className="w-5 h-5 accent-[#00B795] cursor-pointer"
+                                    className="w-5 h-5 accent-[#29C354] cursor-pointer"
                                     checked={precos.exigirCaucao}
                                     onChange={(e) => setPrecos({...precos, exigirCaucao: e.target.checked})}
                                 />
@@ -814,7 +814,7 @@ function CriarAnuncio ()
                         <div className="flex justify-between items-center">
                             <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
                             <div className="flex gap-4">
-                                <button onClick={handleRascunho} className='bg-transparent border-2 border-[#00B795] text-[#00B795] hover:text-[#006861] hover:border-[#006861] px-6 py-2 rounded-lg font-bold transition-all cursor-pointer uppercase tracking-widest'>Salvar como rascunho</button>
+                                <button onClick={handleRascunho} className='bg-transparent border-2 border-[#29C354] text-[#29C354] hover:text-[#032D54] hover:border-[#032D54] px-6 py-2 rounded-lg font-bold transition-all cursor-pointer uppercase tracking-widest'>Salvar como rascunho</button>
                                 <button onClick={handlePublicar} className='btn-next'>Publicar Anúncio</button>
                             </div>
                         </div>

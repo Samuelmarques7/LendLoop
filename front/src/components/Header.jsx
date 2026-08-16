@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LuShoppingBag, LuPackage } from 'react-icons/lu';
-import logo from '../assets/logo.png';
+import logo from '../assets/logocompleta.png';
 
 export function Header() {
   const navigate = useNavigate();
@@ -16,7 +16,7 @@ export function Header() {
       <img
         src={logo}
         alt="LendLoop"
-        className="h-19 w-auto cursor-pointer"
+        className="h-14 w-auto cursor-pointer"
         onClick={() => navigate('/')}
       />
 
@@ -26,7 +26,7 @@ export function Header() {
           <div className="flex items-center gap-4">       
             <button 
               onClick={() => navigate('/meu-perfil')}
-              className="text-[#006861] hover:text-[#00B795] font-semibold transition-colors cursor-pointer"
+              className="text-[#032D54] hover:text-[#29C354] font-semibold transition-colors cursor-pointer"
             >
               Meu Perfil
             </button>
@@ -34,35 +34,35 @@ export function Header() {
         ) : (
           <button 
             onClick={() => navigate('/login')}
-            className="text-[#006861] hover:text-[#00B795] font-semibold transition-colors cursor-pointer"
+            className="text-[#032D54] hover:text-[#29C354] font-semibold transition-colors cursor-pointer"
           >
             Entrar
           </button>
         )}
 
         {isLogado && (
-        <div className="flex items-center bg-[#05BFBE]/10 border border-[#05BFBE]/30 rounded-full p-1">
+        <div className="flex items-center bg-[#0297AA]/10 border border-[#0297AA]/30 rounded-full p-1">
           <button
             onClick={() => navigate('/painellocatario')}
             title="Modo Locatário"
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-semibold transition-colors cursor-pointer ${
               noPainelLocatario
-                ? 'bg-white text-[#00639E] shadow-sm'
-                : 'text-[#006861]/70 hover:text-[#00B795]'
+                ? 'bg-white text-[#0068F3] shadow-sm'
+                : 'text-[#032D54]/70 hover:text-[#29C354]'
             }`}
           >
             <LuShoppingBag size={16} /> Locatário
           </button>
 
-          <div className="w-px h-5 bg-[#05BFBE]/40" />
+          <div className="w-px h-5 bg-[#0297AA]/40" />
 
           <button
             onClick={() => navigate('/painelLocador')}
             title="Modo Locador"
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-semibold transition-colors cursor-pointer ${
               noPainelLocador
-                ? 'bg-white text-[#00639E] shadow-sm'
-                : 'text-[#006861]/70 hover:text-[#00B795]'
+                ? 'bg-white text-[#0068F3] shadow-sm'
+                : 'text-[#032D54]/70 hover:text-[#29C354]'
             }`}
           >
             <LuPackage size={16} /> Locador

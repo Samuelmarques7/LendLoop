@@ -59,7 +59,7 @@ export function ResultadosBusca() {
               <h1 className="text-2xl font-bold text-[#1A1A1A]">Resultados da Busca</h1>
               <p className="text-gray-400 text-sm mt-1">Ferramentas disponíveis na sua região</p>
             </div>
-            <span className="text-[#00639E] text-[10px] font-bold bg-blue-50 px-3 py-1.5 rounded-full uppercase tracking-wider">
+            <span className="text-[#0068F3] text-[10px] font-bold bg-blue-50 px-3 py-1.5 rounded-full uppercase tracking-wider">
               {produtos.length} itens encontrados
             </span>
           </div>
@@ -74,7 +74,7 @@ export function ResultadosBusca() {
                   placeholder="Ex: Furadeira, Barraca..." 
                   value={busca}
                   onChange={(e) => setBusca(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm focus:ring-2 focus:ring-[#00B795]/20 focus:border-[#00B795] outline-none transition-all" />
+                  className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm focus:ring-2 focus:ring-[#29C354]/20 focus:border-[#29C354] outline-none transition-all" />
               </div>
             </div>
 
@@ -86,7 +86,7 @@ export function ResultadosBusca() {
                   type="date" 
                   value={dataInicio}
                   onChange={(e) => setDataInicio(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm outline-none focus:border-[#00B795] cursor-pointer" />
+                  className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm outline-none focus:border-[#29C354] cursor-pointer" />
               </div>
             </div>
 
@@ -98,14 +98,14 @@ export function ResultadosBusca() {
                   type="date" 
                   value={dataFim}
                   onChange={(e) => setDataFim(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm outline-none focus:border-[#00B795] cursor-pointer" />
+                  className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm outline-none focus:border-[#29C354] cursor-pointer" />
               </div>
             </div>
 
             <div className="md:col-span-3 flex items-end">
               <button 
                 type="submit"
-                className="w-full bg-[#00B795] text-white font-bold py-3.5 rounded-xl hover:bg-[#006861] transition-all shadow-sm active:scale-[0.98] cursor-pointer">
+                className="w-full bg-[#29C354] text-white font-bold py-3.5 rounded-xl hover:bg-[#032D54] transition-all shadow-sm active:scale-[0.98] cursor-pointer">
                 Atualizar Busca
               </button>
             </div>
@@ -126,7 +126,7 @@ export function ResultadosBusca() {
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
                 <h3 className="font-bold text-lg text-[#1A1A1A]">Filtros</h3>
-                <button className="text-xs text-gray-400 hover:text-[#00B795] transition-colors cursor-pointer">
+                <button className="text-xs text-gray-400 hover:text-[#29C354] transition-colors cursor-pointer">
                     Limpar tudo
                 </button>
                 </div>
@@ -135,8 +135,8 @@ export function ResultadosBusca() {
                 <div className="border-b border-gray-50 pb-4">
                     <h4 className="text-sm font-bold text-[#1A1A1A] mb-3">Faixa de Preço</h4>
                     <div className="flex items-center gap-2">
-                    <input type="text" placeholder="Mín" className="w-full border border-gray-100 bg-gray-50 rounded-lg p-2 text-xs outline-none focus:bg-white focus:border-[#00B795]" />
-                    <input type="text" placeholder="Máx" className="w-full border border-gray-100 bg-gray-50 rounded-lg p-2 text-xs outline-none focus:bg-white focus:border-[#00B795]" />
+                    <input type="text" placeholder="Mín" className="w-full border border-gray-100 bg-gray-50 rounded-lg p-2 text-xs outline-none focus:bg-white focus:border-[#29C354]" />
+                    <input type="text" placeholder="Máx" className="w-full border border-gray-100 bg-gray-50 rounded-lg p-2 text-xs outline-none focus:bg-white focus:border-[#29C354]" />
                     </div>
                     <p className="text-[10px] text-gray-300 mt-2 uppercase tracking-widest">Por dia</p>
                 </div>
@@ -148,7 +148,7 @@ export function ResultadosBusca() {
                     min="1" 
                     max="50" 
                     defaultValue="15" 
-                    className="w-full h-1.5 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-[#00B795]" 
+                    className="w-full h-1.5 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-[#29C354]" 
                     />
                     <div className="flex justify-between mt-2">
                     <span className="text-[10px] text-gray-400 uppercase tracking-widest">1 km</span>
@@ -161,7 +161,7 @@ export function ResultadosBusca() {
                     <div className="space-y-2">
                     {['Ferramentas', 'Eletrônicos', 'Casa & Jardim', 'Esportes'].map((cat, idx) => (
                         <label key={cat} className="flex items-center gap-3 text-sm text-gray-500 cursor-pointer group">
-                        <input type="checkbox" className="w-4 h-4 rounded border-gray-300 accent-[#00B795] cursor-pointer" />
+                        <input type="checkbox" className="w-4 h-4 rounded border-gray-300 accent-[#29C354] cursor-pointer" />
                         <span className="group-hover:text-[#1A1A1A] transition-colors">{cat}</span>
                         </label>
                     ))}
@@ -173,7 +173,7 @@ export function ResultadosBusca() {
                     <div className="space-y-2">
                     {[4.5, 4.0, 3.5].map((rate) => (
                         <label key={rate} className="flex items-center gap-3 text-sm text-gray-500 cursor-pointer group">
-                        <input type="radio" name="rating" className="w-4 h-4 accent-[#00B795] cursor-pointer" />
+                        <input type="radio" name="rating" className="w-4 h-4 accent-[#29C354] cursor-pointer" />
                         <span className="group-hover:text-[#1A1A1A] flex items-center gap-1.5 transition-colors">
                             <LuStar size={14} className="text-yellow-400" fill="currentColor"/> {rate}+ estrelas
                         </span>
@@ -186,11 +186,11 @@ export function ResultadosBusca() {
                     <h4 className="text-sm font-bold text-[#1A1A1A] mb-3">Disponibilidade</h4>
                     <div className="space-y-2">
                     <label className="flex items-center gap-3 text-sm text-gray-500 cursor-pointer group">
-                        <input type="checkbox" className="w-4 h-4 rounded border-gray-300 accent-[#00B795] cursor-pointer" />
+                        <input type="checkbox" className="w-4 h-4 rounded border-gray-300 accent-[#29C354] cursor-pointer" />
                         <span className="group-hover:text-[#1A1A1A] transition-colors">Reserva instantânea</span>
                     </label>
                     <label className="flex items-center gap-3 text-sm text-gray-500 cursor-pointer group">
-                        <input type="checkbox" className="w-4 h-4 rounded border-gray-300 accent-[#00B795] cursor-pointer" />
+                        <input type="checkbox" className="w-4 h-4 rounded border-gray-300 accent-[#29C354] cursor-pointer" />
                         <span className="group-hover:text-[#1A1A1A] transition-colors">Retirada no mesmo dia</span>
                     </label>
                     </div>
@@ -210,7 +210,7 @@ export function ResultadosBusca() {
                 <p className="text-gray-400 max-w-md">
                   Ainda não temos itens disponíveis com esses filtros na sua região. Tente buscar por outra categoria ou limpar os filtros atuais.
                 </p>
-                <button className="mt-6 border-2 border-[#00B795] text-[#00B795] px-6 py-2.5 rounded-xl font-bold hover:bg-[#00B795]/10 transition-colors cursor-pointer">
+                <button className="mt-6 border-2 border-[#29C354] text-[#29C354] px-6 py-2.5 rounded-xl font-bold hover:bg-[#29C354]/10 transition-colors cursor-pointer">
                   Limpar Filtros
                 </button>
               </div>
@@ -234,7 +234,7 @@ export function ResultadosBusca() {
                     <div className="p-6 flex-grow flex flex-col justify-between">
                       <div>
                         <div className="flex justify-between items-start gap-4">
-                          <h2 className="text-xl font-bold text-[#1A1A1A] group-hover:text-[#00B795] transition-colors leading-tight">
+                          <h2 className="text-xl font-bold text-[#1A1A1A] group-hover:text-[#29C354] transition-colors leading-tight">
                             {produto.titulo}
                           </h2>
                           <div className="flex items-center gap-1.5 text-xs font-bold text-gray-600 bg-gray-50 border border-gray-100 px-2.5 py-1.5 rounded-lg shrink-0">
@@ -246,10 +246,10 @@ export function ResultadosBusca() {
                         </p>
                       </div>
                       
-                      <div className="mt-4 flex flex-wrap gap-5 text-[10px] font-bold text-[#00639E] uppercase tracking-wider">
-                        <span className="flex items-center gap-1.5"><LuMapPin size={15} className="text-[#00B795]"/> {produto.distancia}</span>
-                        <span className="flex items-center gap-1.5"><LuUser size={15} className="text-[#00B795]"/> {produto.locador?.nome || 'Anunciante removido'}</span>
-                        <span className="text-[#05BFBE] flex items-center gap-1.5"><LuZap size={15}/> {produto.status}</span>
+                      <div className="mt-4 flex flex-wrap gap-5 text-[10px] font-bold text-[#0068F3] uppercase tracking-wider">
+                        <span className="flex items-center gap-1.5"><LuMapPin size={15} className="text-[#29C354]"/> {produto.distancia}</span>
+                        <span className="flex items-center gap-1.5"><LuUser size={15} className="text-[#29C354]"/> {produto.locador?.nome || 'Anunciante removido'}</span>
+                        <span className="text-[#0297AA] flex items-center gap-1.5"><LuZap size={15}/> {produto.status}</span>
                       </div>
                     </div>
                     
@@ -266,7 +266,7 @@ export function ResultadosBusca() {
                         </button>
                         <button 
                           onClick={() => navigate(`/produto/${produto._id}`)}
-                          className="w-full bg-white border border-gray-200 text-[#1A1A1A] text-[10px] font-bold py-2 rounded-lg hover:border-[#00B795] hover:text-[#00B795] transition-all uppercase tracking-wider cursor-pointer"
+                          className="w-full bg-white border border-gray-200 text-[#1A1A1A] text-[10px] font-bold py-2 rounded-lg hover:border-[#29C354] hover:text-[#29C354] transition-all uppercase tracking-wider cursor-pointer"
                         >
                           Ver detalhes
                         </button>
@@ -276,15 +276,15 @@ export function ResultadosBusca() {
                 ))}
 
                 <div className="flex justify-center items-center gap-2 mt-6 py-4">
-                  <button className="p-2 border border-gray-200 rounded-xl hover:bg-white hover:border-[#00B795] text-gray-400 hover:text-[#00B795] transition-all cursor-pointer">
+                  <button className="p-2 border border-gray-200 rounded-xl hover:bg-white hover:border-[#29C354] text-gray-400 hover:text-[#29C354] transition-all cursor-pointer">
                     <LuChevronLeft size={18} />
                   </button>
                   <button className="w-10 h-10 bg-[#1A1A1A] text-white rounded-xl font-bold shadow-lg active:scale-95 cursor-pointer">1</button>
-                  <button className="w-10 h-10 border border-gray-100 bg-white text-gray-400 rounded-xl font-bold hover:border-[#00B795] hover:text-[#00B795] transition-all active:scale-95 cursor-pointer">2</button>
-                  <button className="w-10 h-10 border border-gray-100 bg-white text-gray-400 rounded-xl font-bold hover:border-[#00B795] hover:text-[#00B795] transition-all active:scale-95 cursor-pointer">3</button>
+                  <button className="w-10 h-10 border border-gray-100 bg-white text-gray-400 rounded-xl font-bold hover:border-[#29C354] hover:text-[#29C354] transition-all active:scale-95 cursor-pointer">2</button>
+                  <button className="w-10 h-10 border border-gray-100 bg-white text-gray-400 rounded-xl font-bold hover:border-[#29C354] hover:text-[#29C354] transition-all active:scale-95 cursor-pointer">3</button>
                   <span className="text-gray-300 font-bold px-1">...</span>
-                  <button className="w-10 h-10 border border-gray-100 bg-white text-gray-400 rounded-xl font-bold hover:border-[#00B795] hover:text-[#00B795] transition-all active:scale-95 cursor-pointer">12</button>
-                  <button className="p-2 border border-gray-200 rounded-xl hover:bg-white hover:border-[#00B795] text-gray-400 hover:text-[#00B795] transition-all cursor-pointer">
+                  <button className="w-10 h-10 border border-gray-100 bg-white text-gray-400 rounded-xl font-bold hover:border-[#29C354] hover:text-[#29C354] transition-all active:scale-95 cursor-pointer">12</button>
+                  <button className="p-2 border border-gray-200 rounded-xl hover:bg-white hover:border-[#29C354] text-gray-400 hover:text-[#29C354] transition-all cursor-pointer">
                     <LuChevronRight size={18} />
                   </button>
                 </div>
