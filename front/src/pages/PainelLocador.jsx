@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { apiRequest } from '../services/api';
 import logo from '../assets/logo.png'; 
 
@@ -37,6 +37,7 @@ const PAINEIS_DISPONIVEIS = [
 export default function PainelLocador() {
   const [activeTab, setActiveTab] = useState(() => localStorage.getItem('painelPadrao') || 'painel');
   const navigate = useNavigate(); 
+  const location = useLocation();
 
   const [alugueis, setAlugueis] = useState([]);
   const [meusAnuncios, setMeusAnuncios] = useState([]);
@@ -50,6 +51,18 @@ export default function PainelLocador() {
       document.title = 'LendLoop';
     };
   }, []);
+
+  useEffect(() => {
+    if (usuarioLogado?.objetivo === 'locatario') {
+      navigate('/painellocatario', { replace: true });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (location.state?.abrirConfig) {
+      setActiveTab('config');
+    }
+  }, [location.state]);
 
   useEffect(() => {
     async function buscarDadosLocador() {
@@ -125,7 +138,6 @@ export default function PainelLocador() {
     { id: 'ganhos', label: 'Ganhos', icon: LuTrendingUp },
     { id: 'mensagens', label: 'Mensagens', icon: LuMessageSquare },
     { id: 'perfil', label: 'Perfil', icon: LuUser },
-    { id: 'config', label: 'Configurações', icon: LuSettings },
   ];
 
   function handleMenuClick(item) {
@@ -196,6 +208,24 @@ export default function PainelLocador() {
     }
   }
 
+  async function alterarObjetivo(novoObjetivo) {
+    try {
+      const data = await apiRequest(`/api/usuarios/${usuarioLogado.id}`, {
+        method: 'PUT',
+        body: { objetivo: novoObjetivo }
+      });
+
+      localStorage.setItem('dadosUsuario', JSON.stringify({ ...usuarioLogado, objetivo: data.usuario.objetivo }));
+      setDadosLocador(data.usuario);
+
+      if (novoObjetivo === 'locatario') {
+        navigate('/painellocatario', { replace: true });
+      }
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
   function renderConteudo() {
     switch (activeTab) {
       case 'painel':
@@ -235,6 +265,8 @@ export default function PainelLocador() {
       case 'config':
         return <SecaoConfiguracoes
           activeTab={activeTab}
+          objetivoAtual={usuarioLogado?.objetivo || 'ambos'}
+          onAlterarObjetivo={alterarObjetivo}
           onSalvarPainelPadrao={salvarPainelPadrao}
           onExcluirConta={excluirConta}
         />;
@@ -321,12 +353,21 @@ export default function PainelLocador() {
       <main className="flex-1 flex flex-col h-screen overflow-y-auto">
         <header className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-200 flex items-center justify-between px-8 sticky top-0 z-10">
           <h1 className="text-xl font-bold text-[#1A1A1A] capitalize">
-            {menuItems.find(i => i.id === activeTab)?.label}
+            {activeTab === 'config' ? 'Configurações' : menuItems.find(i => i.id === activeTab)?.label}
           </h1>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <button className="p-2.5 rounded-full bg-gray-50 text-gray-500 hover:text-[#29C354] transition-colors relative cursor-pointer">
               <LuBell size={20} />
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+            </button>
+            <button
+              onClick={() => setActiveTab('config')}
+              title="Configurações"
+              className={`p-2.5 rounded-full transition-colors cursor-pointer ${
+                activeTab === 'config' ? 'bg-[#29C354]/10 text-[#29C354]' : 'bg-gray-50 text-gray-500 hover:text-[#29C354]'
+              }`}
+            >
+              <LuSettings size={20} />
             </button>
           </div>
         </header>
@@ -600,8 +641,9 @@ function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, 
   );
 }
 
-function SecaoConfiguracoes({ onSalvarPainelPadrao, onExcluirConta }) {
+function SecaoConfiguracoes({ onSalvarPainelPadrao, onExcluirConta, objetivoAtual, onAlterarObjetivo }) {
   const [painelPadrao, setPainelPadrao] = useState(() => localStorage.getItem('painelPadrao') || 'painel');
+  const [salvandoObjetivo, setSalvandoObjetivo] = useState(false);
 
   function handleChangePainelPadrao(e) {
     const valor = e.target.value;
@@ -609,8 +651,46 @@ function SecaoConfiguracoes({ onSalvarPainelPadrao, onExcluirConta }) {
     onSalvarPainelPadrao(valor);
   }
 
+  async function handleAlterarObjetivo(valor) {
+    if (valor === objetivoAtual) return;
+    setSalvandoObjetivo(true);
+    await onAlterarObjetivo(valor);
+    setSalvandoObjetivo(false);
+  }
+
+  const opcoesObjetivo = [
+    { valor: 'ambos', titulo: 'Ambos', descricao: 'Quero alugar e também disponibilizar meus itens' },
+    { valor: 'locatario', titulo: 'Apenas Alugar', descricao: 'Quero procurar itens para pegar emprestado' },
+    { valor: 'locador', titulo: 'Apenas Disponibilizar', descricao: 'Quero colocar meus itens na plataforma para render uma grana' },
+  ];
+
   return (
     <div className="animate-fade-in space-y-8">
+      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-gray-100">
+          <h2 className="text-lg font-bold text-[#1A1A1A]">Tipo de Conta</h2>
+          <p className="text-xs text-gray-400 mt-1">Mudou de ideia? Ajuste aqui o que você quer fazer no LendLoop.</p>
+        </div>
+        <div className="p-6 space-y-3">
+          {opcoesObjetivo.map((op) => (
+            <div
+              key={op.valor}
+              onClick={() => handleAlterarObjetivo(op.valor)}
+              className={`p-4 border rounded-2xl cursor-pointer transition-all ${
+                objetivoAtual === op.valor
+                  ? 'border-[#29C354] bg-[#29C354]/10 ring-1 ring-[#29C354]'
+                  : 'border-gray-200 hover:border-[#29C354]/50'
+              } ${salvandoObjetivo ? 'opacity-60 pointer-events-none' : ''}`}
+            >
+              <span className={`block text-sm font-bold ${objetivoAtual === op.valor ? 'text-[#032D54]' : 'text-[#1A1A1A]'}`}>
+                {op.titulo}
+              </span>
+              <span className="block text-xs text-gray-500 mt-0.5">{op.descricao}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-gray-100">
           <h2 className="text-lg font-bold text-[#1A1A1A]">Preferências</h2>

@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LuShoppingBag, LuPackage } from 'react-icons/lu';
+import { LuShoppingBag, LuPackage, LuSettings } from 'react-icons/lu';
 import logo from '../assets/logocompleta.png';
 
 export function Header() {
@@ -7,8 +7,23 @@ export function Header() {
   const location = useLocation();
 
   const isLogado = localStorage.getItem('usuarioLogado') === 'true';
+  const dadosUsuario = JSON.parse(localStorage.getItem('dadosUsuario') || 'null');
+  const objetivo = dadosUsuario?.objetivo || 'ambos';
+
   const noPainelLocatario = location.pathname.toLowerCase() === '/painellocatario';
   const noPainelLocador = location.pathname.toLowerCase() === '/painellocador';
+
+  function abrirConfiguracoes() {
+    if (objetivo === 'locador') {
+      navigate('/painelLocador', { state: { abrirConfig: true } });
+    } else if (objetivo === 'locatario') {
+      navigate('/painellocatario', { state: { abrirConfig: true } });
+    } else if (noPainelLocador) {
+      navigate('/painelLocador', { state: { abrirConfig: true } });
+    } else {
+      navigate('/painellocatario', { state: { abrirConfig: true } });
+    }
+  }
 
   return (
     <header className="bg-white border-b border-gray-100 px-8 py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
@@ -40,7 +55,7 @@ export function Header() {
           </button>
         )}
 
-        {isLogado && (
+        {isLogado && objetivo === 'ambos' && (
         <div className="flex items-center bg-[#0297AA]/10 border border-[#0297AA]/30 rounded-full p-1">
           <button
             onClick={() => navigate('/painellocatario')}
@@ -69,6 +84,36 @@ export function Header() {
           </button>
         </div>
       )}
+
+        {isLogado && objetivo === 'locatario' && (
+          <button
+            onClick={() => navigate('/painellocatario')}
+            title="Painel Locatário"
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-semibold bg-[#0297AA]/10 border border-[#0297AA]/30 text-[#0068F3] hover:bg-[#0297AA]/20 transition-colors cursor-pointer"
+          >
+            <LuShoppingBag size={16} /> Painel Locatário
+          </button>
+        )}
+
+        {isLogado && objetivo === 'locador' && (
+          <button
+            onClick={() => navigate('/painelLocador')}
+            title="Painel Locador"
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-semibold bg-[#0297AA]/10 border border-[#0297AA]/30 text-[#0068F3] hover:bg-[#0297AA]/20 transition-colors cursor-pointer"
+          >
+            <LuPackage size={16} /> Painel Locador
+          </button>
+        )}
+
+        {isLogado && (
+          <button
+            onClick={abrirConfiguracoes}
+            title="Configurações"
+            className="p-2.5 rounded-full bg-gray-50 text-gray-500 hover:text-[#29C354] hover:bg-gray-100 transition-colors cursor-pointer"
+          >
+            <LuSettings size={18} />
+          </button>
+        )}
 
       </nav>
     </header>

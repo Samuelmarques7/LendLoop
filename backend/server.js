@@ -21,9 +21,9 @@ app.use(express.json());
 // Cadastro
 app.post('/api/usuarios', async (req, res) => {
   try {
-    const { nome, email, senha, telefone } = req.body;
+    const { nome, email, senha, telefone, objetivo } = req.body;
     const senhaCriptografada = await bcrypt.hash(senha, 10);
-    const novoUsuario = new Usuario({ nome, email, senha: senhaCriptografada, telefone });
+    const novoUsuario = new Usuario({ nome, email, senha: senhaCriptografada, telefone, objetivo });
     
     await novoUsuario.save();
 
@@ -32,7 +32,8 @@ app.post('/api/usuarios', async (req, res) => {
       usuario: {
         id: novoUsuario._id,
         nome: novoUsuario.nome,
-        email: novoUsuario.email
+        email: novoUsuario.email,
+        objetivo: novoUsuario.objetivo
       }
     });
   } catch (erro) {
@@ -70,11 +71,18 @@ app.get('/api/usuarios/:id', async (req, res) => {
 // Atualizar perfil (nome, telefone, bio, avatar)
 app.put('/api/usuarios/:id', async (req, res) => {
   try {
-    const { nome, telefone, bio, avatar } = req.body;
+    const { nome, telefone, bio, avatar, objetivo } = req.body;
+
+    const camposAtualizados = {};
+    if (nome !== undefined) camposAtualizados.nome = nome;
+    if (telefone !== undefined) camposAtualizados.telefone = telefone;
+    if (bio !== undefined) camposAtualizados.bio = bio;
+    if (avatar !== undefined) camposAtualizados.avatar = avatar;
+    if (objetivo !== undefined) camposAtualizados.objetivo = objetivo;
 
     const usuario = await Usuario.findByIdAndUpdate(
       req.params.id,
-      { nome, telefone, bio, avatar },
+      camposAtualizados,
       { new: true, runValidators: true }
     ).select('-senha');
 
@@ -140,7 +148,8 @@ app.post('/api/login', async (req, res) => {
       usuario: { 
         id: usuario._id,
         nome: usuario.nome, 
-        email: usuario.email 
+        email: usuario.email,
+        objetivo: usuario.objetivo
       } 
     });
   } catch (erro) {
@@ -191,7 +200,7 @@ app.post('/api/anuncios', async (req, res) => {
 // Listar todos os anúncios (usado em ResultadosBusca)
 app.get('/api/anuncios', async (req, res) => {
   try {
-    const { busca, dataInicio, dataFim } = req.query;
+    const { busca, dataInicio, dataFim, categoria, precoMin, precoMax } = req.query;
     const filtro = { status: 'publicado' };
 
     if (busca) {
@@ -210,6 +219,19 @@ app.get('/api/anuncios', async (req, res) => {
       filtro.disponivel = {$elemMatch: condicaoData };
     }
 
+    if (categoria) {
+      const categorias = categoria.split(',').filter(Boolean);
+      if (categorias.length > 0) {
+        filtro.categoria = { $in: categorias };
+      }
+    }
+
+    if (precoMin || precoMax) {
+      filtro['precos.precoPorDia'] = {};
+      if (precoMin) filtro['precos.precoPorDia'].$gte = Number(precoMin);
+      if (precoMax) filtro['precos.precoPorDia'].$lte = Number(precoMax);
+    }
+
     const anuncios = await Anuncio.find(filtro).populate('locador', 'nome email');
     res.status(200).json(anuncios);
   } catch (erro) {
@@ -220,7 +242,7 @@ app.get('/api/anuncios', async (req, res) => {
 // Buscar um anúncio específico (usado em DetalhesProduto)
 app.get('/api/anuncios/:id', async (req, res) => {
   try {
-    const anuncio = await Anuncio.findById(req.params.id).populate('locador', 'nome email');
+    const anuncio = await Anuncio.findById(req.params.id).populate('locador', 'nome email bio avatar createdAt');
     if (!anuncio) {
       return res.status(404).json({ erro: 'Anúncio não encontrado' });
     }
