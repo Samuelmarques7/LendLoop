@@ -13,6 +13,17 @@ import {
   LuClock
 } from "react-icons/lu";
 
+const mesesPtBr = [
+  'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+  'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+];
+
+function formatarMembroDesde(data) {
+  if (!data) return null;
+  const d = new Date(data);
+  return `Membro desde ${mesesPtBr[d.getMonth()]} de ${d.getFullYear()}`;
+}
+
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 
@@ -185,55 +196,74 @@ export function DetalhesProduto() {
             
             <section>
               <h2 className="text-xl font-bold text-[#1A1A1A] mb-4">Descrição</h2>
-              <p className="text-gray-500 leading-relaxed text-sm">
-                {anuncio.descricao}
-                <br/><br/>
+              <p className="text-gray-500 leading-relaxed text-sm whitespace-pre-line">
                 {anuncio.descricao}
               </p>
             </section>
 
-            <section>
-              <h2 className="text-xl font-bold text-[#1A1A1A] mb-4">O que está incluído</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 text-sm text-gray-600 font-medium">
-                <div className="flex items-center gap-3"><LuCheck className="text-[#29C354]" size={20}/> Furadeira sem fio 18V</div>
-                <div className="flex items-center gap-3"><LuCheck className="text-[#29C354]" size={20}/> Kit com 20 brocas</div>
-                <div className="flex items-center gap-3"><LuCheck className="text-[#29C354]" size={20}/> 2 baterias recarregáveis</div>
-                <div className="flex items-center gap-3"><LuCheck className="text-[#29C354]" size={20}/> Maleta de transporte</div>
-                <div className="flex items-center gap-3"><LuCheck className="text-[#29C354]" size={20}/> Carregador de bateria</div>
-                <div className="flex items-center gap-3"><LuCheck className="text-[#29C354]" size={20}/> Manual do usuário</div>
-              </div>
-            </section>
+            {anuncio.especificacoes?.length > 0 && (
+              <section>
+                <h2 className="text-xl font-bold text-[#1A1A1A] mb-4">Especificações</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 text-sm text-gray-600 font-medium">
+                  {anuncio.especificacoes
+                    .filter((esp) => esp.chave?.trim())
+                    .map((esp, index) => (
+                      <div key={index} className="flex items-center gap-3">
+                        <LuCheck className="text-[#29C354] shrink-0" size={20}/>
+                        <span>
+                          <span className="text-[#1A1A1A] font-bold">{esp.chave}:</span>{' '}
+                          {esp.valor?.trim() || '—'}
+                        </span>
+                      </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
             <section className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
               <h2 className="text-lg font-bold text-[#1A1A1A] mb-4">Diretrizes de Aluguel</h2>
               <ul className="space-y-3 text-sm text-gray-600 font-medium">
-                <li className="flex items-start gap-2"><span>📍</span> Retirada e devolução na minha localização em São Paulo</li>
-                <li className="flex items-start gap-2"><span>💰</span> Depósito caução de R$ 150 necessário</li>
+                <li className="flex items-start gap-2">
+                  <span>📍</span> Retirada e devolução em {anuncio.endereco.bairro}, {anuncio.endereco.cidade} - {anuncio.endereco.estado}
+                </li>
+                {anuncio.precos.exigirCaucao && (
+                  <li className="flex items-start gap-2">
+                    <span>💰</span> Depósito caução de R$ {anuncio.precos.caucao} necessário
+                  </li>
+                )}
                 <li className="flex items-start gap-2"><span>✨</span> Favor devolver limpo e nas mesmas condições</li>
-                <li className="flex items-start gap-2"><span>🕒</span> Disponível para retirada das 9h às 19h</li>
+                <li className="flex items-start gap-2">
+                  <span>🕒</span> Retirada às {anuncio.precos.horarioRetirada} e devolução até {anuncio.precos.horarioDevolucao}
+                </li>
               </ul>
             </section>
 
             <section className="border-t border-gray-200 pt-10">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-[#29C354] rounded-full flex items-center justify-center text-white text-2xl font-bold">C</div>
+                  {anuncio.locador.avatar ? (
+                    <img src={anuncio.locador.avatar} alt={anuncio.locador.nome} className="w-16 h-16 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-16 h-16 bg-[#29C354] rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                      {anuncio.locador.nome?.[0]?.toUpperCase()}
+                    </div>
+                  )}
                   <div>
                     <h2 className="text-xl font-bold text-[#1A1A1A]">{anuncio.locador.nome}</h2>
-                    <p className="text-sm text-gray-500">Membro desde março de 2023</p>
+                    {formatarMembroDesde(anuncio.locador.createdAt) && (
+                      <p className="text-sm text-gray-500">{formatarMembroDesde(anuncio.locador.createdAt)}</p>
+                    )}
                   </div>
                 </div>
                 <button className="flex items-center gap-2 border border-[#1A1A1A] text-[#1A1A1A] px-6 py-2.5 rounded-xl hover:bg-gray-50 transition-colors font-bold text-sm">
                   <LuMessageCircle size={18}/> Mensagem ao Anfitrião
                 </button>
               </div>
-              <p className="text-gray-500 text-sm leading-relaxed mb-6">
-                Sou empreiteiro com mais de 10 anos de experiência. Adoro compartilhar minhas ferramentas com a comunidade e ajudar outros a completarem seus projetos. Todos os meus equipamentos são de nível profissional e bem mantidos.
-              </p>
-              <div className="flex gap-8 text-sm font-bold text-[#1A1A1A]">
-                <div><span className="text-[#29C354]">23</span> ferramentas listadas</div>
-                <div>Normalmente responde em <span className="text-[#29C354]">1 hora</span></div>
-              </div>
+              {anuncio.locador.bio && (
+                <p className="text-gray-500 text-sm leading-relaxed mb-6">
+                  {anuncio.locador.bio}
+                </p>
+              )}
             </section>
 
           </div>
