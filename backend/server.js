@@ -21,9 +21,9 @@ app.use(express.json());
 // Cadastro
 app.post('/api/usuarios', async (req, res) => {
   try {
-    const { nome, email, senha, telefone,localizacao } = req.body;
+    const { nome, email, senha, telefone, localizacao, objetivo } = req.body;
     const senhaCriptografada = await bcrypt.hash(senha, 10);
-    const novoUsuario = new Usuario({ nome, email, senha: senhaCriptografada, telefone, localizacao });
+    const novoUsuario = new Usuario({ nome, email, senha: senhaCriptografada, telefone, localizacao, objetivo });
     
     await novoUsuario.save();
 
@@ -34,6 +34,7 @@ app.post('/api/usuarios', async (req, res) => {
         nome: novoUsuario.nome,
         email: novoUsuario.email,
         localizacao: novoUsuario.localizacao,
+        objetivo: novoUsuario.objetivo,
         createdAt: novoUsuario.createdAt
       }
     });
@@ -53,6 +54,50 @@ app.get('/api/usuarios', async (req, res) => {
     res.status(200).json(usuarios);
   } catch (erro) {
     res.status(500).json({ erro: 'Erro ao buscar usuários' });
+  }
+});
+
+// Buscar um usuário específico (usado em MeuPerfil)
+app.get('/api/usuarios/:id', async (req, res) => {
+  try {
+    const usuario = await Usuario.findById(req.params.id).select('-senha');
+    if (!usuario) {
+      return res.status(404).json({ erro: 'Usuário não encontrado' });
+    }
+    res.status(200).json(usuario);
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao buscar usuário' });
+  }
+});
+
+// Atualizar perfil (nome, telefone, bio, avatar)
+app.put('/api/usuarios/:id', async (req, res) => {
+  try {
+    const { nome, telefone, bio, avatar, objetivo } = req.body;
+
+    const camposAtualizados = {};
+    if (nome !== undefined) camposAtualizados.nome = nome;
+    if (telefone !== undefined) camposAtualizados.telefone = telefone;
+    if (bio !== undefined) camposAtualizados.bio = bio;
+    if (avatar !== undefined) camposAtualizados.avatar = avatar;
+    if (objetivo !== undefined) camposAtualizados.objetivo = objetivo;  
+
+    const usuario = await Usuario.findByIdAndUpdate(
+      req.params.id,
+      camposAtualizados,
+      { new: true, runValidators: true }
+    ).select('-senha');
+
+    if (!usuario) {
+      return res.status(404).json({ erro: 'Usuário não encontrado' });
+    }
+
+    res.status(200).json({
+      mensagem: 'Perfil atualizado com sucesso!',
+      usuario
+    });
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao atualizar perfil', detalhes: erro.message });
   }
 });
 
@@ -84,30 +129,6 @@ app.delete('/api/usuarios/:id', async (req, res) => {
   }
 });
 
-// Atualizar dados do usuário (avatar, bio, localização, etc.)
-app.patch('/api/usuarios/:id', async (req, res) => {
-  try {
-    const { avatar, bio, localizacao } = req.body;
-
-    const usuario = await Usuario.findByIdAndUpdate(
-      req.params.id,
-      { avatar, bio, localizacao },
-      { new: true }
-    ).select('-senha');
-
-    if (!usuario) {
-      return res.status(404).json({ erro: 'Usuário não encontrado' });
-    }
-
-    res.status(200).json({
-      mensagem: 'Perfil atualizado com sucesso!',
-      usuario
-    });
-  } catch (erro) {
-    res.status(500).json({ erro: 'Erro ao atualizar perfil', detalhes: erro.message });
-  }
-});
-
 // Login
 app.post('/api/login', async (req, res) => {
   try {
@@ -132,6 +153,7 @@ app.post('/api/login', async (req, res) => {
         email: usuario.email,
         avatar: usuario.avatar,
         localizacao: usuario.localizacao,
+        objetivo: usuario.objetivo,
         createdAt: usuario.createdAt,
       } 
     });
@@ -161,10 +183,10 @@ app.post('/api/upload', upload.array('fotos', 6), async (req, res) => {
 // Criar anúncio
 app.post('/api/anuncios', async (req, res) => {
   try {
-    const { titulo, descricao, categoria, subcategoria, fotos, endereco, disponivel, precos, status, locador } = req.body;
+    const { titulo, descricao, categoria, subcategorias, especificacoes, fotos, endereco, disponivel, precos, status, locador } = req.body;
 
     const novoAnuncio = new Anuncio({
-      titulo, descricao, categoria, subcategoria,
+      titulo, descricao, categoria, subcategorias, especificacoes,
       fotos, endereco, disponivel, precos,
       status, locador
     });
@@ -183,7 +205,7 @@ app.post('/api/anuncios', async (req, res) => {
 // Listar todos os anúncios (usado em ResultadosBusca)
 app.get('/api/anuncios', async (req, res) => {
   try {
-    const { busca, dataInicio, dataFim } = req.query;
+    const { busca, dataInicio, dataFim, categoria, precoMin, precoMax } = req.query;
     const filtro = { status: 'publicado' };
 
     if (busca) {
@@ -202,6 +224,19 @@ app.get('/api/anuncios', async (req, res) => {
       filtro.disponivel = {$elemMatch: condicaoData };
     }
 
+    if (categoria) {
+      const categorias = categoria.split(',').filter(Boolean);
+      if (categorias.length > 0) {
+        filtro.categoria = { $in: categorias };
+      }
+    }
+
+    if (precoMin || precoMax) {
+      filtro['precos.precoPorDia'] = {};
+      if (precoMin) filtro['precos.precoPorDia'].$gte = Number(precoMin);
+      if (precoMax) filtro['precos.precoPorDia'].$lte = Number(precoMax);
+    }
+
     const anuncios = await Anuncio.find(filtro).populate('locador', 'nome email');
     res.status(200).json(anuncios);
   } catch (erro) {
@@ -212,7 +247,7 @@ app.get('/api/anuncios', async (req, res) => {
 // Buscar um anúncio específico (usado em DetalhesProduto)
 app.get('/api/anuncios/:id', async (req, res) => {
   try {
-    const anuncio = await Anuncio.findById(req.params.id).populate('locador', 'nome email');
+    const anuncio = await Anuncio.findById(req.params.id).populate('locador', 'nome email bio avatar createdAt');
     if (!anuncio) {
       return res.status(404).json({ erro: 'Anúncio não encontrado' });
     }
@@ -222,13 +257,29 @@ app.get('/api/anuncios/:id', async (req, res) => {
   }
 });
 
-// Listar anúncios de um locador específico (usado em PainelLocador)
 app.get('/api/anuncios/locador/:locadorId', async (req, res) => {
   try {
     const anuncios = await Anuncio.find({ locador: req.params.locadorId });
     res.status(200).json(anuncios);
   } catch (erro) {
     res.status(500).json({ erro: 'Erro ao buscar anúncios do locador' });
+  }
+});
+
+// Excluir anúncio (usado em PainelLocador)
+app.delete('/api/anuncios/:id', async (req, res) => {
+  try {
+    const anuncio = await Anuncio.findById(req.params.id);
+
+    if (!anuncio) {
+      return res.status(404).json({ erro: 'Anúncio não encontrado' });
+    }
+
+    await Anuncio.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({ mensagem: 'Anúncio excluído com sucesso.' });
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao excluir anúncio', detalhes: erro.message });
   }
 });
 

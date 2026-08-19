@@ -71,12 +71,12 @@ export default function Cadastro() {
       <div className="max-w-md w-full bg-[#FFFFFF] rounded-xl shadow-lg p-8 border border-gray-100">
         
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-[#006861]">Criar Conta</h2>
-          <p className="text-[#00639E] mt-2">Junte-se à comunidade LendLoop</p>
+          <h2 className="text-3xl font-bold text-[#032D54]">Criar Conta</h2>
+          <p className="text-[#0068F3] mt-2">Junte-se à comunidade LendLoop</p>
         </div>
 
         {mensagem && (
-          <div className={`p-4 mb-6 rounded-lg font-medium ${mensagem.tipo === 'sucesso' ? 'bg-[#00B795]/10 text-[#006861] border border-[#00B795]/30' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+          <div className={`p-4 mb-6 rounded-lg font-medium ${mensagem.tipo === 'sucesso' ? 'bg-[#29C354]/10 text-[#032D54] border border-[#29C354]/30' : 'bg-red-50 text-red-700 border border-red-200'}`}>
             {mensagem.texto}
           </div>
         )}
@@ -85,19 +85,19 @@ export default function Cadastro() {
           <div>
             <label className="block text-sm font-medium text-[#1A1A1A] mb-1">Nome Completo</label>
             <input type="text" name="nome" value={formData.nome} onChange={handleChange} required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#05BFBE] outline-none text-[#1A1A1A]" placeholder="Ex: João da Silva"/>
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0297AA] outline-none text-[#1A1A1A]" placeholder="Ex: João da Silva"/>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-[#1A1A1A] mb-1">E-mail</label>
             <input type="email" name="email" value={formData.email} onChange={handleChange} required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#05BFBE] outline-none text-[#1A1A1A]" placeholder="joao@email.com"/>
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0297AA] outline-none text-[#1A1A1A]" placeholder="joao@email.com"/>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-[#1A1A1A] mb-1">Senha</label>
             <input type="password" name="senha" value={formData.senha} onChange={handleChange} required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#05BFBE] outline-none text-[#1A1A1A]" placeholder="••••••••"/>
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0297AA] outline-none text-[#1A1A1A]" placeholder="••••••••"/>
           </div>
 
           <div>
@@ -134,38 +134,38 @@ export default function Cadastro() {
               
               <div 
                 onClick={() => handleObjetivoChange('ambos')}
-                className={`p-3 border rounded-lg cursor-pointer transition-all ${formData.objetivo === 'ambos' ? 'border-[#00B795] bg-[#00B795]/10 ring-1 ring-[#00B795]' : 'border-gray-300 hover:border-[#05BFBE]'}`}
+                className={`p-3 border rounded-lg cursor-pointer transition-all ${formData.objetivo === 'ambos' ? 'border-[#29C354] bg-[#29C354]/10 ring-1 ring-[#29C354]' : 'border-gray-300 hover:border-[#0297AA]'}`}
               >
-                <span className={`block text-sm font-semibold ${formData.objetivo === 'ambos' ? 'text-[#006861]' : 'text-[#1A1A1A]'}`}>Ambos</span>
+                <span className={`block text-sm font-semibold ${formData.objetivo === 'ambos' ? 'text-[#032D54]' : 'text-[#1A1A1A]'}`}>Ambos</span>
                 <span className="block text-xs text-gray-500 mt-0.5">Quero alugar e também disponibilizar meus itens</span>
               </div>
 
               <div 
                 onClick={() => handleObjetivoChange('locatario')}
-                className={`p-3 border rounded-lg cursor-pointer transition-all ${formData.objetivo === 'locatario' ? 'border-[#00B795] bg-[#00B795]/10 ring-1 ring-[#00B795]' : 'border-gray-300 hover:border-[#05BFBE]'}`}
+                className={`p-3 border rounded-lg cursor-pointer transition-all ${formData.objetivo === 'locatario' ? 'border-[#29C354] bg-[#29C354]/10 ring-1 ring-[#29C354]' : 'border-gray-300 hover:border-[#0297AA]'}`}
               >
-                <span className={`block text-sm font-semibold ${formData.objetivo === 'locatario' ? 'text-[#006861]' : 'text-[#1A1A1A]'}`}>Apenas Alugar</span>
+                <span className={`block text-sm font-semibold ${formData.objetivo === 'locatario' ? 'text-[#032D54]' : 'text-[#1A1A1A]'}`}>Apenas Alugar</span>
                 <span className="block text-xs text-gray-500 mt-0.5">Quero procurar itens para pegar emprestado</span>
               </div>
 
               <div 
                 onClick={() => handleObjetivoChange('locador')}
-                className={`p-3 border rounded-lg cursor-pointer transition-all ${formData.objetivo === 'locador' ? 'border-[#00B795] bg-[#00B795]/10 ring-1 ring-[#00B795]' : 'border-gray-300 hover:border-[#05BFBE]'}`}
+                className={`p-3 border rounded-lg cursor-pointer transition-all ${formData.objetivo === 'locador' ? 'border-[#29C354] bg-[#29C354]/10 ring-1 ring-[#29C354]' : 'border-gray-300 hover:border-[#0297AA]'}`}
               >
-                <span className={`block text-sm font-semibold ${formData.objetivo === 'locador' ? 'text-[#006861]' : 'text-[#1A1A1A]'}`}>Apenas Disponibilizar</span>
+                <span className={`block text-sm font-semibold ${formData.objetivo === 'locador' ? 'text-[#032D54]' : 'text-[#1A1A1A]'}`}>Apenas Disponibilizar</span>
                 <span className="block text-xs text-gray-500 mt-0.5">Quero colocar meus itens na plataforma para render uma grana</span>
               </div>
 
             </div>
           </div>
 
-          <button type="submit" className="w-full bg-[#00B795] hover:bg-[#006861] text-[#FFFFFF] font-bold py-3 rounded-lg transition-colors mt-6 shadow-md cursor-pointer">
+          <button type="submit" className="w-full bg-[#29C354] hover:bg-[#032D54] text-[#FFFFFF] font-bold py-3 rounded-lg transition-colors mt-6 shadow-md cursor-pointer">
             Finalizar Cadastro
           </button>
 
           <p className="text-center text-sm text-[#1A1A1A] mt-6">
             Já tem uma conta?{' '}
-            <Link to="/login" className="text-[#00B795] hover:text-[#006861] font-semibold hover:underline transition-colors">
+            <Link to="/login" className="text-[#29C354] hover:text-[#032D54] font-semibold hover:underline transition-colors">
               Faça Login
             </Link>
           </p>

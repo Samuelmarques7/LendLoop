@@ -1,19 +1,23 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_URL, apiRequest } from '../services/api';
-import { 
-  LuCamera, 
-  LuMapPin, 
-  LuStar, 
-  LuSettings, 
-  LuShieldCheck, 
+import {
+  LuCamera,
+  LuSettings,
   LuShoppingBag,
   LuPackage,
   LuCalendarDays,
-  LuCheck 
+  LuPhone,
+  LuX,
+  LuLogOut
 } from 'react-icons/lu';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
+import { apiRequest, API_URL } from '../services/api';
+
+function urlAvatarPadrao(nome) {
+  const nomeSeguro = (nome || 'Usuário').trim() || 'Usuário';
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(nomeSeguro)}&background=29C354&color=fff&size=150`;
+}
 
 function formatarMembroDesde(dataCriacao) {
   const data = new Date(dataCriacao);
@@ -31,56 +35,68 @@ export default function MeuPerfil() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
-  const [usuario, setUsuario] = useState({
-    nome: 'Carregando...',
-    email: '',
-    avatar: 'https://ui-avatars.com/api/?name=U&background=00B795&color=fff&size=150',
-    localizacao: 'Santa Rita do Sapucaí, MG',
-    bio: 'Estudante de Engenharia de Computação. Gosto de testar novos hardwares e ferramentas para meus projetos. Compartilhando o que não uso com a comunidade!',
-    membroDesde: 'Janeiro de 2026'
+  const [usuario, setUsuario] = useState(null);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState(null);
+  const [enviandoAvatar, setEnviandoAvatar] = useState(false);
 
-  });
-
-  const [editando, setEditando] = useState(false);
-  const [rascunho, setRascunho] = useState({ bio: '', localizacao: ''});
+  const [modalAberto, setModalAberto] = useState(false);
+  const [formEdicao, setFormEdicao] = useState({ nome: '', telefone: '', bio: '' });
+  const [salvando, setSalvando] = useState(false);
+  const [erroForm, setErroForm] = useState(null);
 
   useEffect(() => {
     const dadosSalvos = localStorage.getItem('dadosUsuario');
-    if (dadosSalvos) {
-      const dados = JSON.parse(dadosSalvos);
-      setUsuario(prev => ({
-        ...prev,
-        nome: dados.nome,
-        email: dados.email,
-        avatar: dados.avatar || `https://ui-avatars.com/api/?name=${dados.nome.replace(' ', '+')}&background=00B795&color=fff&size=150`,
-        localizacao: dados.localizacao || 'Localização não informada',
-        membroDesde: formatarMembroDesde(dados.createdAt)
-      }));
+    if (!dadosSalvos) {
+      navigate('/login');
+      return;
     }
-  }, []);
 
-  const [avaliacoes] = useState([
-    { id: 1, autor: 'Marcos Castro', data: 'Fevereiro de 2026', nota: 5, texto: 'Excelente locador! O equipamento estava em perfeitas condições e a comunicação foi muito rápida e clara. Recomendo muito.' },
-    { id: 2, autor: 'Sarah Wilson', data: 'Janeiro de 2026', nota: 5, texto: 'Peguei uma furadeira emprestada e salvou meu fim de semana. Muito gente boa na hora de combinar a entrega.' }
-  ]);
+    const { id } = JSON.parse(dadosSalvos);
+
+    async function carregarUsuario() {
+      try {
+        const dados = await apiRequest(`/api/usuarios/${id}`);
+        setUsuario(dados);
+      } catch (e) {
+        setErro(e.message);
+      } finally {
+        setCarregando(false);
+      }
+    }
+
+    carregarUsuario();
+  }, [navigate]);
+
+  function atualizarLocalStorage(usuarioAtualizado) {
+    const dadosSalvos = JSON.parse(localStorage.getItem('dadosUsuario') || '{}');
+    localStorage.setItem('dadosUsuario', JSON.stringify({
+      ...dadosSalvos,
+      nome: usuarioAtualizado.nome,
+      email: usuarioAtualizado.email
+    }));
+  }
 
   const handleAvatarClick = () => {
+    if (enviandoAvatar) return;
     fileInputRef.current.click();
   };
 
   const handleFileChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const arquivo = e.target.files[0];
+    if (!arquivo || !usuario) return;
+
+    setEnviandoAvatar(true);
+    setErro(null);
 
     try {
       const formData = new FormData();
-      formData.append('fotos', file);
+      formData.append('fotos', arquivo);
 
       const respostaUpload = await fetch(`${API_URL}/api/upload`, {
         method: 'POST',
         body: formData
       });
-
       const dadosUpload = await respostaUpload.json();
 
       if (!respostaUpload.ok) {
@@ -89,131 +105,142 @@ export default function MeuPerfil() {
 
       const novaUrlAvatar = dadosUpload.urls[0];
 
-      const dadosSalvos = JSON.parse(localStorage.getItem('dadosUsuario'));
-
-      const resultado = await apiRequest(`/api/usuarios/${dadosSalvos.id}`, {
-        method: 'PATCH',
+      const resposta = await apiRequest(`/api/usuarios/${usuario._id}`, {
+        method: 'PUT',
         body: { avatar: novaUrlAvatar }
       });
 
-      setUsuario(prev => ({ ...prev, avatar: resultado.usuario.avatar }));
-
-      localStorage.setItem('dadosUsuario', JSON.stringify({
-        ...dadosSalvos,
-        avatar: resultado.usuario.avatar
-      }));
-
-    } catch (erro) {
-      console.error('Erro ao atualizar avatar:', erro);
+      setUsuario(resposta.usuario);
+    } catch (e) {
+      setErro(e.message);
+    } finally {
+      setEnviandoAvatar(false);
+      e.target.value = '';
     }
   };
 
-  const handleIniciarEdicao = () => {
-    setRascunho({ bio: usuario.bio, localizacao: usuario.localizacao });
-    setEditando(true);
+  const handleLogout = () => {
+    localStorage.removeItem('usuarioLogado');
+    localStorage.removeItem('dadosUsuario');
+    navigate('/');
   };
 
-  const handleSalvarEdicao = async () => {
-    try {
-      const dadosSalvos = JSON.parse(localStorage.getItem('dadosUsuario'));
+  const abrirModalEdicao = () => {
+    setFormEdicao({
+      nome: usuario.nome || '',
+      telefone: usuario.telefone || '',
+      bio: usuario.bio || ''
+    });
+    setErroForm(null);
+    setModalAberto(true);
+  };
 
-      const resultado = await apiRequest(`/api/usuarios/${dadosSalvos.id}`, {
-        method: 'PATCH',
-        body: { bio: rascunho.bio, localizacao: rascunho.localizacao }
+  const handleSalvarEdicao = async (e) => {
+    e.preventDefault();
+    setSalvando(true);
+    setErroForm(null);
+
+    try {
+      const resposta = await apiRequest(`/api/usuarios/${usuario._id}`, {
+        method: 'PUT',
+        body: formEdicao
       });
 
-      setUsuario(prev => ({
-        ...prev,
-        bio: resultado.usuario.bio,
-        localizacao: resultado.usuario.localizacao
-      }));
-
-      localStorage.setItem('dadosUsuario', JSON.stringify({
-        ...dadosSalvos,
-        bio: resultado.usuario.bio,
-        localizacao: resultado.usuario.localizacao
-      }));
-
-      setEditando(false);
-    } catch (erro) {
-      console.error('Erro ao salvar perfil:', erro);
+      setUsuario(resposta.usuario);
+      atualizarLocalStorage(resposta.usuario);
+      setModalAberto(false);
+    } catch (e) {
+      setErroForm(e.message);
+    } finally {
+      setSalvando(false);
     }
   };
+
+  if (carregando) {
+    return (
+      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
+        <p className="text-gray-500 font-medium">Carregando perfil...</p>
+      </div>
+    );
+  }
+
+  if (erro && !usuario) {
+    return (
+      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
+        <p className="text-red-600 font-medium">{erro}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] font-sans flex flex-col text-[#1A1A1A]">
       <Header />
 
       <main className="flex-grow w-full pb-16">
-        <section className="w-full">
-          <div className="h-64 w-full bg-gradient-to-r from-[#006861] via-[#00B795] to-[#05BFBE] relative">
-            <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent bg-[length:20px_20px]"></div>
-          </div>
-          
-          <div className="max-w-5xl mx-auto px-6 sm:px-8 relative -mt-20 flex flex-col sm:flex-row items-center sm:items-end gap-6 mb-8">
+        <section className="w-full bg-white border-b border-gray-100">
+          <div className="max-w-5xl mx-auto px-6 sm:px-8 py-10 flex flex-col sm:flex-row items-center sm:items-center gap-6">
             <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
-              <div className="w-40 h-40 rounded-full border-4 border-white bg-white shadow-xl overflow-hidden relative">
-                <img src={usuario.avatar} alt="Avatar" className="w-full h-full object-cover" />
-                
+              <div className="w-32 h-32 rounded-full border-4 border-[#F8F9FA] bg-white shadow-md overflow-hidden relative">
+                <img
+                  src={usuario.avatar || urlAvatarPadrao(usuario.nome)}
+                  alt="Avatar"
+                  className="w-full h-full object-cover"
+                />
+
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white backdrop-blur-sm">
-                  <LuCamera size={32} />
-                  <span className="text-xs font-bold mt-2 uppercase tracking-widest">Alterar</span>
+                  <LuCamera size={26} />
+                  <span className="text-[10px] font-bold mt-1 uppercase tracking-widest">
+                    {enviandoAvatar ? 'Enviando...' : 'Alterar'}
+                  </span>
                 </div>
               </div>
-              
-              <div className="absolute bottom-2 right-2 w-10 h-10 bg-[#00B795] border-4 border-white rounded-full flex items-center justify-center text-white shadow-sm" title="Conta Verificada">
-                <LuShieldCheck size={18} />
-              </div>
 
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleFileChange} 
-                accept="image/*" 
-                className="hidden" 
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept="image/*"
+                className="hidden"
               />
             </div>
-            
-            <div className="text-center sm:text-left flex-grow pb-2">
-              <h1 className="text-3xl font-black text-[#1A1A1A]">{usuario.nome}</h1>
-              <p className="text-[#00639E] font-semibold mt-1 flex items-center justify-center sm:justify-start gap-1.5">
-                <LuMapPin size={16} /> {usuario.localizacao}
-              </p>
+
+            <div className="text-center sm:text-left flex-grow">
+              <h1 className="text-2xl font-black text-[#1A1A1A]">{usuario.nome}</h1>
+              <p className="text-gray-500 font-medium mt-1">{usuario.email}</p>
+              {erro && <p className="text-red-600 text-sm font-medium mt-2">{erro}</p>}
             </div>
 
-            <div className="pb-2 flex gap-3">
-              {editando && (
-                <button
-                  onClick={handleSalvarEdicao}
-                  title='Salvar'
-                  className="flex items-center gap-2 bg-[#00B795] text-white font-bold w-11 h-11 rounded-full hover:bg-[#006861] transition-colors shadow-sm cursor-pointer"
-                >
-                  <LuCheck size={20} />
-                </button>
-              )}
+            <div className="flex flex-col gap-2">
               <button
-                onClick={() => editando ? setEditando(false) : handleIniciarEdicao()}
-                className="flex items-center gap-2 bg-white border border-gray-200 text-[#1A1A1A] font-bold px-6 py-2.5 rounded-xl hover:border-[#00B795] hover:text-[#00B795] transition-colors shadow-sm cursor-pointer"
+                onClick={abrirModalEdicao}
+                className="flex items-center gap-2 bg-white border border-gray-200 text-[#1A1A1A] font-bold px-6 py-2.5 rounded-xl hover:border-[#29C354] hover:text-[#29C354] transition-colors shadow-sm cursor-pointer"
               >
-                <LuSettings size={16} /> {editando ? 'Cancelar' : 'Editar Perfil'}
+                <LuSettings size={16} /> Editar Perfil
+              </button>
+
+              <button
+                onClick={handleLogout}
+                className="flex items-center justify-center gap-2 bg-white border-2 border-red-100 text-red-500 font-bold px-6 py-2 rounded-xl hover:border-red-400 hover:bg-red-50 transition-colors shadow-sm cursor-pointer"
+              >
+              <LuLogOut size={16} /> Sair
               </button>
             </div>
           </div>
         </section>
 
         <div className="max-w-5xl mx-auto px-6 sm:px-8 grid grid-cols-1 md:grid-cols-12 gap-8 mt-12">
-          
+
           <div className="md:col-span-4 space-y-8">
-            
+
             <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
               <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Alternar Painel</h2>
-              
+
               <div className="space-y-3">
-                <button 
-                  onClick={() => navigate('/painelLocatario')}
-                  className="w-full flex items-center p-4 rounded-2xl border-2 border-transparent hover:border-[#00B795] bg-gray-50 hover:bg-[#00B795]/5 transition-all text-left group cursor-pointer"
+                <button
+                  onClick={() => navigate('/painellocatario')}
+                  className="w-full flex items-center p-4 rounded-2xl border-2 border-transparent hover:border-[#29C354] bg-gray-50 hover:bg-[#29C354]/5 transition-all text-left group cursor-pointer"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-blue-100 text-[#00639E] flex items-center justify-center shrink-0 mr-4 group-hover:bg-[#00B795] group-hover:text-white transition-colors">
+                  <div className="w-12 h-12 rounded-xl bg-blue-100 text-[#0068F3] flex items-center justify-center shrink-0 mr-4 group-hover:bg-[#29C354] group-hover:text-white transition-colors">
                     <LuShoppingBag size={24} />
                   </div>
                   <div>
@@ -222,11 +249,11 @@ export default function MeuPerfil() {
                   </div>
                 </button>
 
-                <button 
+                <button
                   onClick={() => navigate('/painelLocador')}
-                  className="w-full flex items-center p-4 rounded-2xl border-2 border-transparent hover:border-[#00B795] bg-gray-50 hover:bg-[#00B795]/5 transition-all text-left group cursor-pointer"
+                  className="w-full flex items-center p-4 rounded-2xl border-2 border-transparent hover:border-[#29C354] bg-gray-50 hover:bg-[#29C354]/5 transition-all text-left group cursor-pointer"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-orange-100 text-orange-500 flex items-center justify-center shrink-0 mr-4 group-hover:bg-[#00B795] group-hover:text-white transition-colors">
+                  <div className="w-12 h-12 rounded-xl bg-orange-100 text-orange-500 flex items-center justify-center shrink-0 mr-4 group-hover:bg-[#29C354] group-hover:text-white transition-colors">
                     <LuPackage size={24} />
                   </div>
                   <div>
@@ -240,60 +267,29 @@ export default function MeuPerfil() {
             <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
               <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">Informações da Conta</h2>
               <ul className="space-y-4">
-                <li className="flex items-center gap-3 text-sm text-[#1A1A1A] font-medium">
-                  <LuCheck className="text-[#00B795] bg-[#00B795]/10 p-1 rounded-full" size={24} /> Identidade verificada
-                </li>
-                <li className="flex items-center gap-3 text-sm text-[#1A1A1A] font-medium">
-                  <LuCheck className="text-[#00B795] bg-[#00B795]/10 p-1 rounded-full" size={24} /> E-mail confirmado
-                </li>
-                <li className="flex items-center gap-3 text-sm text-[#1A1A1A] font-medium">
-                  <LuCheck className="text-[#00B795] bg-[#00B795]/10 p-1 rounded-full" size={24} /> Telefone confirmado
-                </li>
+                {usuario.telefone && (
+                  <li className="flex items-center gap-3 text-sm text-[#1A1A1A] font-medium">
+                    <LuPhone className="text-[#29C354]" size={18} /> {usuario.telefone}
+                  </li>
+                )}
               </ul>
-              <div className="mt-8 pt-6 border-t border-gray-100 flex items-center gap-2 text-sm text-gray-500 font-medium">
-                <LuCalendarDays size={18} /> Membro desde {usuario.membroDesde}
+              <div className={`flex items-center gap-2 text-sm text-gray-500 font-medium ${usuario.telefone ? 'mt-8 pt-6 border-t border-gray-100' : ''}`}>
+                <LuCalendarDays size={18} /> Membro desde {formatarMembroDesde(usuario.createdAt)}
               </div>
             </div>
           </div>
 
           <div className="md:col-span-8 space-y-8">
-            
+
             <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
               <h2 className="text-xl font-bold text-[#1A1A1A] mb-4">Sobre mim</h2>
-              <p className="text-gray-600 leading-relaxed">
-                {usuario.bio}
-              </p>
-            </div>
-
-            <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
-              <div className="flex items-center gap-3 mb-8">
-                <LuStar className="text-yellow-400" size={28} fill="currentColor" />
-                <h2 className="text-2xl font-black text-[#1A1A1A]">5,0</h2>
-                <span className="text-gray-400 font-medium mt-1">({avaliacoes.length} avaliações)</span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {avaliacoes.map((review) => (
-                  <div key={review.id} className="p-6 bg-gray-50 rounded-2xl border border-gray-100 hover:shadow-md transition-shadow cursor-default">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-12 h-12 bg-white rounded-full border border-gray-200 flex items-center justify-center overflow-hidden">
-                        <img src={`https://ui-avatars.com/api/?name=${review.autor.replace(' ', '+')}&background=random`} alt={review.autor} className="w-full h-full object-cover" />
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-[#1A1A1A] text-sm">{review.autor}</h4>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">{review.data}</p>
-                      </div>
-                    </div>
-                    <p className="text-sm text-gray-600 leading-relaxed italic">
-                      "{review.texto}"
-                    </p>
-                  </div>
-                ))}
-              </div>
-
-              <button className="mt-8 border-2 border-[#1A1A1A] text-[#1A1A1A] font-bold px-6 py-2.5 rounded-xl hover:bg-[#1A1A1A] hover:text-white transition-colors cursor-pointer">
-                Mostrar todas as avaliações
-              </button>
+              {usuario.bio ? (
+                <p className="text-gray-600 leading-relaxed whitespace-pre-line">{usuario.bio}</p>
+              ) : (
+                <p className="text-gray-400 italic">
+                  Você ainda não escreveu nada sobre você. Clique em "Editar Perfil" para adicionar uma bio.
+                </p>
+              )}
             </div>
 
           </div>
@@ -301,6 +297,70 @@ export default function MeuPerfil() {
       </main>
 
       <Footer />
+
+      {modalAberto && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-md p-8 relative">
+            <button
+              onClick={() => setModalAberto(false)}
+              className="absolute top-6 right-6 text-gray-400 hover:text-[#1A1A1A] cursor-pointer"
+            >
+              <LuX size={22} />
+            </button>
+
+            <h2 className="text-xl font-bold text-[#1A1A1A] mb-6">Editar Perfil</h2>
+
+            {erroForm && (
+              <div className="p-3 mb-4 rounded-lg bg-red-50 text-red-700 border border-red-200 text-sm font-medium">
+                {erroForm}
+              </div>
+            )}
+
+            <form onSubmit={handleSalvarEdicao} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[#1A1A1A] mb-1">Nome</label>
+                <input
+                  type="text"
+                  value={formEdicao.nome}
+                  onChange={(e) => setFormEdicao({ ...formEdicao, nome: e.target.value })}
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0297AA] outline-none text-[#1A1A1A]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#1A1A1A] mb-1">Telefone</label>
+                <input
+                  type="tel"
+                  value={formEdicao.telefone}
+                  onChange={(e) => setFormEdicao({ ...formEdicao, telefone: e.target.value })}
+                  placeholder="(35) 99999-9999"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0297AA] outline-none text-[#1A1A1A]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#1A1A1A] mb-1">Bio</label>
+                <textarea
+                  value={formEdicao.bio}
+                  onChange={(e) => setFormEdicao({ ...formEdicao, bio: e.target.value })}
+                  rows={4}
+                  placeholder="Conte um pouco sobre você..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0297AA] outline-none text-[#1A1A1A] resize-none"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={salvando}
+                className={`w-full text-white font-bold py-3 rounded-lg transition-colors mt-2 shadow-md cursor-pointer ${salvando ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#29C354] hover:bg-[#032D54]'}`}
+              >
+                {salvando ? 'Salvando...' : 'Salvar Alterações'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
