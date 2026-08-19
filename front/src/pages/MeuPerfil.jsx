@@ -38,7 +38,11 @@ export default function MeuPerfil() {
     localizacao: 'Santa Rita do Sapucaí, MG',
     bio: 'Estudante de Engenharia de Computação. Gosto de testar novos hardwares e ferramentas para meus projetos. Compartilhando o que não uso com a comunidade!',
     membroDesde: 'Janeiro de 2026'
+
   });
+
+  const [editando, setEditando] = useState(false);
+  const [rascunho, setRascunho] = useState({ bio: '', localizacao: ''});
 
   useEffect(() => {
     const dadosSalvos = localStorage.getItem('dadosUsuario');
@@ -104,6 +108,38 @@ export default function MeuPerfil() {
     }
   };
 
+  const handleIniciarEdicao = () => {
+    setRascunho({ bio: usuario.bio, localizacao: usuario.localizacao });
+    setEditando(true);
+  };
+
+  const handleSalvarEdicao = async () => {
+    try {
+      const dadosSalvos = JSON.parse(localStorage.getItem('dadosUsuario'));
+
+      const resultado = await apiRequest(`/api/usuarios/${dadosSalvos.id}`, {
+        method: 'PATCH',
+        body: { bio: rascunho.bio, localizacao: rascunho.localizacao }
+      });
+
+      setUsuario(prev => ({
+        ...prev,
+        bio: resultado.usuario.bio,
+        localizacao: resultado.usuario.localizacao
+      }));
+
+      localStorage.setItem('dadosUsuario', JSON.stringify({
+        ...dadosSalvos,
+        bio: resultado.usuario.bio,
+        localizacao: resultado.usuario.localizacao
+      }));
+
+      setEditando(false);
+    } catch (erro) {
+      console.error('Erro ao salvar perfil:', erro);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#F8F9FA] font-sans flex flex-col text-[#1A1A1A]">
       <Header />
@@ -145,10 +181,21 @@ export default function MeuPerfil() {
               </p>
             </div>
 
-            <div className="pb-2">
-              <button className="flex items-center gap-2 bg-white border border-gray-200 text-[#1A1A1A] font-bold px-6 py-2.5 rounded-xl hover:border-[#00B795] hover:text-[#00B795] transition-colors shadow-sm cursor-pointer">
-                {/* Usando LuSettings aqui */}
-                <LuSettings size={16} /> Editar Perfil
+            <div className="pb-2 flex gap-3">
+              {editando && (
+                <button
+                  onClick={handleSalvarEdicao}
+                  title='Salvar'
+                  className="flex items-center gap-2 bg-[#00B795] text-white font-bold w-11 h-11 rounded-full hover:bg-[#006861] transition-colors shadow-sm cursor-pointer"
+                >
+                  <LuCheck size={20} />
+                </button>
+              )}
+              <button
+                onClick={() => editando ? setEditando(false) : handleIniciarEdicao()}
+                className="flex items-center gap-2 bg-white border border-gray-200 text-[#1A1A1A] font-bold px-6 py-2.5 rounded-xl hover:border-[#00B795] hover:text-[#00B795] transition-colors shadow-sm cursor-pointer"
+              >
+                <LuSettings size={16} /> {editando ? 'Cancelar' : 'Editar Perfil'}
               </button>
             </div>
           </div>
