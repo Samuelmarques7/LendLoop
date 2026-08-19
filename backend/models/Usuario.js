@@ -8,6 +8,8 @@ const usuarioSchema = new mongoose.Schema({
   objetivo: { type: String, enum: ['ambos', 'locatario', 'locador'], default: 'ambos' },
   bio: { type: String, default: "" },
   avatar: { type: String, default: "" },
+  bio: { type: String, default: "" },
+  localizacao: { type: String, default: "" },
   ativo: { type: Boolean, default: true}
 }, {
   timestamps: true 

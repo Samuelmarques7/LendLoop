@@ -14,15 +14,21 @@ import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { apiRequest, API_URL } from '../services/api';
 
-function formatarMesAno(dataISO) {
-  if (!dataISO) return '—';
-  const data = new Date(dataISO);
-  return data.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-}
-
 function urlAvatarPadrao(nome) {
   const nomeSeguro = (nome || 'Usuário').trim() || 'Usuário';
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(nomeSeguro)}&background=29C354&color=fff&size=150`;
+}
+
+function formatarMembroDesde(dataCriacao) {
+  const data = new Date(dataCriacao);
+  const anoAtual = new Date().getFullYear();
+  const anoCadastro = data.getFullYear();
+
+  if (anoCadastro === anoAtual) {
+    return data.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  }
+
+  return String(anoCadastro);
 }
 
 export default function MeuPerfil() {
@@ -268,7 +274,7 @@ export default function MeuPerfil() {
                 )}
               </ul>
               <div className={`flex items-center gap-2 text-sm text-gray-500 font-medium ${usuario.telefone ? 'mt-8 pt-6 border-t border-gray-100' : ''}`}>
-                <LuCalendarDays size={18} /> Membro desde {formatarMesAno(usuario.createdAt)}
+                <LuCalendarDays size={18} /> Membro desde {formatarMembroDesde(usuario.createdAt)}
               </div>
             </div>
           </div>

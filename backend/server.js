@@ -21,9 +21,9 @@ app.use(express.json());
 // Cadastro
 app.post('/api/usuarios', async (req, res) => {
   try {
-    const { nome, email, senha, telefone, objetivo } = req.body;
+    const { nome, email, senha, telefone, localizacao, objetivo } = req.body;
     const senhaCriptografada = await bcrypt.hash(senha, 10);
-    const novoUsuario = new Usuario({ nome, email, senha: senhaCriptografada, telefone, objetivo });
+    const novoUsuario = new Usuario({ nome, email, senha: senhaCriptografada, telefone, localizacao, objetivo });
     
     await novoUsuario.save();
 
@@ -33,7 +33,9 @@ app.post('/api/usuarios', async (req, res) => {
         id: novoUsuario._id,
         nome: novoUsuario.nome,
         email: novoUsuario.email,
-        objetivo: novoUsuario.objetivo
+        localizacao: novoUsuario.localizacao,
+        objetivo: novoUsuario.objetivo,
+        createdAt: novoUsuario.createdAt
       }
     });
   } catch (erro) {
@@ -78,7 +80,7 @@ app.put('/api/usuarios/:id', async (req, res) => {
     if (telefone !== undefined) camposAtualizados.telefone = telefone;
     if (bio !== undefined) camposAtualizados.bio = bio;
     if (avatar !== undefined) camposAtualizados.avatar = avatar;
-    if (objetivo !== undefined) camposAtualizados.objetivo = objetivo;
+    if (objetivo !== undefined) camposAtualizados.objetivo = objetivo;  
 
     const usuario = await Usuario.findByIdAndUpdate(
       req.params.id,
@@ -149,7 +151,10 @@ app.post('/api/login', async (req, res) => {
         id: usuario._id,
         nome: usuario.nome, 
         email: usuario.email,
-        objetivo: usuario.objetivo
+        avatar: usuario.avatar,
+        localizacao: usuario.localizacao,
+        objetivo: usuario.objetivo,
+        createdAt: usuario.createdAt,
       } 
     });
   } catch (erro) {
