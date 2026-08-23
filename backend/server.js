@@ -375,7 +375,7 @@ app.post('/api/alugueis', async (req, res) => {
 // Listar aluguéis de um locatário (usado em PainelLocatario)
 app.get('/api/alugueis/locatario/:locatarioId', async (req, res) => {
   try {
-    const alugueis = await Aluguel.find({ locatario: req.params.locatarioId }).populate('anuncio');
+    const alugueis = await Aluguel.find({ locatario: req.params.locatarioId }).populate('anuncio').populate('locador', 'nome avatar');
     res.status(200).json(alugueis);
   } catch (erro) {
     res.status(500).json({ erro: 'Erro ao buscar aluguéis do locatário' });
@@ -472,13 +472,32 @@ app.patch('/api/pagamentos/:id/status', async (req, res) => {
 
 // --- Avaliação ---
 
-// Criar avaliação (após aluguel concluído)
+// Criar avaliação (só permitido se o aluguel estiver concluído)
 app.post('/api/avaliacoes', async (req, res) => {
   try {
-    const { anuncio, aluguel, autor, locador, nota, comentario } = req.body;
+    const { aluguel, autor, nota, comentario } = req.body;
 
-    const novaAvaliacao = new Avaliacao({ anuncio, aluguel, autor, locador, nota, comentario });
+    const aluguelEncontrado = await Aluguel.findById(aluguel);
 
+    if (!aluguelEncontrado) {
+      return res.status(404).json({ erro: 'Aluguel não encontrado.' });
+    }
+
+    if (aluguelEncontrado.status !== 'concluido') {
+      return res.status(400).json({ erro: 'Só é possível avaliar após o aluguel ser concluído.' });
+    }
+
+    // Determina quem é o avaliado com base no aluguel, não confia no que o front envia
+    let avaliado;
+    if (String(aluguelEncontrado.locatario) === String(autor)) {
+      avaliado = aluguelEncontrado.locador;
+    } else if (String(aluguelEncontrado.locador) === String(autor)) {
+      avaliado = aluguelEncontrado.locatario;
+    } else {
+      return res.status(403).json({ erro: 'Você não faz parte deste aluguel.' });
+    }
+
+    const novaAvaliacao = new Avaliacao({ aluguel, autor, avaliado, nota, comentario });
     await novaAvaliacao.save();
 
     res.status(201).json({
@@ -486,17 +505,37 @@ app.post('/api/avaliacoes', async (req, res) => {
       avaliacao: novaAvaliacao
     });
   } catch (erro) {
+    if (erro.code === 11000) {
+      return res.status(409).json({ erro: 'Você já avaliou este aluguel.' });
+    }
     res.status(500).json({ erro: 'Erro ao criar avaliação', detalhes: erro.message });
   }
 });
 
-// Listar avaliações de um anúncio (nota média e comentários em DetalhesProduto)
-app.get('/api/avaliacoes/anuncio/:anuncioId', async (req, res) => {
+// Listar avaliações recebidas por um usuário (nota média e comentários)
+app.get('/api/avaliacoes/usuario/:usuarioId', async (req, res) => {
   try {
-    const avaliacoes = await Avaliacao.find({ anuncio: req.params.anuncioId }).populate('autor', 'nome');
+    const avaliacoes = await Avaliacao.find({ avaliado: req.params.usuarioId })
+      .populate('autor', 'nome avatar')
+      .sort({ createdAt: -1 });
+
     res.status(200).json(avaliacoes);
   } catch (erro) {
-    res.status(500).json({ erro: 'Erro ao buscar avaliações do anúncio' });
+    res.status(500).json({ erro: 'Erro ao buscar avaliações do usuário' });
+  }
+});
+
+// Verificar se um aluguel específico já foi avaliado por um autor (usado para mostrar/esconder botão "Avaliar")
+app.get('/api/avaliacoes/aluguel/:aluguelId/autor/:autorId', async (req, res) => {
+  try {
+    const avaliacao = await Avaliacao.findOne({
+      aluguel: req.params.aluguelId,
+      autor: req.params.autorId
+    });
+
+    res.status(200).json({ avaliado: !!avaliacao });
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao verificar avaliação' });
   }
 });
 
