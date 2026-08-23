@@ -8,6 +8,7 @@ import PainelLocador from './pages/PainelLocador';
 import Cadastro from './pages/Cadastro';
 import Login from './pages/Login';
 import EsqueceuSenha from './pages/EsqueceuSenha';
+import RedefinirSenha from './pages/RedefinirSenha';
 import MeuPerfil from './pages/MeuPerfil';
 
 import './index.css';
@@ -25,6 +26,7 @@ function App() {
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/login" element={<Login />} />
         <Route path="/esqueceu-senha" element={<EsqueceuSenha />} />
+         <Route path="/redefinir-senha" element={<RedefinirSenha />} />
         <Route path="/meu-perfil" element={<MeuPerfil />} />
       </Routes>
     </BrowserRouter>
