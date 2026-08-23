@@ -4,6 +4,8 @@ const cors = require('cors');
 const connectDB = require('./config/db');
 const upload = require('./config/upload');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
+const { enviarEmailRecuperacao } = require('./config/mailer');
 
 const Usuario = require('./models/Usuario');
 const Anuncio = require('./models/Anuncio');
@@ -160,6 +162,69 @@ app.post('/api/login', async (req, res) => {
   } catch (erro) {
     console.error("Erro no login:", erro);
     res.status(500).json({ erro: 'Erro interno no servidor.' });
+  }
+});
+
+// --- Recuperação de Senha ---
+
+// Solicitar recuperação (envia e-mail com o link)
+app.post('/api/esqueceu-senha', async (req, res) => {
+  try {
+    const { email } = req.body;
+    const usuario = await Usuario.findOne({ email });
+
+    // Não revela se o e-mail existe ou não, por segurança
+    if (!usuario) {
+      return res.status(200).json({
+        mensagem: 'Se este e-mail estiver cadastrado, você receberá um link com as instruções de recuperação em breve.'
+      });
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expira = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+
+    usuario.tokenRecuperacaoSenha = token;
+    usuario.tokenRecuperacaoExpira = expira;
+    await usuario.save();
+
+    await enviarEmailRecuperacao(usuario.email, token);
+
+    res.status(200).json({
+      mensagem: 'Se este e-mail estiver cadastrado, você receberá um link com as instruções de recuperação em breve.'
+    });
+  } catch (erro) {
+    console.error('Erro ao solicitar recuperação de senha:', erro);
+    res.status(500).json({ erro: 'Erro ao solicitar recuperação de senha.' });
+  }
+});
+
+// Redefinir senha (recebe token + nova senha)
+app.post('/api/redefinir-senha', async (req, res) => {
+  try {
+    const { token, novaSenha } = req.body;
+
+    if (!token || !novaSenha) {
+      return res.status(400).json({ erro: 'Token e nova senha são obrigatórios.' });
+    }
+
+    const usuario = await Usuario.findOne({
+      tokenRecuperacaoSenha: token,
+      tokenRecuperacaoExpira: { $gt: new Date() }
+    });
+
+    if (!usuario) {
+      return res.status(400).json({ erro: 'Token inválido ou expirado. Solicite a recuperação novamente.' });
+    }
+
+    usuario.senha = await bcrypt.hash(novaSenha, 10);
+    usuario.tokenRecuperacaoSenha = null;
+    usuario.tokenRecuperacaoExpira = null;
+    await usuario.save();
+
+    res.status(200).json({ mensagem: 'Senha redefinida com sucesso!' });
+  } catch (erro) {
+    console.error('Erro ao redefinir senha:', erro);
+    res.status(500).json({ erro: 'Erro ao redefinir senha.' });
   }
 });
 

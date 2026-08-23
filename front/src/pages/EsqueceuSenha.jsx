@@ -1,17 +1,30 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { apiRequest } from '../services/api';
 
 export default function EsqueceuSenha() {
   const [email, setEmail] = useState('');
   const [mensagem, setMensagem] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMensagem(null);
-    
-    console.log("Solicitando recuperação para:", email);
-    setMensagem({ tipo: 'sucesso', texto: 'Se este e-mail estiver cadastrado, você receberá um link com as instruções de recuperação em breve.' });
-    setEmail('');
+    setLoading(true);
+
+    try {
+      const data = await apiRequest('/api/esqueceu-senha', {
+        method: 'POST',
+        body: { email }
+      });
+
+      setMensagem({ tipo: 'sucesso', texto: data.mensagem });
+      setEmail('');
+    } catch (error) {
+      setMensagem({ tipo: 'erro', texto: error.message });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -42,8 +55,12 @@ export default function EsqueceuSenha() {
             />
           </div>
 
-          <button type="submit" className="w-full bg-[#29C354] hover:bg-[#032D54] text-[#FFFFFF] font-bold py-3 rounded-lg transition-colors mt-6 shadow-md cursor-pointer">
-            Enviar Instruções
+          <button 
+            type="submit" 
+            disabled={loading}
+            className={`w-full text-[#FFFFFF] font-bold py-3 rounded-lg transition-colors mt-6 shadow-md cursor-pointer ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#29C354] hover:bg-[#032D54]'}`}
+          >
+            {loading ? 'Enviando...' : 'Enviar Instruções'}
           </button>
 
           <p className="text-center text-sm text-[#1A1A1A] mt-6">
