@@ -397,15 +397,27 @@ app.patch('/api/alugueis/:id/status', async (req, res) => {
   try {
     const { status } = req.body;
 
-    const aluguel = await Aluguel.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true }
-    );
+    const aluguel = await Aluguel.findById(req.params.id);
 
     if (!aluguel) {
       return res.status(404).json({ erro: 'Aluguel não encontrado' });
     }
+
+    // Regra específica: só pode marcar como concluído se já estava aceito
+    // e se a data de devolução já passou. Evita chamadas diretas à API
+    // "concluindo" um aluguel que ainda nem começou.
+    if (status === 'concluido') {
+      if (aluguel.status !== 'aceito' && aluguel.status !== 'andamento') {
+        return res.status(400).json({ erro: 'Só é possível concluir um aluguel que está em andamento.' });
+      }
+
+      if (new Date() < new Date(aluguel.dataFim)) {
+        return res.status(400).json({ erro: 'Ainda não é possível concluir: o período do aluguel não terminou.' });
+      }
+    }
+
+    aluguel.status = status;
+    await aluguel.save();
 
     res.status(200).json({
       mensagem: 'Status do aluguel atualizado com sucesso!',

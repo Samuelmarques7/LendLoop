@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { apiRequest } from '../services/api';
 import logo from '../assets/logo.png'; 
+import { BotaoAvaliar } from '../components/BotaoAvaliar';
 
 import { 
   LuLayoutDashboard, 
@@ -174,6 +175,19 @@ export default function PainelLocador() {
     }
   }
 
+  async function marcarComoDevolvido(id) {
+    try {
+      await apiRequest(`/api/alugueis/${id}/status`, {
+        method: 'PATCH',
+        body: { status: 'concluido' }
+      });
+
+      setAlugueis(prev => prev.map(a => a._id === id ? { ...a, status: 'concluido' } : a));
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
   async function excluirAnuncio(id) {
     const confirmar = window.confirm('Tem certeza que deseja excluir este anúncio? Essa ação não pode ser desfeita.');
     if (!confirmar) return;
@@ -260,6 +274,8 @@ export default function PainelLocador() {
             aReceber={aReceber}
             alugueisConcluidos={alugueisConcluidos}
             alugueisAndamento={alugueisAndamento}
+            onMarcarDevolvido={marcarComoDevolvido}
+            usuarioLogadoId={usuarioLogado?.id}
           />
         );
       case 'config':
@@ -554,7 +570,7 @@ function SecaoSolicitacoes({ solicitacoes, onAceitar, onRecusar }) {
   );
 }
 
-function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, alugueisAndamento }) {
+function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, alugueisAndamento, onMarcarDevolvido, usuarioLogadoId }) {
   return (
     <div className="animate-fade-in space-y-8">
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -606,9 +622,18 @@ function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, 
                     Alugado por {a.locatario?.nome} • {new Date(a.dataFim).toLocaleDateString('pt-BR')}
                   </p>
                 </div>
-                <span className="font-black text-[#29C354] text-sm shrink-0">
-                  + R$ {(a.precoTotal - (a.taxaServico || 0)).toFixed(2)}
-                </span>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="font-black text-[#29C354] text-sm">
+                    + R$ {(a.precoTotal - (a.taxaServico || 0)).toFixed(2)}
+                  </span>
+                  {a.locatario && (
+                    <BotaoAvaliar
+                      aluguelId={a._id}
+                      autorId={usuarioLogadoId}
+                      nomeAvaliado={a.locatario.nome}
+                    />
+                  )}
+                </div>
               </div>
             ))
           )}
@@ -621,19 +646,39 @@ function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, 
             <h2 className="text-lg font-bold text-[#1A1A1A]">Aluguéis em Andamento</h2>
           </div>
           <div className="p-2 flex-grow">
-            {alugueisAndamento.map((a) => (
-              <div key={a._id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-colors">
-                <div className="min-w-0">
-                  <h3 className="font-bold text-[#1A1A1A] text-sm truncate">{a.anuncio?.titulo}</h3>
-                  <p className="text-xs text-gray-400 font-medium mt-0.5">
-                    Alugado por {a.locatario?.nome} • devolução em {new Date(a.dataFim).toLocaleDateString('pt-BR')}
-                  </p>
+            {alugueisAndamento.map((a) => {
+              const podeDevolver = new Date() >= new Date(a.dataFim);
+
+              return (
+                <div key={a._id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-colors">
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-[#1A1A1A] text-sm truncate">{a.anuncio?.titulo}</h3>
+                    <p className="text-xs text-gray-400 font-medium mt-0.5">
+                      Alugado por {a.locatario?.nome} • devolução em {new Date(a.dataFim).toLocaleDateString('pt-BR')}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="font-black text-orange-500 text-sm">
+                      R$ {(a.precoTotal - (a.taxaServico || 0)).toFixed(2)}
+                    </span>
+
+                    {podeDevolver ? (
+                      <button
+                        onClick={() => onMarcarDevolvido(a._id)}
+                        className="bg-[#29C354] text-white text-[10px] font-bold uppercase tracking-widest px-3 py-2 rounded-xl hover:bg-[#032D54] transition-colors cursor-pointer shadow-sm"
+                      >
+                        Marcar devolvido
+                      </button>
+                    ) : (
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-300 px-3 py-1.5">
+                        Aguardando prazo
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <span className="font-black text-orange-500 text-sm shrink-0">
-                  R$ {(a.precoTotal - (a.taxaServico || 0)).toFixed(2)}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
