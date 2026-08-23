@@ -531,7 +531,13 @@ app.get('/api/avaliacoes/usuario/:usuarioId', async (req, res) => {
       .populate('autor', 'nome avatar')
       .sort({ createdAt: -1 });
 
-    res.status(200).json(avaliacoes);
+    const media = avaliacoes.length ? avaliacoes.reduce((soma, a) => soma + a.nota, 0) / avaliacoes.length : 0;
+    
+    res.status(200).json({
+      avaliacoes,
+      media: Number(media.toFixed(1)),
+      total: avaliacoes.length
+    });
   } catch (erro) {
     res.status(500).json({ erro: 'Erro ao buscar avaliações do usuário' });
   }
