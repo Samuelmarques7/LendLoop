@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { apiRequest } from '../services/api';
 import logo from '../assets/logo.png';
+import { BotaoAvaliar } from '../components/BotaoAvaliar';
 
 import {
   LuLayoutDashboard,
@@ -189,9 +190,10 @@ export default function PainelLocatario() {
           setAbaPagamentos={setAbaPagamentos}
           onCancelarSolicitacao={cancelarSolicitacao}
           onPagarAgora={pagarAgora}
+          usuarioLogadoId={usuarioLogado?.id}
         />;
       case 'alugueis':
-        return <SecaoAlugueis alugueis={alugueis} abaAlugueis={abaAlugueis} setAbaAlugueis={setAbaAlugueis} />;
+        return <SecaoAlugueis alugueis={alugueis} abaAlugueis={abaAlugueis} setAbaAlugueis={setAbaAlugueis} usuarioLogadoId={usuarioLogado?.id} />;
       case 'solicitacoes':
         return <SecaoSolicitacoesEnviadas solicitacoesEnviadas={solicitacoesEnviadas} onCancelarSolicitacao={cancelarSolicitacao} />;
       case 'pagamentos':
@@ -332,7 +334,7 @@ function AbaFiltro({ abas, atual, onChange }) {
   );
 }
 
-function ListaAlugueis({ alugueis, aba }) {
+function ListaAlugueis({ alugueis, aba, usuarioLogadoId }) {
   if (alugueis.length === 0) {
     return (
       <div className="p-8 text-center text-gray-400">
@@ -368,12 +370,20 @@ function ListaAlugueis({ alugueis, aba }) {
         </span>
 
         <span className="font-black text-[#1A1A1A] text-sm w-16 text-right">R$ {aluguel.precoTotal}</span>
+
+        {aba === 'concluido' && aluguel.locador && (
+          <BotaoAvaliar
+            aluguelId={aluguel._id}
+            autorId={usuarioLogadoId}
+            nomeAvaliado={aluguel.locador.nome}
+          />
+        )}
       </div>
     </div>
   ));
 }
 
-function SecaoAlugueis({ alugueis, abaAlugueis, setAbaAlugueis }) {
+function SecaoAlugueis({ alugueis, abaAlugueis, setAbaAlugueis, usuarioLogadoId }) {
   return (
     <div className="animate-fade-in">
       <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
@@ -390,7 +400,7 @@ function SecaoAlugueis({ alugueis, abaAlugueis, setAbaAlugueis }) {
           />
         </div>
         <div className="p-2">
-          <ListaAlugueis alugueis={alugueis[abaAlugueis]} aba={abaAlugueis} />
+          <ListaAlugueis alugueis={alugueis[abaAlugueis]} aba={abaAlugueis} usuarioLogadoId={usuarioLogadoId} />
         </div>
       </section>
     </div>
@@ -496,7 +506,7 @@ function SecaoPagamentos({ pagamentos, abaPagamentos, setAbaPagamentos, onPagarA
   );
 }
 
-function SecaoPainel({ stats, alugueis, pagamentos, solicitacoesEnviadas, abaAlugueis, setAbaAlugueis, abaPagamentos, setAbaPagamentos, onCancelarSolicitacao, onPagarAgora }) {
+function SecaoPainel({ stats, alugueis, pagamentos, solicitacoesEnviadas, abaAlugueis, setAbaAlugueis, abaPagamentos, setAbaPagamentos, onCancelarSolicitacao, onPagarAgora, usuarioLogadoId }) {
   return (
     <div className="animate-fade-in space-y-8">
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -531,7 +541,7 @@ function SecaoPainel({ stats, alugueis, pagamentos, solicitacoesEnviadas, abaAlu
         </div>
 
         <div className="p-2">
-          <ListaAlugueis alugueis={alugueis[abaAlugueis]} aba={abaAlugueis} />
+          <ListaAlugueis alugueis={alugueis[abaAlugueis]} aba={abaAlugueis} usuarioLogadoId={usuarioLogadoId} />
         </div>
       </section>
 

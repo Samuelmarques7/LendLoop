@@ -375,7 +375,7 @@ app.post('/api/alugueis', async (req, res) => {
 // Listar aluguéis de um locatário (usado em PainelLocatario)
 app.get('/api/alugueis/locatario/:locatarioId', async (req, res) => {
   try {
-    const alugueis = await Aluguel.find({ locatario: req.params.locatarioId }).populate('anuncio');
+    const alugueis = await Aluguel.find({ locatario: req.params.locatarioId }).populate('anuncio').populate('locador', 'nome avatar');
     res.status(200).json(alugueis);
   } catch (erro) {
     res.status(500).json({ erro: 'Erro ao buscar aluguéis do locatário' });
