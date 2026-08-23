@@ -9,7 +9,9 @@ const usuarioSchema = new mongoose.Schema({
   bio: { type: String, default: "" },
   avatar: { type: String, default: "" },
   localizacao: { type: String, default: "" },
-  ativo: { type: Boolean, default: true}
+  ativo: { type: Boolean, default: true},
+  tokenRecuperacaoSenha: { type: String, default: null },
+  tokenRecuperacaoExpira: { type: Date, default: null }
 }, {
   timestamps: true 
 });
