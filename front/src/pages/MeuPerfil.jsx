@@ -13,6 +13,7 @@ import {
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { apiRequest, API_URL } from '../services/api';
+import { PainelAvaliacoes } from '../components/PainelAvaliacoes';
 
 function urlAvatarPadrao(nome) {
   const nomeSeguro = (nome || 'Usuário').trim() || 'Usuário';
@@ -280,7 +281,6 @@ export default function MeuPerfil() {
           </div>
 
           <div className="md:col-span-8 space-y-8">
-
             <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
               <h2 className="text-xl font-bold text-[#1A1A1A] mb-4">Sobre mim</h2>
               {usuario.bio ? (
@@ -291,6 +291,8 @@ export default function MeuPerfil() {
                 </p>
               )}
             </div>
+
+            <PainelAvaliacoes usuarioId={usuario._id} />
 
           </div>
         </div>

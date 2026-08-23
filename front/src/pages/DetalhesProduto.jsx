@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { apiRequest } from "../services/api";
+import { MediaAvaliacao } from "../components/MediaAvaliacao";
 
 import { 
   LuStar, 
@@ -39,6 +40,7 @@ export function DetalhesProduto() {
   const [horarioRetirada, setHorarioRetirada] = useState("09:00");
   const [enviando, setEnviando] = useState(false);
   const [mensagem, setMensagem] = useState(null);
+  const [avaliacoesLocador, setAvaliacoesLocador] = useState(null);
 
   useEffect(() => {
     async function buscarAnuncio() {
@@ -46,14 +48,21 @@ export function DetalhesProduto() {
         setCarregando(true);
         const dados = await apiRequest(`/api/anuncios/${id}`);
         setAnuncio(dados);
+
+        try {
+          const dadosAvaliacoes = await apiRequest(`/api/avaliacoes/usuario/${dados.locador._id}`);
+          setAvaliacoesLocador(dadosAvaliacoes);
+        } catch (e) {
+          setAvaliacoesLocador(null);
+        }
       } catch (e) {
         setErro(e.message);
       } finally {
         setCarregando(false);
       }
     }
-    buscarAnuncio();
-  }, [id]);
+  buscarAnuncio();
+}, [id]);
 
   if (carregando) {
     return (
@@ -154,10 +163,7 @@ export function DetalhesProduto() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-[#1A1A1A] mb-3">{anuncio?.titulo}</h1>
           <div className="flex items-center gap-6 text-sm text-gray-500 font-medium">
-            <span className="flex items-center gap-1.5 text-[#1A1A1A] font-bold">
-              <LuStar className="text-yellow-400" fill="currentColor" size={18}/> 
-              4,8 <span className="text-gray-400 font-normal underline cursor-pointer">(24 avaliações)</span>
-            </span>
+              <MediaAvaliacao dadosExternos={avaliacoesLocador} tamanho="lg" />
             <span className="flex items-center gap-1.5">
               <LuMapPin className="text-[#29C354]" size={18}/> {anuncio.endereco.cidade}, {anuncio.endereco.estado}
             </span>
@@ -248,11 +254,14 @@ export function DetalhesProduto() {
                       {anuncio.locador.nome?.[0]?.toUpperCase()}
                     </div>
                   )}
-                  <div>
+                 <div>
                     <h2 className="text-xl font-bold text-[#1A1A1A]">{anuncio.locador.nome}</h2>
                     {formatarMembroDesde(anuncio.locador.createdAt) && (
                       <p className="text-sm text-gray-500">{formatarMembroDesde(anuncio.locador.createdAt)}</p>
                     )}
+                    <div className="mt-1">
+                      <MediaAvaliacao dadosExternos={avaliacoesLocador} tamanho="sm" />
+                    </div>
                   </div>
                 </div>
                 <button className="flex items-center gap-2 border border-[#1A1A1A] text-[#1A1A1A] px-6 py-2.5 rounded-xl hover:bg-gray-50 transition-colors font-bold text-sm">
@@ -277,7 +286,7 @@ export function DetalhesProduto() {
                   <span className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">/ dia</span>
                 </div>
                 <div className="flex items-center gap-1 text-xs font-bold text-gray-500">
-                  <LuStar className="text-yellow-400" fill="currentColor" size={14}/> 4,8 (24 avaliações)
+                  <MediaAvaliacao dadosExternos={avaliacoesLocador} tamanho="sm" />
                 </div>
               </div>
 
