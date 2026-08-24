@@ -5,6 +5,7 @@ import 'react-day-picker/dist/style.css'
 import { apiRequest, API_URL } from '../services/api'
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
+import { SeletorLocalizacao } from '../components/SeletorLocalizao'
 
 const categoriasDisponiveis = [
     { value: 'ferramentas', label: 'Ferramentas' },
@@ -79,8 +80,58 @@ function CriarAnuncio ()
         semComplemento: false,
         bairro: "",
         cidade: "",
-        estado: ""
+        estado: "",
+        latitude: null,
+        longitude: null
     })
+
+    const [buscandoCoordenadas, setBuscandoCoordenadas] = useState(false)
+
+    // Geocoding automático: sempre que rua, número, cidade e estado estiverem preenchidos,
+    // busca as coordenadas via Nominatim (OpenStreetMap) para posicionar o pin no mapa.
+    // Debounce de 800ms para não disparar uma request a cada tecla digitada.
+    useEffect(() => {
+        const { rua, numero, cidade, estado } = endereco
+
+        if (!rua.trim() || !numero.trim() || !cidade.trim() || !estado.trim() || estado === 'SELECIONE') {
+            return
+        }
+
+        const enderecoCompleto = `${rua}, ${numero}, ${cidade}, ${estado}, Brasil`
+
+        const timeoutId = setTimeout(() => {
+            setBuscandoCoordenadas(true)
+
+            const params = new URLSearchParams({
+                q: enderecoCompleto,
+                format: 'json',
+                limit: '1',
+                countrycodes: 'br'
+            })
+
+            fetch(`https://nominatim.openstreetmap.org/search?${params}`)
+                .then(resposta => resposta.json())
+                .then(resultados => {
+                    if (resultados.length > 0) {
+                        setEndereco(atual => ({
+                            ...atual,
+                            latitude: parseFloat(resultados[0].lat),
+                            longitude: parseFloat(resultados[0].lon)
+                        }))
+                    }
+                })
+                .catch(() => {
+                    // Falha silenciosa: o usuário ainda pode marcar o ponto manualmente no mapa
+                })
+                .finally(() => setBuscandoCoordenadas(false))
+        }, 800)
+
+        return () => clearTimeout(timeoutId)
+    }, [endereco.rua, endereco.numero, endereco.cidade, endereco.estado])
+
+    function handleMudarPosicaoMapa(latitude, longitude) {
+        setEndereco(atual => ({ ...atual, latitude, longitude }))
+    }
 
     const estados = ['SELECIONE','AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO']
     
@@ -554,21 +605,24 @@ function CriarAnuncio ()
                                     placeholder='00000-000'
                                     value={endereco.cep}
                                     onChange = {(e) => {
-                                        setEndereco({...endereco, cep: e.target.value})
+                                        const novoCep = e.target.value
+                                        setEndereco(atual => ({...atual, cep: novoCep }))
 
-                                        if(e.target.value.length === 8)
+                                        if(novoCep.length === 8)
                                         {
-                                            fetch(`https://brasilapi.com.br/api/cep/v1/${e.target.value}`)
+                                            fetch(`https://brasilapi.com.br/api/cep/v1/${novoCep}`)
                                                 .then(retorno => retorno.json())
                                                 .then(dados =>
                                                     {
-                                                        setEndereco({
-                                                            ...endereco,
+                                                        setEndereco( atual => ({
+                                                            ...atual,
                                                             rua: dados.street,
                                                             bairro: dados.neighborhood,
                                                             cidade: dados.city,
                                                             estado: dados.state
-                                                        })
+                                                        }))
+                                                    })
+                                                    .catch(() => {
                                                     })
                                         }
                                     }}
@@ -655,21 +709,15 @@ function CriarAnuncio ()
 
                             <div className='mb-4'>
                                 <label className='label-field'>Localização no mapa</label>
-                                <div className="relative h-56 rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden flex items-center justify-center">
-                                    <div className="absolute inset-0 opacity-40" style={{
-                                        backgroundImage: 'linear-gradient(#e5e7eb 1px, transparent 1px), linear-gradient(90deg, #e5e7eb 1px, transparent 1px)',
-                                        backgroundSize: '24px 24px'
-                                    }}></div>
-                                    <div className="relative flex flex-col items-center gap-2 text-center px-4">
-                                        <div className="w-10 h-10 rounded-full bg-[#29C354] flex items-center justify-center shadow-lg">
-                                            <div className="w-3 h-3 rounded-full bg-white"></div>
-                                        </div>
-                                        <p className="text-sm font-bold text-[#1A1A1A]">
-                                            {endereco.rua ? `${endereco.rua}, ${endereco.cidade || ''}` : 'Preencha o endereço acima'}
-                                        </p>
-                                        <p className="text-xs text-gray-400">Arraste o pin para ajustar a localização exata</p>
-                                    </div>
-                                </div>
+                                <SeletorLocalizacao
+                                    latitude={endereco.latitude}
+                                    longitude={endereco.longitude}
+                                    onMudarPosicao={handleMudarPosicaoMapa}
+                                    carregandoGeocoding={buscandoCoordenadas}
+                                />
+                                {endereco.latitude && (
+                                    <p className="text-xs text-gray-400 mt-2">Arraste o pin ou clique no mapa para ajustar a localização exata</p>
+                                )}
                             </div>
 
                             <div className = 'flex justify-between mt-6'>
