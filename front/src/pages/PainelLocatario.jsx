@@ -295,14 +295,12 @@ export default function PainelLocatario() {
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
             <button
-              onClick={() => setActiveTab('config')}
-              title="Configurações"
-              className={`p-2.5 rounded-full transition-colors cursor-pointer ${
-                activeTab === 'config' ? 'bg-[#0068F3]/10 text-[#0068F3]' : 'bg-gray-50 text-gray-500 hover:text-[#0068F3]'
-              }`}
-            >
-              <LuSettings size={20} />
-            </button>
+            onClick={() => navigate('/configuracoes')}
+            title="Configurações"
+            className="p-2.5 rounded-full bg-gray-50 text-gray-500 hover:text-[#0068F3] transition-colors cursor-pointer"
+          >
+            <LuSettings size={20} />
+          </button>
           </div>
         </header>
 

@@ -10,6 +10,7 @@ import Login from './pages/Login';
 import EsqueceuSenha from './pages/EsqueceuSenha';
 import RedefinirSenha from './pages/RedefinirSenha';
 import MeuPerfil from './pages/MeuPerfil';
+import Configuracoes from './pages/Configuracoes';
 
 import './index.css';
 
@@ -28,6 +29,7 @@ function App() {
         <Route path="/esqueceu-senha" element={<EsqueceuSenha />} />
          <Route path="/redefinir-senha" element={<RedefinirSenha />} />
         <Route path="/meu-perfil" element={<MeuPerfil />} />
+        <Route path="/configuracoes" element={<Configuracoes />} />
       </Routes>
     </BrowserRouter>
   );
