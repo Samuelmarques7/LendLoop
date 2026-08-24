@@ -839,26 +839,105 @@ function CriarAnuncio ()
                             <p className='text-gray-400 text-sm mt-1'>Confira tudo antes de publicar</p>
                         </div>
 
-                        <div className="space-y-3 mb-8 bg-gray-50/50 rounded-xl p-5 border border-gray-100">
-                            <p className="text-[#1A1A1A]"><strong>Produto:</strong> {titulo}</p>
-                            <p className="text-[#1A1A1A]"><strong>Descrição:</strong> {descricao}</p>
-                            <p className="text-[#1A1A1A]">
-                                <strong>Categoria:</strong> {categoriasDisponiveis.find(c => c.value === categoria)?.label || categoria}
-                                {subcategorias.length > 0 ? ` / ${subcategorias.join(', ')}` : ''}
-                            </p>
-                            <p className="text-[#1A1A1A]">
-                                <strong>Especificações:</strong>{' '}
-                                {especificacoes.filter(e => e.chave.trim()).length > 0
-                                    ? especificacoes.filter(e => e.chave.trim()).map(e => `${e.chave}: ${e.valor || '—'}`).join(' • ')
-                                    : 'Nenhuma'}
-                            </p>
-                            <p className="text-[#1A1A1A]"><strong>Fotos:</strong> {fotos.length} adicionadas</p>
-                            <p className="text-[#1A1A1A]"><strong>Endereço:</strong> {endereco.rua}, {endereco.numero}</p>
-                            <p className="text-[#1A1A1A]"><strong>Disponibilidade:</strong> {disponivel.length} {disponivel.length === 1 ? 'dia selecionado' : 'dias selecionados'}</p>
-                            <p className="text-[#1A1A1A]"><strong>Preço por dia:</strong> R$ {precos.precoPorDia || '0,00'}{precos.exigirCaucao && precos.caucao ? ` (+ caução de R$ ${precos.caucao})` : ''}</p>
-                            <p className="text-[#1A1A1A]"><strong>Retirada/Devolução:</strong> {precos.horarioRetirada} às {precos.horarioDevolucao}</p>
+                        {/* Card de preview: como o anúncio vai aparecer para quem está buscando */}
+                        <div className="rounded-2xl border border-gray-100 overflow-hidden mb-6">
+                            <div className="h-48 bg-gray-100 relative">
+                                {fotos.length > 0 ? (
+                                    <img src={URL.createObjectURL(fotos[0])} className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="w-full h-full flex flex-col items-center justify-center text-gray-300">
+                                        <span className="text-3xl mb-1">📷</span>
+                                        <span className="text-xs font-bold">Nenhuma foto adicionada</span>
+                                    </div>
+                                )}
+                                {fotos.length > 1 && (
+                                    <span className="absolute bottom-3 right-3 bg-black/60 text-white text-[10px] font-bold px-2.5 py-1 rounded-full">
+                                        +{fotos.length - 1} foto{fotos.length - 1 > 1 ? 's' : ''}
+                                    </span>
+                                )}
+                            </div>
+
+                            <div className="p-5">
+                                <div className="flex items-start justify-between gap-4 mb-2">
+                                    <h3 className="text-lg font-bold text-[#1A1A1A]">
+                                        {titulo || <span className="text-gray-300 italic font-normal">Sem título</span>}
+                                    </h3>
+                                    <div className="text-right shrink-0">
+                                        <span className="text-xl font-black text-[#1A1A1A]">R$ {precos.precoPorDia || '0,00'}</span>
+                                        <span className="text-[10px] font-bold text-gray-400 uppercase"> /dia</span>
+                                    </div>
+                                </div>
+
+                                {categoria && (
+                                    <span className="inline-block bg-[#29C354]/10 text-[#29C354] text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-3">
+                                        {categoriasDisponiveis.find(c => c.value === categoria)?.label || categoria}
+                                    </span>
+                                )}
+
+                                <p className="text-sm text-gray-500 leading-relaxed">
+                                    {descricao || <span className="text-gray-300 italic">Sem descrição</span>}
+                                </p>
+                            </div>
                         </div>
-                    
+
+                        {/* Detalhes agrupados por seção */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+
+                            <div className="bg-gray-50/70 rounded-2xl p-5 border border-gray-100">
+                                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Especificações</h4>
+                                {especificacoes.filter(e => e.chave.trim()).length > 0 ? (
+                                    <div className="flex flex-wrap gap-2">
+                                        {especificacoes.filter(e => e.chave.trim()).map((e, i) => (
+                                            <span key={i} className="bg-white border border-gray-200 text-[#1A1A1A] text-xs font-semibold px-3 py-1.5 rounded-lg">
+                                                {e.chave}{e.valor ? `: ${e.valor}` : ''}
+                                            </span>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-gray-300 italic">Nenhuma especificação adicionada</p>
+                                )}
+                                {subcategorias.length > 0 && (
+                                    <p className="text-xs text-gray-400 mt-3">Subcategorias: {subcategorias.join(', ')}</p>
+                                )}
+                            </div>
+
+                            <div className="bg-gray-50/70 rounded-2xl p-5 border border-gray-100">
+                                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Localização</h4>
+                                {endereco.rua ? (
+                                    <>
+                                        <p className="text-sm font-semibold text-[#1A1A1A]">{endereco.rua}, {endereco.numero}</p>
+                                        <p className="text-xs text-gray-400 mt-0.5">{endereco.bairro}, {endereco.cidade} - {endereco.estado}</p>
+                                        <span className={`inline-block mt-2 text-[10px] font-bold px-2.5 py-1 rounded-full ${endereco.latitude ? 'bg-[#29C354]/10 text-[#29C354]' : 'bg-orange-50 text-orange-500'}`}>
+                                            {endereco.latitude ? '📍 Localização marcada no mapa' : '⚠ Posição no mapa não definida'}
+                                        </span>
+                                    </>
+                                ) : (
+                                    <p className="text-sm text-gray-300 italic">Endereço não preenchido</p>
+                                )}
+                            </div>
+
+                            <div className="bg-gray-50/70 rounded-2xl p-5 border border-gray-100">
+                                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Disponibilidade</h4>
+                                {disponivel.length > 0 ? (
+                                    <p className="text-sm font-semibold text-[#1A1A1A]">
+                                        {disponivel.length} {disponivel.length === 1 ? 'dia selecionado' : 'dias selecionados'}
+                                    </p>
+                                ) : (
+                                    <p className="text-sm text-gray-300 italic">Nenhum dia selecionado</p>
+                                )}
+                            </div>
+
+                            <div className="bg-gray-50/70 rounded-2xl p-5 border border-gray-100">
+                                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Preço e Condições</h4>
+                                <p className="text-sm font-semibold text-[#1A1A1A]">
+                                    R$ {precos.precoPorDia || '0,00'} / dia
+                                    {precos.exigirCaucao && precos.caucao ? ` + caução de R$ ${precos.caucao}` : ''}
+                                </p>
+                                <p className="text-xs text-gray-400 mt-1">Retirada {precos.horarioRetirada} • Devolução {precos.horarioDevolucao}</p>
+                            </div>
+
+                        </div>
+
                         <div className="flex justify-between items-center">
                             <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
                             <div className="flex gap-4">

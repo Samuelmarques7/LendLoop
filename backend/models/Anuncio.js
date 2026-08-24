@@ -22,7 +22,9 @@ const anuncioSchema = new mongoose.Schema({
     semComplemento: { type: Boolean, default: false },
     bairro: { type: String, required: true },
     cidade: { type: String, required: true },
-    estado: { type: String, required: true }
+    estado: { type: String, required: true },
+    latitude: { type: Number, default: null },
+    longitude: { type: Number, default: null}
   },
  
   disponivel: [{ type: Date }],
