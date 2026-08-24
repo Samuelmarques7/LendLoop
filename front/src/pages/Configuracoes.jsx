@@ -80,6 +80,7 @@ export default function Configuracoes() {
       });
       localStorage.removeItem('dadosUsuario');
       localStorage.removeItem('usuarioLogado');
+      localStorage.removeItem('token');
       navigate('/login');
     } catch (e) {
       setErro(e.message);

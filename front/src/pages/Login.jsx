@@ -29,6 +29,7 @@ export default function Login() {
 
       localStorage.setItem('usuarioLogado', 'true');
       localStorage.setItem('dadosUsuario', JSON.stringify(data.usuario));
+      localStorage.setItem('token', data.token);
 
       setMensagem({ tipo: 'sucesso', texto: 'Bem-vindo de volta! Redirecionando...' });
 

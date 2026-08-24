@@ -11,6 +11,7 @@ import EsqueceuSenha from './pages/EsqueceuSenha';
 import RedefinirSenha from './pages/RedefinirSenha';
 import MeuPerfil from './pages/MeuPerfil';
 import Configuracoes from './pages/Configuracoes';
+import RotaPrivada from './components/RotaPrivada';
 
 import './index.css';
 
@@ -20,16 +21,16 @@ function App() {
       <Routes>
         <Route path="/" element={<PaginaInicial />} />
         <Route path="/busca" element={<ResultadosBusca />} />
-        <Route path="/criar-anuncio" element={<CriarAnuncio />} />
+        <Route path="/criar-anuncio" element={<RotaPrivada><CriarAnuncio /></RotaPrivada>} />
         <Route path="/produto/:id" element={<DetalhesProduto />} />
-        <Route path="/painellocatario" element={<PainelLocatario />} />
-        <Route path="/painelLocador" element={<PainelLocador />} />
+        <Route path="/painellocatario" element={<RotaPrivada><PainelLocatario /></RotaPrivada>} />
+        <Route path="/painelLocador" element={<RotaPrivada><PainelLocador /></RotaPrivada>} />
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/login" element={<Login />} />
         <Route path="/esqueceu-senha" element={<EsqueceuSenha />} />
          <Route path="/redefinir-senha" element={<RedefinirSenha />} />
-        <Route path="/meu-perfil" element={<MeuPerfil />} />
-        <Route path="/configuracoes" element={<Configuracoes />} />
+        <Route path="/meu-perfil" element={<RotaPrivada><MeuPerfil /></RotaPrivada>} />
+        <Route path="/configuracoes" element={<RotaPrivada><Configuracoes /></RotaPrivada>} />
       </Routes>
     </BrowserRouter>
   );
