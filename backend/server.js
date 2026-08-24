@@ -12,6 +12,8 @@ const Anuncio = require('./models/Anuncio');
 const Aluguel = require('./models/Aluguel');
 const Pagamento = require('./models/Pagamento');
 const Avaliacao = require('./models/Avaliacao');
+const Conversa = require('./models/Conversa');
+const Mensagem = require('./models/Mensagem');
 
 const app = express();
 
@@ -554,6 +556,148 @@ app.get('/api/avaliacoes/aluguel/:aluguelId/autor/:autorId', async (req, res) =>
     res.status(200).json({ avaliado: !!avaliacao });
   } catch (erro) {
     res.status(500).json({ erro: 'Erro ao verificar avaliação' });
+  }
+});
+
+app.post('/api/conversas', async (req, res) => {
+  try {
+    const { usuarioA, usuarioB, anuncio } = req.body;
+
+    if (!usuarioA || !usuarioB) {
+      return res.status(400).json({ erro: 'Os dois participantes são obrigatórios.' });
+    }
+
+    if (String(usuarioA) === String(usuarioB)) {
+      return res.status(400).json({ erro: 'Não é possível iniciar uma conversa consigo mesmo.' });
+    }
+
+    const filtro = {
+      participantes: { $all: [usuarioA, usuarioB], $size: 2 }
+    };
+    if (anuncio) filtro.anuncio = anuncio;
+
+    let conversa = await Conversa.findOne(filtro);
+
+    if (!conversa) {
+      conversa = new Conversa({
+        participantes: [usuarioA, usuarioB],
+        anuncio: anuncio || null
+      });
+      await conversa.save();
+    }
+
+    // A busca logo após o save garante que o banco cruze os dados perfeitamente (evita falha de versão do Mongoose)
+    const conversaPopulada = await Conversa.findById(conversa._id)
+      .populate('participantes', 'nome avatar')
+      .populate('anuncio', 'titulo fotos');
+
+    res.status(200).json(conversaPopulada);
+  } catch (erro) {
+    console.error("ERRO AO INICIAR CONVERSA NO BACKEND:", erro);
+    res.status(500).json({ erro: 'Erro ao iniciar conversa', detalhes: erro.message });
+  }
+});
+
+// Listar conversas de um usuário (usado nos painéis)
+app.get('/api/conversas/usuario/:usuarioId', async (req, res) => {
+  try {
+    const { usuarioId } = req.params;
+
+    const conversas = await Conversa.find({ participantes: usuarioId })
+      .populate('participantes', 'nome avatar')
+      .populate('anuncio', 'titulo fotos')
+      .sort({ ultimaMensagemEm: -1 });
+
+    const conversasComNaoLidas = await Promise.all(
+      conversas.map(async (conversa) => {
+        const naoLidas = await Mensagem.countDocuments({
+          conversa: conversa._id,
+          destinatario: usuarioId,
+          lida: false
+        });
+        return { ...conversa.toObject(), naoLidas };
+      })
+    );
+
+    res.status(200).json(conversasComNaoLidas);
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao buscar conversas' });
+  }
+});
+
+// Contar total de mensagens não lidas de um usuário (usado nos cards de estatística)
+app.get('/api/mensagens/nao-lidas/:usuarioId', async (req, res) => {
+  try {
+    const total = await Mensagem.countDocuments({
+      destinatario: req.params.usuarioId,
+      lida: false
+    });
+    res.status(200).json({ total });
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao contar mensagens não lidas' });
+  }
+});
+
+// Listar mensagens de uma conversa
+app.get('/api/mensagens/conversa/:conversaId', async (req, res) => {
+  try {
+    const mensagens = await Mensagem.find({ conversa: req.params.conversaId })
+      .populate('remetente', 'nome avatar')
+      .sort({ createdAt: 1 });
+
+    res.status(200).json(mensagens);
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao buscar mensagens' });
+  }
+});
+
+// Enviar mensagem
+app.post('/api/mensagens', async (req, res) => {
+  try {
+    const { conversa, remetente, destinatario, texto } = req.body;
+
+    if (!conversa || !remetente || !destinatario || !texto?.trim()) {
+      return res.status(400).json({ erro: 'Conversa, remetente, destinatário e texto são obrigatórios.' });
+    }
+
+    const conversaExistente = await Conversa.findById(conversa);
+    if (!conversaExistente) {
+      return res.status(404).json({ erro: 'Conversa não encontrada.' });
+    }
+
+    const novaMensagem = new Mensagem({ conversa, remetente, destinatario, texto: texto.trim() });
+    await novaMensagem.save();
+
+    conversaExistente.ultimaMensagem = texto.trim();
+    conversaExistente.ultimaMensagemEm = novaMensagem.createdAt;
+    conversaExistente.ultimaMensagemAutor = remetente;
+    await conversaExistente.save();
+
+    const mensagemPopulada = await novaMensagem.populate('remetente', 'nome avatar');
+
+    res.status(201).json(mensagemPopulada);
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao enviar mensagem', detalhes: erro.message });
+  }
+});
+
+// Marcar mensagens de uma conversa como lidas por um usuário
+app.patch('/api/mensagens/conversa/:conversaId/lida', async (req, res) => {
+  try {
+    const { usuarioId } = req.body;
+
+    if (!usuarioId) {
+      return res.status(400).json({ erro: 'usuarioId é obrigatório.' });
+    }
+
+    await Mensagem.updateMany(
+      { conversa: req.params.conversaId, destinatario: usuarioId, lida: false },
+      { lida: true }
+    );
+
+    res.status(200).json({ mensagem: 'Mensagens marcadas como lidas.' });
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao marcar mensagens como lidas', detalhes: erro.message });
   }
 });
 
