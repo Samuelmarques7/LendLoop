@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { apiRequest } from '../services/api';
 import logo from '../assets/logo.png';
 import { BotaoAvaliar } from '../components/BotaoAvaliar';
+import { PainelMensagens } from '../components/PainelMensagens';
 
 import {
   LuLayoutDashboard,
@@ -35,6 +36,7 @@ export default function PainelLocatario() {
 
   const [todosAlugueis, setTodosAlugueis] = useState([]);
   const [pagamentos, setPagamentos] = useState([]);
+  const [mensagensNaoLidas, setMensagensNaoLidas] = useState(0);
 
   useEffect(() => {
     document.title = 'Painel Locatário';
@@ -52,6 +54,9 @@ export default function PainelLocatario() {
   useEffect(() => {
     if (location.state?.abrirConfig) {
       setActiveTab('config');
+    }
+    if (location.state?.abrirConversa) {
+      setActiveTab('mensagens');
     }
   }, [location.state]);
 
@@ -79,6 +84,20 @@ export default function PainelLocatario() {
     buscarPagamentos();
   }, []);
 
+  useEffect(() => {
+    async function buscarMensagensNaoLidas() {
+      try {
+        const dados = await apiRequest(`/api/mensagens/nao-lidas/${usuarioLogado.id}`);
+        setMensagensNaoLidas(dados.total);
+      } catch {
+        // silencioso: badge de mensagens não é crítico
+      }
+    }
+    buscarMensagensNaoLidas();
+    const intervalo = setInterval(buscarMensagensNaoLidas, 15000);
+    return () => clearInterval(intervalo);
+  }, []);
+
   const solicitacoesEnviadas = useMemo(
     () => todosAlugueis.filter(a => a.status === 'pendente'),
     [todosAlugueis]
@@ -99,7 +118,7 @@ export default function PainelLocatario() {
     { id: 1, titulo: "Próximos Aluguéis", valor: String(alugueis.andamento.length), icon: LuCalendar, color: "text-[#0068F3]", bg: "bg-blue-50" },
     { id: 2, titulo: "Solicitações Pendentes", valor: String(solicitacoesEnviadas.length), icon: LuMailWarning, color: "text-orange-500", bg: "bg-orange-50" },
     { id: 3, titulo: "Pagamentos Pendentes", valor: `R$ ${pagamentosPorAba.pendentes.reduce((soma, p) => soma + p.valor, 0).toFixed(2)}`, icon: LuWallet, color: "text-[#29C354]", bg: "bg-[#29C354]/10" },
-    { id: 4, titulo: "Mensagens Não Lidas", valor: "0", icon: LuMessageSquare, color: "text-[#0297AA]", bg: "bg-[#0297AA]/10" }
+    { id: 4, titulo: "Mensagens Não Lidas", valor: String(mensagensNaoLidas), icon: LuMessageSquare, color: "text-[#0297AA]", bg: "bg-[#0297AA]/10" }
   ];
 
   const menuItems = [
@@ -198,6 +217,13 @@ export default function PainelLocatario() {
         return <SecaoSolicitacoesEnviadas solicitacoesEnviadas={solicitacoesEnviadas} onCancelarSolicitacao={cancelarSolicitacao} />;
       case 'pagamentos':
         return <SecaoPagamentos pagamentos={pagamentosPorAba} abaPagamentos={abaPagamentos} setAbaPagamentos={setAbaPagamentos} onPagarAgora={pagarAgora} />;
+      case 'mensagens':
+        return <PainelMensagens
+          usuarioLogadoId={usuarioLogado?.id}
+          corPrimaria="#0068F3"
+          conversaParaAbrir={location.state?.abrirConversa}
+          onConversasAtualizadas={setMensagensNaoLidas}
+        />;
       case 'config':
         return <SecaoConfiguracoes
           objetivoAtual={usuarioLogado?.objetivo || 'ambos'}
@@ -295,12 +321,12 @@ export default function PainelLocatario() {
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
             <button
-            onClick={() => navigate('/configuracoes')}
-            title="Configurações"
-            className="p-2.5 rounded-full bg-gray-50 text-gray-500 hover:text-[#0068F3] transition-colors cursor-pointer"
-          >
-            <LuSettings size={20} />
-          </button>
+              onClick={() => navigate('/configuracoes')}
+              title="Configurações"
+              className="p-2.5 rounded-full bg-gray-50 text-gray-500 hover:text-[#0068F3] transition-colors cursor-pointer"
+            >
+              <LuSettings size={20} />
+            </button>
           </div>
         </header>
 
@@ -423,7 +449,7 @@ function SecaoSolicitacoesEnviadas({ solicitacoesEnviadas, onCancelarSolicitacao
               <div key={solicitacao._id} className="p-4 hover:bg-gray-50 rounded-2xl transition-colors border border-transparent hover:border-gray-100 mb-2">
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <h3 className="font-bold text-[#1A1A1A] text-sm">{solicitacao.anuncio.titulo}</h3>
+                    <h3 className="font-bold text-[#1A1A1A] text-sm">{solicitacao.anuncio?.titulo || 'Anúncio Indisponível'}</h3>
                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">
                       {new Date(solicitacao.dataInicio).toLocaleDateString('pt-BR')} - {new Date(solicitacao.dataFim).toLocaleDateString('pt-BR')}
                     </p>
@@ -559,7 +585,7 @@ function SecaoPainel({ stats, alugueis, pagamentos, solicitacoesEnviadas, abaAlu
                 <div key={solicitacao._id} className="p-4 hover:bg-gray-50 rounded-2xl transition-colors border border-transparent hover:border-gray-100 mb-2">
                   <div className="flex justify-between items-start mb-3">
                     <div>
-                      <h3 className="font-bold text-[#1A1A1A] text-sm">{solicitacao.anuncio.titulo}</h3>
+                      <h3 className="font-bold text-[#1A1A1A] text-sm">{solicitacao.anuncio?.titulo || 'Anúncio Indisponível'}</h3>
                       <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">
                         {new Date(solicitacao.dataInicio).toLocaleDateString('pt-BR')}
                       </p>

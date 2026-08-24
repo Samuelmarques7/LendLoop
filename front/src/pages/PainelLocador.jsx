@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { apiRequest } from '../services/api';
 import logo from '../assets/logo.png'; 
 import { BotaoAvaliar } from '../components/BotaoAvaliar';
+import { PainelMensagens } from '../components/PainelMensagens';
 
 import { 
   LuLayoutDashboard, 
@@ -43,6 +44,7 @@ export default function PainelLocador() {
   const [alugueis, setAlugueis] = useState([]);
   const [meusAnuncios, setMeusAnuncios] = useState([]);
   const [dadosLocador, setDadosLocador] = useState(null);
+  const [mensagensNaoLidas, setMensagensNaoLidas] = useState(0);
 
   const usuarioLogado = JSON.parse(localStorage.getItem('dadosUsuario'));
 
@@ -62,6 +64,9 @@ export default function PainelLocador() {
   useEffect(() => {
     if (location.state?.abrirConfig) {
       setActiveTab('config');
+    }
+    if (location.state?.abrirConversa) {
+      setActiveTab('mensagens');
     }
   }, [location.state]);
 
@@ -87,6 +92,20 @@ export default function PainelLocador() {
       setAlugueis(dados);
     }
     buscarAlugueis();
+  }, []);
+
+  useEffect(() => {
+    async function buscarMensagensNaoLidas() {
+      try {
+        const dados = await apiRequest(`/api/mensagens/nao-lidas/${usuarioLogado.id}`);
+        setMensagensNaoLidas(dados.total);
+      } catch {
+        // silencioso: badge de mensagens não é crítico
+      }
+    }
+    buscarMensagensNaoLidas();
+    const intervalo = setInterval(buscarMensagensNaoLidas, 15000);
+    return () => clearInterval(intervalo);
   }, []);
 
   const solicitacoesPendentes = useMemo(
@@ -128,7 +147,7 @@ export default function PainelLocador() {
     { id: 1, titulo: "Ganhos Este Mês", valor: `R$ ${ganhosDoMes.toFixed(2)}`, icon: LuDollarSign, color: "text-[#29C354]", bg: "bg-[#29C354]/10" },
     { id: 2, titulo: "Anúncios Ativos", valor: String(meusAnuncios.length), icon: LuPackage, color: "text-[#1A1A1A]", bg: "bg-gray-100" },
     { id: 3, titulo: "Solicitações Pendentes", valor: String(solicitacoesPendentes.length), icon: LuInfo, color: "text-orange-500", bg: "bg-orange-50" },
-    { id: 4, titulo: "Mensagens Não Lidas", valor: "0", icon: LuMessageSquare, color: "text-[#0068F3]", bg: "bg-blue-50" }
+    { id: 4, titulo: "Mensagens Não Lidas", valor: String(mensagensNaoLidas), icon: LuMessageSquare, color: "text-[#0068F3]", bg: "bg-blue-50" }
   ];
 
   const menuItems = [
@@ -278,6 +297,13 @@ export default function PainelLocador() {
             usuarioLogadoId={usuarioLogado?.id}
           />
         );
+      case 'mensagens':
+        return <PainelMensagens
+          usuarioLogadoId={usuarioLogado?.id}
+          corPrimaria="#29C354"
+          conversaParaAbrir={location.state?.abrirConversa}
+          onConversasAtualizadas={setMensagensNaoLidas}
+        />;
       case 'config':
         return <SecaoConfiguracoes
           activeTab={activeTab}
@@ -381,8 +407,8 @@ export default function PainelLocador() {
               title="Configurações"
               className="p-2.5 rounded-full bg-gray-50 text-gray-500 hover:text-[#29C354] transition-colors cursor-pointer"
             >
-            <LuSettings size={20} />
-          </button>
+              <LuSettings size={20} />
+            </button>
           </div>
         </header>
 

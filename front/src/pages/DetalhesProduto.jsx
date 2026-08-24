@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom"; // <-- ADICIONADO useNavigate
 import { apiRequest } from "../services/api";
 import { MediaAvaliacao } from "../components/MediaAvaliacao";
 
@@ -30,6 +30,7 @@ import { Footer } from "../components/Footer";
 
 export function DetalhesProduto() {
   const { id } = useParams();
+  const navigate = useNavigate(); // <-- INICIALIZADO useNavigate
 
   const [anuncio, setAnuncio] = useState(null);
   const [carregando, setCarregando] = useState(true);
@@ -61,8 +62,8 @@ export function DetalhesProduto() {
         setCarregando(false);
       }
     }
-  buscarAnuncio();
-}, [id]);
+    buscarAnuncio();
+  }, [id]);
 
   if (carregando) {
     return (
@@ -98,7 +99,7 @@ export function DetalhesProduto() {
   const total = subtotal + taxaServico + caucao;
 
   async function handleSolicitarAluguel() {
-    setMensagem (null);
+    setMensagem(null);
 
     const dadosUsuarioRaw = localStorage.getItem("dadosUsuario");
 
@@ -122,7 +123,7 @@ export function DetalhesProduto() {
     try {
       setEnviando(true);
 
-      await apiRequest ("/api/alugueis", {
+      await apiRequest("/api/alugueis", {
         method: "POST",
         body: {
           anuncio: anuncio._id,
@@ -145,6 +146,33 @@ export function DetalhesProduto() {
     }
   }
 
+  // --- NOVA FUNÇÃO ADICIONADA AQUI ---
+  function handleMensagemAnfitriao() {
+    setMensagem(null);
+    const dadosUsuarioRaw = localStorage.getItem("dadosUsuario");
+
+    if (!dadosUsuarioRaw) {
+      setMensagem({ tipo: 'erro', texto: 'Você precisa estar logado para enviar mensagens.' });
+      return;
+    }
+
+    const usuarioLogado = JSON.parse(dadosUsuarioRaw);
+
+    if (usuarioLogado.id === anuncio.locador._id) {
+      setMensagem({ tipo: 'erro', texto: 'Você não pode enviar mensagem para o seu próprio anúncio.' });
+      return;
+    }
+
+    // Define para qual painel redirecionar com base no objetivo do usuário
+    const rotaPainel = usuarioLogado.objetivo === 'locador' ? '/painelLocador' : '/painelLocatario';
+
+    // Redireciona para o painel, forçando a abertura da aba de mensagens e enviando o ID do anfitrião
+    navigate(rotaPainel, {
+      state: { abrirConversa: anuncio.locador._id }
+    });
+  }
+  // -----------------------------------
+
   return (
     <div className="min-h-screen bg-[#F8F9FA] font-sans text-[#1A1A1A] flex flex-col">
       
@@ -153,11 +181,9 @@ export function DetalhesProduto() {
       <main className="max-w-7xl mx-auto w-full flex-grow p-6 pt-8">
         
         <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-6">
-          <span className="cursor-pointer hover:text-[#29C354]">Início</span>
+          <span className="cursor-pointer hover:text-[#29C354]" onClick={() => navigate('/')}>Início</span>
           <LuChevronRight size={14} />
-          <span className="cursor-pointer hover:text-[#29C354]">Ferramentas e Equipamentos</span>
-          <LuChevronRight size={14} />
-          <span className="text-[#1A1A1A]">{anuncio?.titulo}</span>
+          <span className="text-[#1A1A1A] truncate max-w-[200px]">{anuncio?.titulo}</span>
         </div>
 
         <div className="mb-6">
@@ -264,9 +290,15 @@ export function DetalhesProduto() {
                     </div>
                   </div>
                 </div>
-                <button className="flex items-center gap-2 border border-[#1A1A1A] text-[#1A1A1A] px-6 py-2.5 rounded-xl hover:bg-gray-50 transition-colors font-bold text-sm">
+                
+                {/* BOTÃO ATUALIZADO AQUI */}
+                <button 
+                  onClick={handleMensagemAnfitriao}
+                  className="flex items-center gap-2 border border-[#1A1A1A] text-[#1A1A1A] px-6 py-2.5 rounded-xl hover:bg-gray-50 transition-colors font-bold text-sm cursor-pointer"
+                >
                   <LuMessageCircle size={18}/> Mensagem ao Anfitrião
                 </button>
+                
               </div>
               {anuncio.locador.bio && (
                 <p className="text-gray-500 text-sm leading-relaxed mb-6">
