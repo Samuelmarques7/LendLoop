@@ -377,14 +377,12 @@ export default function PainelLocador() {
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
             <button
-              onClick={() => setActiveTab('config')}
+              onClick={() => navigate('/configuracoes')}
               title="Configurações"
-              className={`p-2.5 rounded-full transition-colors cursor-pointer ${
-                activeTab === 'config' ? 'bg-[#29C354]/10 text-[#29C354]' : 'bg-gray-50 text-gray-500 hover:text-[#29C354]'
-              }`}
+              className="p-2.5 rounded-full bg-gray-50 text-gray-500 hover:text-[#29C354] transition-colors cursor-pointer"
             >
-              <LuSettings size={20} />
-            </button>
+            <LuSettings size={20} />
+          </button>
           </div>
         </header>
 

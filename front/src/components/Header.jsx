@@ -14,16 +14,8 @@ export function Header() {
   const noPainelLocador = location.pathname.toLowerCase() === '/painellocador';
 
   function abrirConfiguracoes() {
-    if (objetivo === 'locador') {
-      navigate('/painelLocador', { state: { abrirConfig: true } });
-    } else if (objetivo === 'locatario') {
-      navigate('/painellocatario', { state: { abrirConfig: true } });
-    } else if (noPainelLocador) {
-      navigate('/painelLocador', { state: { abrirConfig: true } });
-    } else {
-      navigate('/painellocatario', { state: { abrirConfig: true } });
-    }
-  }
+  navigate('/configuracoes');
+}
 
   return (
     <header className="bg-white border-b border-gray-100 px-8 py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
