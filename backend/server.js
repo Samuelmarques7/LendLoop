@@ -5,8 +5,9 @@ const connectDB = require('./config/db');
 const upload = require('./config/upload');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 const { enviarEmailRecuperacao } = require('./config/mailer');
-
+const autenticacao = require('./middlewares/autenticacao');
 const Usuario = require('./models/Usuario');
 const Anuncio = require('./models/Anuncio');
 const Aluguel = require('./models/Aluguel');
@@ -26,7 +27,7 @@ app.post('/api/usuarios', async (req, res) => {
     const { nome, email, senha, telefone, localizacao, objetivo } = req.body;
     const senhaCriptografada = await bcrypt.hash(senha, 10);
     const novoUsuario = new Usuario({ nome, email, senha: senhaCriptografada, telefone, localizacao, objetivo });
-    
+
     await novoUsuario.save();
 
     res.status(201).json({
@@ -41,9 +42,8 @@ app.post('/api/usuarios', async (req, res) => {
       }
     });
   } catch (erro) {
-
-    if(erro.code === 11000) {
-      return res.status(409).json({erro: 'Este e-mail já está cadastrado.'});
+    if (erro.code === 11000) {
+      return res.status(409).json({ erro: 'Este e-mail já está cadastrado.' });
     }
     res.status(500).json({ erro: 'Erro ao criar usuário', detalhes: erro.message });
   }
@@ -73,8 +73,12 @@ app.get('/api/usuarios/:id', async (req, res) => {
 });
 
 // Atualizar perfil (nome, telefone, bio, avatar)
-app.put('/api/usuarios/:id', async (req, res) => {
+app.put('/api/usuarios/:id', autenticacao, async (req, res) => {
   try {
+    if (req.usuarioId !== req.params.id) {
+      return res.status(403).json({ erro: 'Você não tem permissão para editar este perfil.' });
+    }
+
     const { nome, telefone, bio, avatar, objetivo } = req.body;
 
     const camposAtualizados = {};
@@ -82,7 +86,7 @@ app.put('/api/usuarios/:id', async (req, res) => {
     if (telefone !== undefined) camposAtualizados.telefone = telefone;
     if (bio !== undefined) camposAtualizados.bio = bio;
     if (avatar !== undefined) camposAtualizados.avatar = avatar;
-    if (objetivo !== undefined) camposAtualizados.objetivo = objetivo;  
+    if (objetivo !== undefined) camposAtualizados.objetivo = objetivo;
 
     const usuario = await Usuario.findByIdAndUpdate(
       req.params.id,
@@ -104,8 +108,12 @@ app.put('/api/usuarios/:id', async (req, res) => {
 });
 
 // Excluir conta (soft delete: anonimiza o usuário e apaga seus anúncios)
-app.delete('/api/usuarios/:id', async (req, res) => {
+app.delete('/api/usuarios/:id', autenticacao, async (req, res) => {
   try {
+    if (req.usuarioId !== req.params.id) {
+      return res.status(403).json({ erro: 'Você não tem permissão para excluir esta conta.' });
+    }
+
     const usuario = await Usuario.findById(req.params.id);
 
     if (!usuario) {
@@ -147,17 +155,24 @@ app.post('/api/login', async (req, res) => {
       return res.status(401).json({ erro: 'Senha incorreta.' });
     }
 
-    res.status(200).json({ 
-      mensagem: 'Login realizado com sucesso!', 
-      usuario: { 
+    const token = jwt.sign(
+      { id: usuario._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.status(200).json({
+      mensagem: 'Login realizado com sucesso!',
+      token,
+      usuario: {
         id: usuario._id,
-        nome: usuario.nome, 
+        nome: usuario.nome,
         email: usuario.email,
         avatar: usuario.avatar,
         localizacao: usuario.localizacao,
         objetivo: usuario.objetivo,
         createdAt: usuario.createdAt,
-      } 
+      }
     });
   } catch (erro) {
     console.error("Erro no login:", erro);
@@ -246,14 +261,14 @@ app.post('/api/upload', upload.array('fotos', 6), async (req, res) => {
 // --- Anúncio ---
 
 // Criar anúncio
-app.post('/api/anuncios', async (req, res) => {
+app.post('/api/anuncios', autenticacao, async (req, res) => {
   try {
-    const { titulo, descricao, categoria, subcategorias, especificacoes, fotos, endereco, disponivel, precos, status, locador } = req.body;
+    const { titulo, descricao, categoria, subcategorias, especificacoes, fotos, endereco, disponivel, precos, status } = req.body;
 
     const novoAnuncio = new Anuncio({
       titulo, descricao, categoria, subcategorias, especificacoes,
       fotos, endereco, disponivel, precos,
-      status, locador
+      status, locador: req.usuarioId
     });
 
     await novoAnuncio.save();
@@ -276,17 +291,17 @@ app.get('/api/anuncios', async (req, res) => {
     if (busca) {
       const regex = new RegExp(busca, 'i'); // 'i' para case-insensitive
       filtro.$or = [
-        {titulo: regex},
-        {descricao: regex},
+        { titulo: regex },
+        { descricao: regex },
       ];
     }
 
     if (dataInicio || dataFim) {
       const condicaoData = {};
-      
+
       if (dataInicio) condicaoData.$gte = new Date(dataInicio);
       if (dataFim) condicaoData.$lte = new Date(dataFim);
-      filtro.disponivel = {$elemMatch: condicaoData };
+      filtro.disponivel = { $elemMatch: condicaoData };
     }
 
     if (categoria) {
@@ -332,12 +347,16 @@ app.get('/api/anuncios/locador/:locadorId', async (req, res) => {
 });
 
 // Excluir anúncio (usado em PainelLocador)
-app.delete('/api/anuncios/:id', async (req, res) => {
+app.delete('/api/anuncios/:id', autenticacao, async (req, res) => {
   try {
     const anuncio = await Anuncio.findById(req.params.id);
 
     if (!anuncio) {
       return res.status(404).json({ erro: 'Anúncio não encontrado' });
+    }
+
+    if (anuncio.locador.toString() !== req.usuarioId) {
+      return res.status(403).json({ erro: 'Você não tem permissão para excluir este anúncio.' });
     }
 
     await Anuncio.findByIdAndDelete(req.params.id);
@@ -351,12 +370,24 @@ app.delete('/api/anuncios/:id', async (req, res) => {
 // --- Aluguel ---
 
 // Criar solicitação de aluguel (botão "Solicitar Aluguel" em DetalhesProduto)
-app.post('/api/alugueis', async (req, res) => {
+app.post('/api/alugueis', autenticacao, async (req, res) => {
   try {
-    const { anuncio, locatario, locador, dataInicio, dataFim, horarioRetirada, precoTotal, taxaServico, caucao } = req.body;
+    const { anuncio, dataInicio, dataFim, horarioRetirada, precoTotal, taxaServico, caucao } = req.body;
+
+    const anuncioEncontrado = await Anuncio.findById(anuncio);
+
+    if (!anuncioEncontrado) {
+      return res.status(404).json({ erro: 'Anúncio não encontrado.' });
+    }
+
+    if (anuncioEncontrado.locador.toString() === req.usuarioId) {
+      return res.status(400).json({ erro: 'Você não pode alugar seu próprio anúncio.' });
+    }
 
     const novoAluguel = new Aluguel({
-      anuncio, locatario, locador,
+      anuncio,
+      locatario: req.usuarioId,
+      locador: anuncioEncontrado.locador,
       dataInicio, dataFim, horarioRetirada,
       precoTotal, taxaServico, caucao
     });
@@ -431,11 +462,21 @@ app.patch('/api/alugueis/:id/status', async (req, res) => {
 // --- Pagamento ---
 
 // Criar pagamento (gerado a partir de um aluguel)
-app.post('/api/pagamentos', async (req, res) => {
+app.post('/api/pagamentos', autenticacao, async (req, res) => {
   try {
-    const { aluguel, locatario, valor, vencimento, metodo } = req.body;
+    const { aluguel, valor, vencimento, metodo } = req.body;
 
-    const novoPagamento = new Pagamento({ aluguel, locatario, valor, vencimento, metodo });
+    const aluguelEncontrado = await Aluguel.findById(aluguel);
+
+    if (!aluguelEncontrado) {
+      return res.status(404).json({ erro: 'Aluguel não encontrado.' });
+    }
+
+    if (aluguelEncontrado.locatario.toString() !== req.usuarioId) {
+      return res.status(403).json({ erro: 'Você não tem permissão para criar um pagamento para este aluguel.' });
+    }
+
+    const novoPagamento = new Pagamento({ aluguel, locatario: req.usuarioId, valor, vencimento, metodo });
 
     await novoPagamento.save();
 
@@ -459,19 +500,22 @@ app.get('/api/pagamentos/locatario/:locatarioId', async (req, res) => {
 });
 
 // Confirmar pagamento (botão "Pagar Agora")
-app.patch('/api/pagamentos/:id/status', async (req, res) => {
+app.patch('/api/pagamentos/:id/status', autenticacao, async (req, res) => {
   try {
     const { status } = req.body;
 
-    const pagamento = await Pagamento.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true }
-    );
+    const pagamento = await Pagamento.findById(req.params.id);
 
     if (!pagamento) {
       return res.status(404).json({ erro: 'Pagamento não encontrado' });
     }
+
+    if (pagamento.locatario.toString() !== req.usuarioId) {
+      return res.status(403).json({ erro: 'Você não tem permissão para alterar este pagamento.' });
+    }
+
+    pagamento.status = status;
+    await pagamento.save();
 
     res.status(200).json({
       mensagem: 'Status do pagamento atualizado com sucesso!',
@@ -485,9 +529,10 @@ app.patch('/api/pagamentos/:id/status', async (req, res) => {
 // --- Avaliação ---
 
 // Criar avaliação (só permitido se o aluguel estiver concluído)
-app.post('/api/avaliacoes', async (req, res) => {
+app.post('/api/avaliacoes', autenticacao, async (req, res) => {
   try {
-    const { aluguel, autor, nota, comentario } = req.body;
+    const { aluguel, nota, comentario } = req.body;
+    const autor = req.usuarioId;
 
     const aluguelEncontrado = await Aluguel.findById(aluguel);
 
@@ -532,7 +577,7 @@ app.get('/api/avaliacoes/usuario/:usuarioId', async (req, res) => {
       .sort({ createdAt: -1 });
 
     const media = avaliacoes.length ? avaliacoes.reduce((soma, a) => soma + a.nota, 0) / avaliacoes.length : 0;
-    
+
     res.status(200).json({
       avaliacoes,
       media: Number(media.toFixed(1)),
