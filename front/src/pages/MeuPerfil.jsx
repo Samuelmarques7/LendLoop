@@ -123,6 +123,7 @@ export default function MeuPerfil() {
   const handleLogout = () => {
     localStorage.removeItem('usuarioLogado');
     localStorage.removeItem('dadosUsuario');
+    localStorage.removeItem('token');
     navigate('/');
   };
 

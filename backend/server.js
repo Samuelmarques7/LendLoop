@@ -52,7 +52,7 @@ app.post('/api/usuarios', async (req, res) => {
 });
 
 // Listagem
-app.get('/api/usuarios', async (req, res) => {
+app.get('/api/usuarios', autenticacao, async (req, res) => {
   try {
     const usuarios = await Usuario.find().select('-senha');
     res.status(200).json(usuarios);
@@ -406,8 +406,12 @@ app.post('/api/alugueis', autenticacao, async (req, res) => {
 });
 
 // Listar aluguéis de um locatário (usado em PainelLocatario)
-app.get('/api/alugueis/locatario/:locatarioId', async (req, res) => {
+app.get('/api/alugueis/locatario/:locatarioId', autenticacao, async (req, res) => {
   try {
+    if (req.params.locatarioId !== req.usuarioId) {
+      return res.status(403).json({ erro: 'Você não tem permissão para ver estes aluguéis.' });
+    }
+
     const alugueis = await Aluguel.find({ locatario: req.params.locatarioId }).populate('anuncio').populate('locador', 'nome avatar');
     res.status(200).json(alugueis);
   } catch (erro) {
@@ -416,8 +420,12 @@ app.get('/api/alugueis/locatario/:locatarioId', async (req, res) => {
 });
 
 // Listar solicitações recebidas por um locador (usado em PainelLocador)
-app.get('/api/alugueis/locador/:locadorId', async (req, res) => {
+app.get('/api/alugueis/locador/:locadorId', autenticacao, async (req, res) => {
   try {
+    if (req.params.locadorId !== req.usuarioId) {
+      return res.status(403).json({ erro: 'Você não tem permissão para ver estas solicitações.' });
+    }
+
     const alugueis = await Aluguel.find({ locador: req.params.locadorId }).populate('anuncio locatario');
     res.status(200).json(alugueis);
   } catch (erro) {
@@ -426,7 +434,7 @@ app.get('/api/alugueis/locador/:locadorId', async (req, res) => {
 });
 
 // Atualizar status de um aluguel (aceitar, recusar, marcar como devolvido, etc.)
-app.patch('/api/alugueis/:id/status', async (req, res) => {
+app.patch('/api/alugueis/:id/status', autenticacao, async (req, res) => {
   try {
     const { status } = req.body;
 
@@ -434,6 +442,10 @@ app.patch('/api/alugueis/:id/status', async (req, res) => {
 
     if (!aluguel) {
       return res.status(404).json({ erro: 'Aluguel não encontrado' });
+    }
+
+    if (aluguel.locador.toString() !== req.usuarioId && aluguel.locatario.toString() !== req.usuarioId) {
+      return res.status(403).json({ erro: 'Você não tem permissão para alterar este aluguel.' });
     }
 
     // Regra específica: só pode marcar como concluído se já estava aceito
@@ -492,8 +504,12 @@ app.post('/api/pagamentos', autenticacao, async (req, res) => {
 });
 
 // Listar pagamentos de um locatário (usado em PainelLocatario)
-app.get('/api/pagamentos/locatario/:locatarioId', async (req, res) => {
+app.get('/api/pagamentos/locatario/:locatarioId', autenticacao, async (req, res) => {
   try {
+    if (req.params.locatarioId !== req.usuarioId) {
+      return res.status(403).json({ erro: 'Você não tem permissão para ver estes pagamentos.' });
+    }
+
     const pagamentos = await Pagamento.find({ locatario: req.params.locatarioId }).populate('aluguel');
     res.status(200).json(pagamentos);
   } catch (erro) {
@@ -604,9 +620,10 @@ app.get('/api/avaliacoes/aluguel/:aluguelId/autor/:autorId', async (req, res) =>
   }
 });
 
-app.post('/api/conversas', async (req, res) => {
+app.post('/api/conversas', autenticacao, async (req, res) => {
   try {
-    const { usuarioA, usuarioB, anuncio } = req.body;
+    const { usuarioB, anuncio } = req.body;
+    const usuarioA = req.usuarioId;
 
     if (!usuarioA || !usuarioB) {
       return res.status(400).json({ erro: 'Os dois participantes são obrigatórios.' });
@@ -631,7 +648,6 @@ app.post('/api/conversas', async (req, res) => {
       await conversa.save();
     }
 
-    // A busca logo após o save garante que o banco cruze os dados perfeitamente (evita falha de versão do Mongoose)
     const conversaPopulada = await Conversa.findById(conversa._id)
       .populate('participantes', 'nome avatar')
       .populate('anuncio', 'titulo fotos');
@@ -644,9 +660,13 @@ app.post('/api/conversas', async (req, res) => {
 });
 
 // Listar conversas de um usuário (usado nos painéis)
-app.get('/api/conversas/usuario/:usuarioId', async (req, res) => {
+app.get('/api/conversas/usuario/:usuarioId', autenticacao, async (req, res) => {
   try {
     const { usuarioId } = req.params;
+
+    if (usuarioId !== req.usuarioId) {
+      return res.status(403).json({ erro: 'Você não tem permissão para ver estas conversas.' });
+    }
 
     const conversas = await Conversa.find({ participantes: usuarioId })
       .populate('participantes', 'nome avatar')
@@ -671,8 +691,12 @@ app.get('/api/conversas/usuario/:usuarioId', async (req, res) => {
 });
 
 // Contar total de mensagens não lidas de um usuário (usado nos cards de estatística)
-app.get('/api/mensagens/nao-lidas/:usuarioId', async (req, res) => {
+app.get('/api/mensagens/nao-lidas/:usuarioId', autenticacao, async (req, res) => {
   try {
+    if (req.params.usuarioId !== req.usuarioId) {
+      return res.status(403).json({ erro: 'Você não tem permissão para ver estas mensagens.' });
+    }
+
     const total = await Mensagem.countDocuments({
       destinatario: req.params.usuarioId,
       lida: false
@@ -684,8 +708,19 @@ app.get('/api/mensagens/nao-lidas/:usuarioId', async (req, res) => {
 });
 
 // Listar mensagens de uma conversa
-app.get('/api/mensagens/conversa/:conversaId', async (req, res) => {
+app.get('/api/mensagens/conversa/:conversaId', autenticacao, async (req, res) => {
   try {
+    const conversa = await Conversa.findById(req.params.conversaId);
+
+    if (!conversa) {
+      return res.status(404).json({ erro: 'Conversa não encontrada.' });
+    }
+
+    const ehParticipante = conversa.participantes.some(p => p.toString() === req.usuarioId);
+    if (!ehParticipante) {
+      return res.status(403).json({ erro: 'Você não faz parte desta conversa.' });
+    }
+
     const mensagens = await Mensagem.find({ conversa: req.params.conversaId })
       .populate('remetente', 'nome avatar')
       .sort({ createdAt: 1 });
@@ -697,17 +732,23 @@ app.get('/api/mensagens/conversa/:conversaId', async (req, res) => {
 });
 
 // Enviar mensagem
-app.post('/api/mensagens', async (req, res) => {
+app.post('/api/mensagens', autenticacao, async (req, res) => {
   try {
-    const { conversa, remetente, destinatario, texto } = req.body;
+    const { conversa, destinatario, texto } = req.body;
+    const remetente = req.usuarioId;
 
-    if (!conversa || !remetente || !destinatario || !texto?.trim()) {
-      return res.status(400).json({ erro: 'Conversa, remetente, destinatário e texto são obrigatórios.' });
+    if (!conversa || !destinatario || !texto?.trim()) {
+      return res.status(400).json({ erro: 'Conversa, destinatário e texto são obrigatórios.' });
     }
 
     const conversaExistente = await Conversa.findById(conversa);
     if (!conversaExistente) {
       return res.status(404).json({ erro: 'Conversa não encontrada.' });
+    }
+
+    const ehParticipante = conversaExistente.participantes.some(p => p.toString() === remetente);
+    if (!ehParticipante) {
+      return res.status(403).json({ erro: 'Você não faz parte desta conversa.' });
     }
 
     const novaMensagem = new Mensagem({ conversa, remetente, destinatario, texto: texto.trim() });
@@ -725,18 +766,11 @@ app.post('/api/mensagens', async (req, res) => {
     res.status(500).json({ erro: 'Erro ao enviar mensagem', detalhes: erro.message });
   }
 });
-
 // Marcar mensagens de uma conversa como lidas por um usuário
-app.patch('/api/mensagens/conversa/:conversaId/lida', async (req, res) => {
+app.patch('/api/mensagens/conversa/:conversaId/lida', autenticacao, async (req, res) => {
   try {
-    const { usuarioId } = req.body;
-
-    if (!usuarioId) {
-      return res.status(400).json({ erro: 'usuarioId é obrigatório.' });
-    }
-
     await Mensagem.updateMany(
-      { conversa: req.params.conversaId, destinatario: usuarioId, lida: false },
+      { conversa: req.params.conversaId, destinatario: req.usuarioId, lida: false },
       { lida: true }
     );
 
