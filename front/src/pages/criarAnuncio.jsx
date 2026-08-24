@@ -327,7 +327,7 @@ function CriarAnuncio ()
     return (
         <div className="min-h-screen bg-[#F8F9FA] flex flex-col">
             <Header />
-            <div className='max-w-4xl mx-auto px-6 w-full flex-1 pt-10 pb-16'>
+            <div className={`mx-auto px-6 w-full flex-1 pt-10 pb-16 transition-all ${step === 7 ? 'max-w-6xl' : 'max-w-4xl'}`}>
 
                 <div className='flex items-center justify-center mb-4'>
                     {steps.map((nome, index) => {
@@ -839,101 +839,108 @@ function CriarAnuncio ()
                             <p className='text-gray-400 text-sm mt-1'>Confira tudo antes de publicar</p>
                         </div>
 
-                        {/* Card de preview: como o anúncio vai aparecer para quem está buscando */}
-                        <div className="rounded-2xl border border-gray-100 overflow-hidden mb-6">
-                            <div className="h-48 bg-gray-100 relative">
-                                {fotos.length > 0 ? (
-                                    <img src={URL.createObjectURL(fotos[0])} className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full flex flex-col items-center justify-center text-gray-300">
-                                        <span className="text-3xl mb-1">📷</span>
-                                        <span className="text-xs font-bold">Nenhuma foto adicionada</span>
-                                    </div>
-                                )}
-                                {fotos.length > 1 && (
-                                    <span className="absolute bottom-3 right-3 bg-black/60 text-white text-[10px] font-bold px-2.5 py-1 rounded-full">
-                                        +{fotos.length - 1} foto{fotos.length - 1 > 1 ? 's' : ''}
-                                    </span>
-                                )}
-                            </div>
+                        <div className="flex flex-col lg:flex-row gap-4 mb-6">
 
-                            <div className="p-5">
-                                <div className="flex items-start justify-between gap-4 mb-2">
-                                    <h3 className="text-lg font-bold text-[#1A1A1A]">
-                                        {titulo || <span className="text-gray-300 italic font-normal">Sem título</span>}
-                                    </h3>
-                                    <div className="text-right shrink-0">
-                                        <span className="text-xl font-black text-[#1A1A1A]">R$ {precos.precoPorDia || '0,00'}</span>
-                                        <span className="text-[10px] font-bold text-gray-400 uppercase"> /dia</span>
-                                    </div>
+                            {/* Card de preview: foto + informações principais */}
+                            <div className="rounded-2xl border border-gray-100 overflow-hidden lg:w-[38%] shrink-0 flex flex-col">
+                                <div className="h-40 bg-gray-100 relative shrink-0">
+                                    {fotos.length > 0 ? (
+                                        <img src={URL.createObjectURL(fotos[0])} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full flex flex-col items-center justify-center text-gray-300">
+                                            <span className="text-2xl mb-1">📷</span>
+                                            <span className="text-[10px] font-bold">Sem foto</span>
+                                        </div>
+                                    )}
+                                    {fotos.length > 1 && (
+                                        <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
+                                            +{fotos.length - 1}
+                                        </span>
+                                    )}
                                 </div>
 
-                                {categoria && (
-                                    <span className="inline-block bg-[#29C354]/10 text-[#29C354] text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-3">
-                                        {categoriasDisponiveis.find(c => c.value === categoria)?.label || categoria}
-                                    </span>
-                                )}
-
-                                <p className="text-sm text-gray-500 leading-relaxed">
-                                    {descricao || <span className="text-gray-300 italic">Sem descrição</span>}
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Detalhes agrupados por seção */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-
-                            <div className="bg-gray-50/70 rounded-2xl p-5 border border-gray-100">
-                                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Especificações</h4>
-                                {especificacoes.filter(e => e.chave.trim()).length > 0 ? (
-                                    <div className="flex flex-wrap gap-2">
-                                        {especificacoes.filter(e => e.chave.trim()).map((e, i) => (
-                                            <span key={i} className="bg-white border border-gray-200 text-[#1A1A1A] text-xs font-semibold px-3 py-1.5 rounded-lg">
-                                                {e.chave}{e.valor ? `: ${e.valor}` : ''}
-                                            </span>
-                                        ))}
+                                <div className="p-5 flex-1">
+                                    <div className="flex items-start justify-between gap-3 mb-1.5">
+                                        <h3 className="text-lg font-bold text-[#1A1A1A] truncate">
+                                            {titulo || <span className="text-gray-300 italic font-normal">Sem título</span>}
+                                        </h3>
                                     </div>
-                                ) : (
-                                    <p className="text-sm text-gray-300 italic">Nenhuma especificação adicionada</p>
-                                )}
-                                {subcategorias.length > 0 && (
-                                    <p className="text-xs text-gray-400 mt-3">Subcategorias: {subcategorias.join(', ')}</p>
-                                )}
-                            </div>
 
-                            <div className="bg-gray-50/70 rounded-2xl p-5 border border-gray-100">
-                                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Localização</h4>
-                                {endereco.rua ? (
-                                    <>
-                                        <p className="text-sm font-semibold text-[#1A1A1A]">{endereco.rua}, {endereco.numero}</p>
-                                        <p className="text-xs text-gray-400 mt-0.5">{endereco.bairro}, {endereco.cidade} - {endereco.estado}</p>
-                                        <span className={`inline-block mt-2 text-[10px] font-bold px-2.5 py-1 rounded-full ${endereco.latitude ? 'bg-[#29C354]/10 text-[#29C354]' : 'bg-orange-50 text-orange-500'}`}>
-                                            {endereco.latitude ? '📍 Localização marcada no mapa' : '⚠ Posição no mapa não definida'}
-                                        </span>
-                                    </>
-                                ) : (
-                                    <p className="text-sm text-gray-300 italic">Endereço não preenchido</p>
-                                )}
-                            </div>
+                                    <span className="text-xl font-black text-[#1A1A1A]">R$ {precos.precoPorDia || '0,00'}</span>
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase"> /dia</span>
 
-                            <div className="bg-gray-50/70 rounded-2xl p-5 border border-gray-100">
-                                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Disponibilidade</h4>
-                                {disponivel.length > 0 ? (
-                                    <p className="text-sm font-semibold text-[#1A1A1A]">
-                                        {disponivel.length} {disponivel.length === 1 ? 'dia selecionado' : 'dias selecionados'}
+                                    {categoria && (
+                                        <div>
+                                            <span className="inline-block bg-[#29C354]/10 text-[#29C354] text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full mt-2 mb-2">
+                                                {categoriasDisponiveis.find(c => c.value === categoria)?.label || categoria}
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    <p className="text-sm text-gray-500 leading-relaxed">
+                                        {descricao || <span className="text-gray-300 italic">Sem descrição</span>}
                                     </p>
-                                ) : (
-                                    <p className="text-sm text-gray-300 italic">Nenhum dia selecionado</p>
-                                )}
+                                </div>
                             </div>
 
-                            <div className="bg-gray-50/70 rounded-2xl p-5 border border-gray-100">
-                                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Preço e Condições</h4>
-                                <p className="text-sm font-semibold text-[#1A1A1A]">
-                                    R$ {precos.precoPorDia || '0,00'} / dia
-                                    {precos.exigirCaucao && precos.caucao ? ` + caução de R$ ${precos.caucao}` : ''}
-                                </p>
-                                <p className="text-xs text-gray-400 mt-1">Retirada {precos.horarioRetirada} • Devolução {precos.horarioDevolucao}</p>
+                            {/* Detalhes agrupados: grid 2x2 ao lado do preview, usando a largura extra */}
+                            <div className="grid grid-cols-2 gap-3 flex-1 content-start">
+
+                                <div className="bg-gray-50/70 rounded-xl p-4 border border-gray-100">
+                                    <h4 className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2">Especificações</h4>
+                                    {especificacoes.filter(e => e.chave.trim()).length > 0 ? (
+                                        <div className="flex flex-wrap gap-1">
+                                            {especificacoes.filter(e => e.chave.trim()).map((e, i) => (
+                                                <span key={i} className="bg-white border border-gray-200 text-[#1A1A1A] text-[10px] font-semibold px-2 py-1 rounded-md">
+                                                    {e.chave}{e.valor ? `: ${e.valor}` : ''}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-xs text-gray-300 italic">Nenhuma especificação</p>
+                                    )}
+                                    {subcategorias.length > 0 && (
+                                        <p className="text-[10px] text-gray-400 mt-2">Subcategorias: {subcategorias.join(', ')}</p>
+                                    )}
+                                </div>
+
+                                <div className="bg-gray-50/70 rounded-xl p-4 border border-gray-100">
+                                    <h4 className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2">Localização</h4>
+                                    {endereco.rua ? (
+                                        <>
+                                            <p className="text-xs font-semibold text-[#1A1A1A] truncate">{endereco.rua}, {endereco.numero}</p>
+                                            <p className="text-[10px] text-gray-400 mt-0.5 truncate">{endereco.bairro}, {endereco.cidade} - {endereco.estado}</p>
+                                            <span className={`inline-block mt-1.5 text-[9px] font-bold px-2 py-0.5 rounded-full ${endereco.latitude ? 'bg-[#29C354]/10 text-[#29C354]' : 'bg-orange-50 text-orange-500'}`}>
+                                                {endereco.latitude ? '📍 Localização marcada no mapa' : '⚠ Posição no mapa não definida'}
+                                            </span>
+                                        </>
+                                    ) : (
+                                        <p className="text-xs text-gray-300 italic">Endereço não preenchido</p>
+                                    )}
+                                </div>
+
+                                <div className="bg-gray-50/70 rounded-xl p-4 border border-gray-100">
+                                    <h4 className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2">Disponibilidade</h4>
+                                    {disponivel.length > 0 ? (
+                                        <p className="text-xs font-semibold text-[#1A1A1A]">
+                                            {disponivel.length} {disponivel.length === 1 ? 'dia selecionado' : 'dias selecionados'}
+                                        </p>
+                                    ) : (
+                                        <p className="text-xs text-gray-300 italic">Nenhum dia selecionado</p>
+                                    )}
+                                </div>
+
+                                <div className="bg-gray-50/70 rounded-xl p-4 border border-gray-100">
+                                    <h4 className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2">Preço e Condições</h4>
+                                    <p className="text-xs font-semibold text-[#1A1A1A]">
+                                        R$ {precos.precoPorDia || '0,00'} / dia
+                                    </p>
+                                    {precos.exigirCaucao && precos.caucao && (
+                                        <p className="text-[10px] text-gray-400 mt-0.5">+ caução de R$ {precos.caucao}</p>
+                                    )}
+                                    <p className="text-[10px] text-gray-400 mt-0.5">Retirada {precos.horarioRetirada} • Devolução {precos.horarioDevolucao}</p>
+                                </div>
+
                             </div>
 
                         </div>
