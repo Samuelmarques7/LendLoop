@@ -13,10 +13,10 @@ const aluguelSchema = new mongoose.Schema({
   taxaServico: { type: Number, default: 0 },
   caucao: { type: Number, default: 0 },
  
-  status: {
-    type: String,
-    enum: ['pendente', 'aceito', 'recusado', 'andamento', 'concluido', 'cancelado'],
-    default: 'pendente'
+  status: { 
+    type: String, 
+    enum: ['pendente', 'aceito', 'recusado', 'andamento', 'aguardando_confirmacao', 'concluido', 'cancelado'], 
+    default: 'pendente' 
   }
 }, {
   timestamps: true
