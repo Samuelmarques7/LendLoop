@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { LuSend, LuMessageSquare, LuSearch } from 'react-icons/lu';
+import { LuSend, LuMessageSquare, LuSearch, LuArrowLeft } from 'react-icons/lu';
 import { apiRequest } from '../services/api';
 
 function formatarHora(data) {
@@ -17,7 +17,7 @@ function formatarDataConversa(data) {
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
 }
 
-export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#29C354', conversaParaAbrir, onConversasAtualizadas }) {
+export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#0068F3', conversaParaAbrir, onConversasAtualizadas }) {
   const [conversas, setConversas] = useState([]);
   const [carregandoConversas, setCarregandoConversas] = useState(true);
   const [conversaAtivaId, setConversaAtivaId] = useState(null);
@@ -59,7 +59,7 @@ export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#29C354', conv
               usuarioB: conversaParaAbrir
             }
           });
-          
+
           if (conversa && conversa._id) {
             setConversas(prev => {
               const existe = prev.find(c => c._id === conversa._id);
@@ -140,9 +140,9 @@ export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#29C354', conv
   }
 
   return (
-    <div className="animate-fade-in bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex h-[calc(100vh-180px)] min-h-[500px]">
+    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex h-[calc(100vh-220px)] min-h-[500px]">
 
-      <div className={`w-full sm:w-80 border-r border-gray-100 flex flex-col ${conversaAtivaId ? 'hidden sm:flex' : 'flex'}`}>
+      <div className={`w-full sm:w-80 border-r border-gray-200 flex flex-col ${conversaAtivaId ? 'hidden sm:flex' : 'flex'}`}>
         <div className="p-4 border-b border-gray-100">
           <div className="relative">
             <LuSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -150,7 +150,7 @@ export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#29C354', conv
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Buscar conversas..."
-              className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none"
+              className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#0068F3]/20 focus:border-[#0068F3] transition-colors"
             />
           </div>
         </div>
@@ -160,8 +160,8 @@ export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#29C354', conv
             <p className="text-center text-sm text-gray-400 p-6">Carregando conversas...</p>
           ) : conversasFiltradas.length === 0 ? (
             <div className="text-center text-gray-400 p-8">
-              <LuMessageSquare size={28} className="mx-auto mb-2 opacity-50" />
-              <p className="text-sm font-bold">Nenhuma conversa ainda</p>
+              <LuMessageSquare size={26} className="mx-auto mb-2 opacity-40" />
+              <p className="text-sm font-semibold">Nenhuma conversa ainda</p>
               <p className="text-xs mt-1">Suas conversas com locadores e locatários vão aparecer aqui.</p>
             </div>
           ) : (
@@ -172,13 +172,13 @@ export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#29C354', conv
                 <button
                   key={c._id}
                   onClick={() => setConversaAtivaId(c._id)}
-                  className={`w-full flex items-center gap-3 p-4 border-b border-gray-50 text-left transition-colors cursor-pointer hover:bg-gray-50 ${ativa ? 'bg-gray-50' : ''}`}
+                  className={`w-full flex items-center gap-3 p-4 border-b border-gray-100 text-left transition-colors cursor-pointer hover:bg-gray-50 ${ativa ? 'bg-gray-50' : ''}`}
                 >
                   {outro?.avatar ? (
-                    <img src={outro.avatar} alt={outro.nome} className="w-11 h-11 rounded-full object-cover flex-shrink-0" />
+                    <img src={outro.avatar} alt={outro.nome} className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
                   ) : (
                     <div
-                      className="w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0"
                       style={{ backgroundColor: corPrimaria }}
                     >
                       {outro?.nome?.[0]?.toUpperCase() || '?'}
@@ -186,19 +186,19 @@ export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#29C354', conv
                   )}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="font-bold text-sm text-[#1A1A1A] truncate">{outro?.nome || 'Usuário removido'}</p>
-                      <span className="text-[10px] text-gray-400 flex-shrink-0">{formatarDataConversa(c.ultimaMensagemEm)}</span>
+                      <p className="font-semibold text-sm text-[#1A1A1A] truncate">{outro?.nome || 'Usuário removido'}</p>
+                      <span className="text-[11px] text-gray-400 flex-shrink-0">{formatarDataConversa(c.ultimaMensagemEm)}</span>
                     </div>
                     {c.anuncio?.titulo && (
                       <p className="text-[11px] text-gray-400 truncate">sobre {c.anuncio.titulo}</p>
                     )}
-                    <p className={`text-xs truncate mt-0.5 ${c.naoLidas > 0 ? 'font-bold text-[#1A1A1A]' : 'text-gray-400'}`}>
+                    <p className={`text-xs truncate mt-0.5 ${c.naoLidas > 0 ? 'font-semibold text-[#1A1A1A]' : 'text-gray-400'}`}>
                       {c.ultimaMensagem || 'Conversa iniciada'}
                     </p>
                   </div>
                   {c.naoLidas > 0 && (
                     <span
-                      className="flex-shrink-0 min-w-[20px] h-5 rounded-full text-white text-[10px] font-bold flex items-center justify-center px-1.5"
+                      className="flex-shrink-0 min-w-[20px] h-5 rounded-full text-white text-[11px] font-semibold flex items-center justify-center px-1.5"
                       style={{ backgroundColor: corPrimaria }}
                     >
                       {c.naoLidas}
@@ -214,40 +214,40 @@ export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#29C354', conv
       <div className={`flex-1 flex-col ${conversaAtivaId ? 'flex' : 'hidden sm:flex'}`}>
         {!conversaAtivaId ? (
           <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
-            <LuMessageSquare size={36} className="mb-2 opacity-40" />
-            <p className="text-sm font-bold">Selecione uma conversa</p>
+            <LuMessageSquare size={32} className="mb-2 opacity-40" />
+            <p className="text-sm font-semibold">Selecione uma conversa</p>
             <p className="text-xs mt-1">Escolha uma conversa na lista para ver as mensagens.</p>
           </div>
         ) : (
           <>
-            <div className="h-16 border-b border-gray-100 flex items-center gap-3 px-5 flex-shrink-0">
+            <div className="h-16 border-b border-gray-200 flex items-center gap-3 px-5 flex-shrink-0">
               <button
                 onClick={() => setConversaAtivaId(null)}
-                className="sm:hidden text-gray-400 hover:text-[#1A1A1A] cursor-pointer text-sm font-bold"
+                className="sm:hidden text-gray-400 hover:text-[#1A1A1A] cursor-pointer"
               >
-                ←
+                <LuArrowLeft size={18} />
               </button>
               {outroParticipante?.avatar ? (
                 <img src={outroParticipante.avatar} alt={outroParticipante.nome} className="w-9 h-9 rounded-full object-cover" />
               ) : (
                 <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-semibold"
                   style={{ backgroundColor: corPrimaria }}
                 >
                   {outroParticipante?.nome?.[0]?.toUpperCase() || '?'}
                 </div>
               )}
               <div className="min-w-0">
-                <p className="font-bold text-sm text-[#1A1A1A] truncate">{outroParticipante?.nome || 'Usuário removido'}</p>
+                <p className="font-semibold text-sm text-[#1A1A1A] truncate">{outroParticipante?.nome || 'Usuário removido'}</p>
                 {conversaAtiva?.anuncio?.titulo && (
                   <p className="text-[11px] text-gray-400 truncate">sobre {conversaAtiva.anuncio.titulo}</p>
                 )}
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-5 space-y-3 bg-[#F8F9FA]">
+            <div className="flex-1 overflow-y-auto p-5 space-y-3 bg-[#FAFAF9]">
               {mensagens.length === 0 ? (
-                <p className="text-center text-xs text-gray-400 mt-4">Nenhuma mensagem ainda. Diga olá! 👋</p>
+                <p className="text-center text-xs text-gray-400 mt-4">Nenhuma mensagem ainda. Diga olá.</p>
               ) : (
                 mensagens.map((m) => {
                   const minha = m.remetente?._id === usuarioLogadoId;
@@ -255,7 +255,7 @@ export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#29C354', conv
                     <div key={m._id} className={`flex ${minha ? 'justify-end' : 'justify-start'}`}>
                       <div
                         className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                          minha ? 'text-white rounded-br-sm' : 'bg-white border border-gray-100 text-[#1A1A1A] rounded-bl-sm'
+                          minha ? 'text-white rounded-br-sm' : 'bg-white border border-gray-200 text-[#1A1A1A] rounded-bl-sm'
                         }`}
                         style={minha ? { backgroundColor: corPrimaria } : {}}
                       >
@@ -269,17 +269,17 @@ export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#29C354', conv
               <div ref={fimDaListaRef} />
             </div>
 
-            <form onSubmit={handleEnviarMensagem} className="p-4 border-t border-gray-100 flex items-center gap-3 flex-shrink-0">
+            <form onSubmit={handleEnviarMensagem} className="p-4 border-t border-gray-200 flex items-center gap-3 flex-shrink-0">
               <input
                 value={textoNovaMensagem}
                 onChange={(e) => setTextoNovaMensagem(e.target.value)}
                 placeholder="Escreva uma mensagem..."
-                className="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none"
+                className="flex-1 px-4 py-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#0068F3]/20 focus:border-[#0068F3] transition-colors"
               />
               <button
                 type="submit"
                 disabled={!textoNovaMensagem.trim() || enviando}
-                className="w-11 h-11 flex-shrink-0 rounded-xl flex items-center justify-center text-white transition-opacity cursor-pointer disabled:opacity-40"
+                className="w-11 h-11 flex-shrink-0 rounded-lg flex items-center justify-center text-white transition-opacity cursor-pointer disabled:opacity-40"
                 style={{ backgroundColor: corPrimaria }}
               >
                 <LuSend size={18} />
