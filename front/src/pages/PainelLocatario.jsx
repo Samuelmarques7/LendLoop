@@ -12,15 +12,15 @@ import {
   LuSend,
   LuWallet,
   LuMessageSquare,
-  LuUser,
   LuSettings,
   LuCalendar,
   LuMailWarning,
   LuBell,
   LuX,
   LuCircleCheckBig,
-  LuArrowLeft,
-  LuTrash2
+  LuTrash2,
+  LuShieldCheck,
+  LuTriangleAlert
 } from "react-icons/lu";
 
 export default function PainelLocatario() {
@@ -58,9 +58,6 @@ export default function PainelLocatario() {
     }
     if (location.state?.abrirConversa) {
       setActiveTab('mensagens');
-    }
-    if (location.state?.abrirAba) {
-      setActiveTab(location.state.abrirAba);
     }
   }, [location.state]);
 
@@ -119,26 +116,29 @@ export default function PainelLocatario() {
   }), [pagamentos]);
 
   const stats = [
-    { id: 1, titulo: "Próximos Aluguéis", valor: String(alugueis.andamento.length), icon: LuCalendar, color: "text-[#0068F3]", bg: "bg-blue-50" },
-    { id: 2, titulo: "Solicitações Pendentes", valor: String(solicitacoesEnviadas.length), icon: LuMailWarning, color: "text-orange-500", bg: "bg-orange-50" },
-    { id: 3, titulo: "Pagamentos Pendentes", valor: `R$ ${pagamentosPorAba.pendentes.reduce((soma, p) => soma + p.valor, 0).toFixed(2)}`, icon: LuWallet, color: "text-[#29C354]", bg: "bg-[#29C354]/10" },
-    { id: 4, titulo: "Mensagens Não Lidas", valor: String(mensagensNaoLidas), icon: LuMessageSquare, color: "text-[#0297AA]", bg: "bg-[#0297AA]/10" }
-  ];
+  { id: 1, titulo: "Próximos aluguéis", valor: String(alugueis.andamento.length), icon: LuCalendar, tone: 'accent' },
+  { id: 2, titulo: "Solicitações pendentes", valor: String(solicitacoesEnviadas.length), icon: LuMailWarning, tone: 'warning' },
+  { id: 3, titulo: "Pagamentos pendentes", valor: `R$ ${pagamentosPorAba.pendentes.reduce((soma, p) => soma + p.valor, 0).toFixed(2)}`, icon: LuWallet, tone: pagamentosPorAba.pendentes.some(p => p.status === 'atrasado') ? 'danger' : 'success' },
+  { id: 4, titulo: "Mensagens não lidas", valor: String(mensagensNaoLidas), icon: LuMessageSquare, tone: 'neutral' }
+];
+
+const toneClasses = {
+  accent: { bg: 'bg-[#0068F3]/[0.08]', text: 'text-[#0068F3]', border: 'border-l-[#0068F3]' },
+  warning: { bg: 'bg-amber-500/[0.1]', text: 'text-amber-600', border: 'border-l-amber-500' },
+  success: { bg: 'bg-[#0F6E56]/[0.08]', text: 'text-[#0F6E56]', border: 'border-l-[#0F6E56]' },
+  danger: { bg: 'bg-[#A32D2D]/[0.08]', text: 'text-[#A32D2D]', border: 'border-l-[#A32D2D]' },
+  neutral: { bg: 'bg-gray-900/[0.05]', text: 'text-gray-700', border: 'border-l-gray-300' },
+};
 
   const menuItems = [
-    { id: 'painel', label: 'Painel Locatário', icon: LuLayoutDashboard },
-    { id: 'alugueis', label: 'Meus Aluguéis', icon: LuPackage },
-    { id: 'solicitacoes', label: 'Solicitações Enviadas', icon: LuSend },
+    { id: 'painel', label: 'Painel', icon: LuLayoutDashboard },
+    { id: 'alugueis', label: 'Meus aluguéis', icon: LuPackage },
+    { id: 'solicitacoes', label: 'Solicitações enviadas', icon: LuSend },
     { id: 'pagamentos', label: 'Pagamentos', icon: LuWallet },
     { id: 'mensagens', label: 'Mensagens', icon: LuMessageSquare },
-    { id: 'perfil', label: 'Perfil', icon: LuUser },
   ];
 
   function handleMenuClick(item) {
-    if (item.id === 'perfil') {
-      navigate('/meu-perfil');
-      return;
-    }
     setActiveTab(item.id);
   }
 
@@ -204,6 +204,7 @@ export default function PainelLocatario() {
       case 'painel':
         return <SecaoPainel
           stats={stats}
+          toneClasses={toneClasses}
           alugueis={alugueis}
           pagamentos={pagamentosPorAba}
           solicitacoesEnviadas={solicitacoesEnviadas}
@@ -236,120 +237,118 @@ export default function PainelLocatario() {
         />;
       default:
         return (
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-12 text-center text-gray-400">
-            <p className="font-bold text-lg capitalize">{menuItems.find(i => i.id === activeTab)?.label}</p>
+          <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center text-gray-400">
+            <p className="font-semibold text-lg capitalize">{menuItems.find(i => i.id === activeTab)?.label}</p>
             <p className="text-sm mt-2">Conteúdo desta seção será implementado em breve.</p>
           </div>
         );
     }
   }
 
+  const secaoAtual = menuItems.find(i => i.id === activeTab) || (activeTab === 'config' ? { label: 'Configurações' } : null);
+
   return (
-    <div className="min-h-screen bg-[#F8F9FA] font-sans flex text-[#1A1A1A]">
-      <aside className="w-72 bg-white border-r border-gray-100 flex flex-col sticky top-0 h-screen shadow-sm z-10">
-
-        <div className="h-20 flex items-center px-6 border-b border-gray-100">
-          <img
-            src={logo}
-            alt="LendLoop"
-            className="h-18 w-auto cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={() => navigate('/')}
-          />
-        </div>
-
-        <div className="px-4 pt-4">
-          <button
-            onClick={() => navigate('/')}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-[#1A1A1A] hover:bg-gray-50 transition-all cursor-pointer"
-          >
-            <LuArrowLeft size={15} />
-            Voltar ao site
+    <div className="min-h-screen bg-[#FAFAF9] font-sans text-[#1A1A1A]">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-[1600px] mx-auto w-full h-16 flex items-center px-10 gap-8">
+          <button onClick={() => navigate('/')} className="flex-shrink-0 cursor-pointer">
+            <img src={logo} alt="LendLoop" className="h-8 w-auto" />
           </button>
-        </div>
 
-        <nav className="flex-1 px-4 pt-2 pb-6 space-y-1 overflow-y-auto">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleMenuClick(item)}
-                className={`group w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-bold transition-all cursor-pointer ${
-                  isActive
-                    ? 'bg-[#1A1A1A] text-white shadow-md shadow-black/10'
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-[#1A1A1A]'
-                }`}
-              >
-                <span className={`flex items-center justify-center w-8 h-8 rounded-xl transition-colors flex-shrink-0 ${
-                  isActive ? 'bg-[#0068F3] text-white' : 'bg-gray-100 text-gray-400 group-hover:bg-[#0068F3]/10 group-hover:text-[#0068F3]'
-                }`}>
-                  <Icon size={16} />
-                </span>
-                {item.label}
-              </button>
-            );
-          })}
-        </nav>
+          <nav className="flex-1 flex items-center gap-1 h-full overflow-x-auto">
+            {menuItems.map((item) => {
+              const isActive = activeTab === item.id;
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleMenuClick(item)}
+                  className={`h-full flex items-center gap-2 px-3.5 text-[13px] font-medium whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
+                    isActive
+                      ? 'border-[#1A1A1A] text-[#1A1A1A]'
+                      : 'border-transparent text-gray-500 hover:text-[#1A1A1A]'
+                  }`}
+                >
+                  <Icon size={16} className={isActive ? 'text-[#0068F3]' : 'text-gray-400'} />
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
 
-        <div className="p-4 border-t border-gray-100">
-          <button
-            onClick={() => navigate('/meu-perfil')}
-            className="w-full flex items-center gap-3 p-2 rounded-2xl hover:bg-gray-50 transition-colors cursor-pointer"
-          >
-            <div className="w-11 h-11 rounded-full bg-[#0068F3] text-white flex items-center justify-center font-bold text-lg overflow-hidden flex-shrink-0 ring-2 ring-[#0068F3]/20">
-              {dadosLocatario?.avatar ? (
-                <img src={dadosLocatario.avatar} alt={dadosLocatario.nome} className="w-full h-full object-cover" />
-              ) : (
-                dadosLocatario?.nome?.charAt(0).toUpperCase() || 'U'
-              )}
-            </div>
-            <div className="text-left min-w-0">
-              <p className="text-sm font-bold text-[#1A1A1A] truncate">{dadosLocatario?.nome || 'Carregando...'}</p>
-              <span className="inline-block mt-0.5 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-[#0068F3]/10 text-[#0068F3]">
-                Locatário
-              </span>
-            </div>
-          </button>
-        </div>
-      </aside>
-
-      <main className="flex-1 flex flex-col h-screen overflow-y-auto">
-        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-200 flex items-center justify-between px-8 sticky top-0 z-10">
-          <h1 className="text-xl font-bold text-[#1A1A1A] capitalize">
-            {activeTab === 'config' ? 'Configurações' : menuItems.find(i => i.id === activeTab)?.label}
-          </h1>
-          <div className="flex items-center gap-3">
-            <NotificacaoSino />
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button className="p-2 rounded-lg text-gray-500 hover:bg-gray-50 hover:text-[#1A1A1A] transition-colors relative cursor-pointer">
+              <LuBell size={18} />
+              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[#D85A30] rounded-full"></span>
+            </button>
             <button
               onClick={() => navigate('/configuracoes')}
               title="Configurações"
-              className="p-2.5 rounded-full bg-gray-50 text-gray-500 hover:text-[#0068F3] transition-colors cursor-pointer"
+              className="p-2 rounded-lg text-gray-500 hover:bg-gray-50 hover:text-[#1A1A1A] transition-colors cursor-pointer"
             >
-              <LuSettings size={20} />
+              <LuSettings size={18} />
+            </button>
+
+            <button
+              onClick={() => navigate('/meu-perfil')}
+              className="flex items-center gap-2.5 pl-3 ml-1 border-l border-gray-200 cursor-pointer group"
+            >
+              <div className="w-8 h-8 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center font-semibold text-xs overflow-hidden flex-shrink-0">
+                {dadosLocatario?.avatar ? (
+                  <img src={dadosLocatario.avatar} alt={dadosLocatario.nome} className="w-full h-full object-cover" />
+                ) : (
+                  dadosLocatario?.nome?.charAt(0).toUpperCase() || 'U'
+                )}
+              </div>
+              <div className="hidden lg:block text-left min-w-0">
+                <p className="text-[13px] font-semibold text-[#1A1A1A] whitespace-nowrap leading-tight group-hover:text-[#0068F3] transition-colors">
+                  {dadosLocatario?.nome ? dadosLocatario.nome.split(' ').slice(0, 2).join(' ') : 'Carregando...'}
+                </p>
+                <p className="text-[11px] text-gray-400 leading-tight">Locatário</p>
+              </div>
             </button>
           </div>
-        </header>
-
-        <div className="p-8 max-w-7xl mx-auto w-full space-y-8">
-          {renderConteudo()}
         </div>
+      </header>
+
+      <main className="px-10 py-8 max-w-[1600px] mx-auto w-full space-y-6">
+        <div>
+          <h1 className="text-xl font-semibold text-[#1A1A1A]">{secaoAtual?.label || 'Painel'}</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Acompanhe seus aluguéis, solicitações e pagamentos em um só lugar.</p>
+        </div>
+        {renderConteudo()}
       </main>
     </div>
   );
 }
 
+function StatusPill({ status }) {
+  const map = {
+    andamento: { label: 'Em andamento', dot: 'bg-[#0F6E56]', text: 'text-[#0F6E56]', bg: 'bg-[#0F6E56]/[0.08]' },
+    aceito: { label: 'Em andamento', dot: 'bg-[#0F6E56]', text: 'text-[#0F6E56]', bg: 'bg-[#0F6E56]/[0.08]' },
+    concluido: { label: 'Concluído', dot: 'bg-gray-400', text: 'text-gray-600', bg: 'bg-gray-100' },
+    pendente: { label: 'Pendente', dot: 'bg-amber-500', text: 'text-amber-700', bg: 'bg-amber-500/[0.1]' },
+  };
+  const s = map[status] || map.pendente;
+  return (
+    <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full ${s.bg} ${s.text}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`}></span>
+      {s.label}
+    </span>
+  );
+}
+
 function AbaFiltro({ abas, atual, onChange }) {
   return (
-    <div className="flex gap-2">
+    <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
       {abas.map((aba) => (
         <button
           key={aba.key}
           onClick={() => onChange(aba.key)}
-          className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all cursor-pointer ${
+          className={`px-3 py-1.5 rounded-md text-[12px] font-semibold transition-all cursor-pointer ${
             atual === aba.key
-              ? 'bg-[#1A1A1A] text-white'
-              : 'bg-gray-50 text-gray-400 hover:text-[#1A1A1A]'
+              ? 'bg-white text-[#1A1A1A] shadow-sm'
+              : 'text-gray-500 hover:text-[#1A1A1A]'
           }`}
         >
           {aba.label}
@@ -359,42 +358,39 @@ function AbaFiltro({ abas, atual, onChange }) {
   );
 }
 
+function EstadoVazio({ texto }) {
+  return (
+    <div className="py-12 text-center text-gray-400">
+      <LuCircleCheckBig size={28} className="mx-auto mb-2.5 opacity-40" />
+      <p className="text-sm font-medium">{texto}</p>
+    </div>
+  );
+}
+
 function ListaAlugueis({ alugueis, aba, usuarioLogadoId }) {
   if (alugueis.length === 0) {
-    return (
-      <div className="p-8 text-center text-gray-400">
-        <LuCircleCheckBig size={32} className="mx-auto mb-2 opacity-30" />
-        <p className="text-sm font-bold">Nenhum aluguel nesta categoria</p>
-      </div>
-    );
+    return <EstadoVazio texto="Nenhum aluguel nesta categoria" />;
   }
 
   return alugueis.map((aluguel) => (
-    <div key={aluguel._id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-colors group">
-      <div className="flex items-center gap-4 min-w-0">
+    <div key={aluguel._id} className="flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-100 last:border-0">
+      <div className="flex items-center gap-3.5 min-w-0">
         {aluguel.anuncio?.fotos?.[0] ? (
-          <img src={aluguel.anuncio.fotos[0]} alt={aluguel.anuncio.titulo} className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
+          <img src={aluguel.anuncio.fotos[0]} alt={aluguel.anuncio.titulo} className="w-11 h-11 rounded-lg object-cover flex-shrink-0 border border-gray-200" />
         ) : (
-          <div className="w-12 h-12 bg-gray-200 rounded-xl flex-shrink-0"></div>
+          <div className="w-11 h-11 bg-gray-100 rounded-lg flex-shrink-0 border border-gray-200"></div>
         )}
         <div className="min-w-0">
-          <h3 className="font-bold text-[#1A1A1A] text-sm group-hover:text-[#29C354] transition-colors truncate">{aluguel.anuncio?.titulo}</h3>
-          <p className="text-xs text-gray-400 font-medium mt-0.5">
-            {new Date(aluguel.dataInicio).toLocaleDateString('pt-BR')} - {new Date(aluguel.dataFim).toLocaleDateString('pt-BR')}
+          <h3 className="font-semibold text-[#1A1A1A] text-sm truncate">{aluguel.anuncio?.titulo}</h3>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {new Date(aluguel.dataInicio).toLocaleDateString('pt-BR')} – {new Date(aluguel.dataFim).toLocaleDateString('pt-BR')}
           </p>
         </div>
       </div>
 
       <div className="flex items-center gap-4 shrink-0">
-        <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-md ${
-          aba === 'andamento' ? 'bg-[#29C354]/10 text-[#29C354]' :
-          aba === 'concluido' ? 'bg-gray-100 text-gray-500' :
-          'bg-orange-50 text-orange-500'
-        }`}>
-          {aluguel.status}
-        </span>
-
-        <span className="font-black text-[#1A1A1A] text-sm w-16 text-right">R$ {aluguel.precoTotal}</span>
+        <StatusPill status={aluguel.status} />
+        <span className="font-semibold text-[#1A1A1A] text-sm w-16 text-right tabular-nums">R$ {aluguel.precoTotal}</span>
 
         {aba === 'concluido' && aluguel.locador && (
           <BotaoAvaliar
@@ -408,255 +404,159 @@ function ListaAlugueis({ alugueis, aba, usuarioLogadoId }) {
   ));
 }
 
+function CardSecao({ titulo, acao, children }) {
+  return (
+    <section className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col">
+      <div className="px-6 py-4.5 border-b border-gray-100 flex justify-between items-center">
+        <h2 className="text-[15px] font-semibold text-[#1A1A1A]">{titulo}</h2>
+        {acao}
+      </div>
+      <div className="p-2">
+        {children}
+      </div>
+    </section>
+  );
+}
+
 function SecaoAlugueis({ alugueis, abaAlugueis, setAbaAlugueis, usuarioLogadoId }) {
   return (
-    <div className="animate-fade-in">
-      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-          <h2 className="text-lg font-bold text-[#1A1A1A]">Meus Aluguéis</h2>
-          <AbaFiltro
-            abas={[
-              { key: 'andamento', label: 'Em Andamento' },
-              { key: 'pendente', label: 'Pendente' },
-              { key: 'concluido', label: 'Concluído' }
-            ]}
-            atual={abaAlugueis}
-            onChange={setAbaAlugueis}
-          />
+    <CardSecao
+      titulo="Meus aluguéis"
+      acao={
+        <AbaFiltro
+          abas={[
+            { key: 'andamento', label: 'Em andamento' },
+            { key: 'pendente', label: 'Pendente' },
+            { key: 'concluido', label: 'Concluído' }
+          ]}
+          atual={abaAlugueis}
+          onChange={setAbaAlugueis}
+        />
+      }
+    >
+      <ListaAlugueis alugueis={alugueis[abaAlugueis]} aba={abaAlugueis} usuarioLogadoId={usuarioLogadoId} />
+    </CardSecao>
+  );
+}
+
+function CardSolicitacao({ solicitacao, onCancelarSolicitacao }) {
+  return (
+    <div className="p-4 hover:bg-gray-50 rounded-xl transition-colors border border-gray-100 mb-2 last:mb-0">
+      <div className="flex justify-between items-start mb-3 gap-3">
+        <div className="min-w-0">
+          <h3 className="font-semibold text-[#1A1A1A] text-sm truncate">{solicitacao.anuncio?.titulo || 'Anúncio indisponível'}</h3>
+          <p className="text-xs text-gray-400 mt-1">
+            Início em {new Date(solicitacao.dataInicio).toLocaleDateString('pt-BR')}
+          </p>
         </div>
-        <div className="p-2">
-          <ListaAlugueis alugueis={alugueis[abaAlugueis]} aba={abaAlugueis} usuarioLogadoId={usuarioLogadoId} />
-        </div>
-      </section>
+        <StatusPill status="pendente" />
+      </div>
+      <button
+        onClick={() => onCancelarSolicitacao(solicitacao._id)}
+        className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 text-xs font-semibold py-2.5 rounded-lg hover:bg-red-50 hover:text-[#A32D2D] hover:border-red-200 transition-colors cursor-pointer"
+      >
+        <LuX size={14} /> Cancelar solicitação
+      </button>
     </div>
   );
 }
 
 function SecaoSolicitacoesEnviadas({ solicitacoesEnviadas, onCancelarSolicitacao }) {
   return (
-    <div className="animate-fade-in">
-      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-        <div className="p-6 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-[#1A1A1A]">Solicitações Enviadas</h2>
-        </div>
-        <div className="p-2 flex-grow">
-          {solicitacoesEnviadas.length === 0 ? (
-            <div className="p-8 text-center text-gray-400">
-              <LuCircleCheckBig size={32} className="mx-auto mb-2 opacity-30" />
-              <p className="text-sm font-bold">Nenhuma solicitação enviada</p>
-            </div>
-          ) : (
-            solicitacoesEnviadas.map((solicitacao) => (
-              <div key={solicitacao._id} className="p-4 hover:bg-gray-50 rounded-2xl transition-colors border border-transparent hover:border-gray-100 mb-2">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="font-bold text-[#1A1A1A] text-sm">{solicitacao.anuncio?.titulo || 'Anúncio Indisponível'}</h3>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">
-                      {new Date(solicitacao.dataInicio).toLocaleDateString('pt-BR')} - {new Date(solicitacao.dataFim).toLocaleDateString('pt-BR')}
-                    </p>
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest bg-orange-50 text-orange-500 px-3 py-1.5 rounded-md shrink-0">
-                    Pendente
-                  </span>
-                </div>
-                <button
-                  onClick={() => onCancelarSolicitacao(solicitacao._id)}
-                  className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 text-xs font-bold py-2.5 rounded-xl hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors cursor-pointer shadow-sm"
-                >
-                  <LuX size={14} /> Cancelar Solicitação
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-      </section>
+    <CardSecao titulo="Solicitações enviadas">
+      {solicitacoesEnviadas.length === 0 ? (
+        <EstadoVazio texto="Nenhuma solicitação enviada" />
+      ) : (
+        solicitacoesEnviadas.map((solicitacao) => (
+          <CardSolicitacao key={solicitacao._id} solicitacao={solicitacao} onCancelarSolicitacao={onCancelarSolicitacao} />
+        ))
+      )}
+    </CardSecao>
+  );
+}
+
+function LinhaPagamento({ pagamento, abaPagamentos, onPagarAgora }) {
+  return (
+    <div className="flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-100 last:border-0">
+      <div className="min-w-0">
+        <h3 className="font-semibold text-[#1A1A1A] text-sm truncate">{pagamento.aluguel?.anuncio?.titulo || 'Aluguel'}</h3>
+        <p className="text-xs text-gray-400 mt-0.5">Vencimento em {new Date(pagamento.vencimento).toLocaleDateString('pt-BR')}</p>
+      </div>
+
+      <div className="flex items-center gap-3 shrink-0">
+        {pagamento.status === 'atrasado' && (
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#A32D2D] bg-red-50 px-2.5 py-1 rounded-full">
+            <LuTriangleAlert size={12} /> Em atraso
+          </span>
+        )}
+
+        <span className="font-semibold text-[#1A1A1A] text-sm tabular-nums">R$ {pagamento.valor}</span>
+
+        {abaPagamentos === 'pendentes' && (
+          <button
+            onClick={() => onPagarAgora(pagamento._id)}
+            className="bg-[#1A1A1A] text-white text-[11px] font-semibold px-3.5 py-2 rounded-lg hover:bg-[#0068F3] transition-colors cursor-pointer"
+          >
+            Pagar agora
+          </button>
+        )}
+      </div>
     </div>
   );
 }
 
 function SecaoPagamentos({ pagamentos, abaPagamentos, setAbaPagamentos, onPagarAgora }) {
   return (
-    <div className="animate-fade-in">
-      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-          <h2 className="text-lg font-bold text-[#1A1A1A]">Pagamentos</h2>
-          <AbaFiltro
-            abas={[
-              { key: 'pendentes', label: 'Pendentes' },
-              { key: 'confirmados', label: 'Confirmados' }
-            ]}
-            atual={abaPagamentos}
-            onChange={setAbaPagamentos}
-          />
-        </div>
-
-        <div className="p-2 flex-grow">
-          {pagamentos[abaPagamentos].length === 0 ? (
-            <div className="p-8 text-center text-gray-400">
-              <LuCircleCheckBig size={32} className="mx-auto mb-2 opacity-30" />
-              <p className="text-sm font-bold">Nenhum pagamento nesta categoria</p>
-            </div>
-          ) : (
-            pagamentos[abaPagamentos].map((pagamento) => (
-              <div key={pagamento._id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-colors">
-                <div className="min-w-0">
-                  <h3 className="font-bold text-[#1A1A1A] text-sm truncate">{pagamento.aluguel?.anuncio?.titulo || 'Aluguel'}</h3>
-                  <p className="text-xs text-gray-400 font-medium mt-0.5">Vencimento: {new Date(pagamento.vencimento).toLocaleDateString('pt-BR')}</p>
-                </div>
-
-                <div className="flex items-center gap-3 shrink-0">
-                  <span className="font-black text-[#1A1A1A] text-sm">R$ {pagamento.valor}</span>
-
-                  {pagamento.status === 'atrasado' && (
-                    <span className="text-[10px] font-bold uppercase tracking-widest bg-red-50 text-red-500 px-2.5 py-1.5 rounded-md">
-                      Em atraso
-                    </span>
-                  )}
-
-                  {abaPagamentos === 'pendentes' && (
-                    <button
-                      onClick={() => onPagarAgora(pagamento._id)}
-                      className="bg-[#29C354] text-white text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-xl hover:bg-[#032D54] transition-colors cursor-pointer shadow-sm"
-                    >
-                      Pagar Agora
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </section>
-    </div>
+    <CardSecao
+      titulo="Pagamentos"
+      acao={
+        <AbaFiltro
+          abas={[
+            { key: 'pendentes', label: 'Pendentes' },
+            { key: 'confirmados', label: 'Confirmados' }
+          ]}
+          atual={abaPagamentos}
+          onChange={setAbaPagamentos}
+        />
+      }
+    >
+      {pagamentos[abaPagamentos].length === 0 ? (
+        <EstadoVazio texto="Nenhum pagamento nesta categoria" />
+      ) : (
+        pagamentos[abaPagamentos].map((pagamento) => (
+          <LinhaPagamento key={pagamento._id} pagamento={pagamento} abaPagamentos={abaPagamentos} onPagarAgora={onPagarAgora} />
+        ))
+      )}
+    </CardSecao>
   );
 }
 
-function SecaoPainel({ stats, alugueis, pagamentos, solicitacoesEnviadas, abaAlugueis, setAbaAlugueis, abaPagamentos, setAbaPagamentos, onCancelarSolicitacao, onPagarAgora, usuarioLogadoId }) {
+function SecaoPainel({ stats, toneClasses, alugueis, pagamentos, solicitacoesEnviadas, abaAlugueis, setAbaAlugueis, abaPagamentos, setAbaPagamentos, onCancelarSolicitacao, onPagarAgora, usuarioLogadoId }) {
   return (
-    <div className="animate-fade-in space-y-8">
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="space-y-6">
+      <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
+          const tone = toneClasses[stat.tone];
           return (
-            <div key={stat.id} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-center gap-5 hover:shadow-md transition-shadow">
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${stat.bg} ${stat.color}`}>
-                <Icon size={24} />
+            <div key={stat.id} className={`bg-white p-5 rounded-2xl border border-gray-200 border-l-4 ${tone.border} flex items-center gap-4`}>
+              <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${tone.bg} ${tone.text} flex-shrink-0`}>
+                <Icon size={20} />
               </div>
-              <div>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{stat.titulo}</p>
-                <p className="text-2xl font-black text-[#1A1A1A]">{stat.valor}</p>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5 truncate">{stat.titulo}</p>
+                <p className="text-xl font-semibold text-[#1A1A1A] tabular-nums">{stat.valor}</p>
               </div>
             </div>
           );
         })}
       </section>
 
-      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-          <h2 className="text-lg font-bold text-[#1A1A1A]">Meus Aluguéis</h2>
-          <AbaFiltro
-            abas={[
-              { key: 'andamento', label: 'Em Andamento' },
-              { key: 'pendente', label: 'Pendente' },
-              { key: 'concluido', label: 'Concluído' }
-            ]}
-            atual={abaAlugueis}
-            onChange={setAbaAlugueis}
-          />
-        </div>
+      <SecaoAlugueis alugueis={alugueis} abaAlugueis={abaAlugueis} setAbaAlugueis={setAbaAlugueis} usuarioLogadoId={usuarioLogadoId} />
 
-        <div className="p-2">
-          <ListaAlugueis alugueis={alugueis[abaAlugueis]} aba={abaAlugueis} usuarioLogadoId={usuarioLogadoId} />
-        </div>
-      </section>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="text-lg font-bold text-[#1A1A1A]">Solicitações Enviadas</h2>
-          </div>
-          <div className="p-2 flex-grow">
-            {solicitacoesEnviadas.length === 0 ? (
-              <div className="p-8 text-center text-gray-400">
-                <LuCircleCheckBig size={32} className="mx-auto mb-2 opacity-30" />
-                <p className="text-sm font-bold">Nenhuma solicitação enviada</p>
-              </div>
-            ) : (
-              solicitacoesEnviadas.map((solicitacao) => (
-                <div key={solicitacao._id} className="p-4 hover:bg-gray-50 rounded-2xl transition-colors border border-transparent hover:border-gray-100 mb-2">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h3 className="font-bold text-[#1A1A1A] text-sm">{solicitacao.anuncio?.titulo || 'Anúncio Indisponível'}</h3>
-                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">
-                        {new Date(solicitacao.dataInicio).toLocaleDateString('pt-BR')}
-                      </p>
-                    </div>
-                    <span className="text-[10px] font-bold uppercase tracking-widest bg-orange-50 text-orange-500 px-3 py-1.5 rounded-md shrink-0">
-                      Pendente
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => onCancelarSolicitacao(solicitacao._id)}
-                    className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 text-xs font-bold py-2.5 rounded-xl hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors cursor-pointer shadow-sm"
-                  >
-                    <LuX size={14} /> Cancelar Solicitação
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
-
-        <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-          <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-            <h2 className="text-lg font-bold text-[#1A1A1A]">Pagamentos</h2>
-            <AbaFiltro
-              abas={[
-                { key: 'pendentes', label: 'Pendentes' },
-                { key: 'confirmados', label: 'Confirmados' }
-              ]}
-              atual={abaPagamentos}
-              onChange={setAbaPagamentos}
-            />
-          </div>
-
-          <div className="p-2 flex-grow">
-            {pagamentos[abaPagamentos].length === 0 ? (
-              <div className="p-8 text-center text-gray-400">
-                <LuCircleCheckBig size={32} className="mx-auto mb-2 opacity-30" />
-                <p className="text-sm font-bold">Nenhum pagamento nesta categoria</p>
-              </div>
-            ) : (
-              pagamentos[abaPagamentos].map((pagamento) => (
-                <div key={pagamento._id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-colors">
-                  <div className="min-w-0">
-                    <h3 className="font-bold text-[#1A1A1A] text-sm truncate">{pagamento.aluguel?.anuncio?.titulo || 'Aluguel'}</h3>
-                    <p className="text-xs text-gray-400 font-medium mt-0.5">Vencimento: {new Date(pagamento.vencimento).toLocaleDateString('pt-BR')}</p>
-                  </div>
-
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="font-black text-[#1A1A1A] text-sm">R$ {pagamento.valor}</span>
-
-                    {pagamento.status === 'atrasado' && (
-                      <span className="text-[10px] font-bold uppercase tracking-widest bg-red-50 text-red-500 px-2.5 py-1.5 rounded-md">
-                        Em atraso
-                      </span>
-                    )}
-
-                    {abaPagamentos === 'pendentes' && (
-                      <button
-                        onClick={() => onPagarAgora(pagamento._id)}
-                        className="bg-[#29C354] text-white text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-xl hover:bg-[#032D54] transition-colors cursor-pointer shadow-sm"
-                      >
-                        Pagar Agora
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <SecaoSolicitacoesEnviadas solicitacoesEnviadas={solicitacoesEnviadas} onCancelarSolicitacao={onCancelarSolicitacao} />
+        <SecaoPagamentos pagamentos={pagamentos} abaPagamentos={abaPagamentos} setAbaPagamentos={setAbaPagamentos} onPagarAgora={onPagarAgora} />
       </div>
     </div>
   );
@@ -674,29 +574,29 @@ function SecaoConfiguracoes({ objetivoAtual, onAlterarObjetivo, onExcluirConta }
 
   const opcoesObjetivo = [
     { valor: 'ambos', titulo: 'Ambos', descricao: 'Quero alugar e também disponibilizar meus itens' },
-    { valor: 'locatario', titulo: 'Apenas Alugar', descricao: 'Quero procurar itens para pegar emprestado' },
-    { valor: 'locador', titulo: 'Apenas Disponibilizar', descricao: 'Quero colocar meus itens na plataforma para render uma grana' },
+    { valor: 'locatario', titulo: 'Apenas alugar', descricao: 'Quero procurar itens para pegar emprestado' },
+    { valor: 'locador', titulo: 'Apenas disponibilizar', descricao: 'Quero colocar meus itens na plataforma para render uma grana' },
   ];
 
   return (
-    <div className="animate-fade-in space-y-8">
-      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-[#1A1A1A]">Tipo de Conta</h2>
-          <p className="text-xs text-gray-400 mt-1">Mudou de ideia? Ajuste aqui o que você quer fazer no LendLoop.</p>
+    <div className="space-y-6">
+      <section className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4.5 border-b border-gray-100">
+          <h2 className="text-[15px] font-semibold text-[#1A1A1A]">Tipo de conta</h2>
+          <p className="text-xs text-gray-500 mt-1">Mudou de ideia? Ajuste aqui o que você quer fazer no LendLoop.</p>
         </div>
         <div className="p-6 space-y-3">
           {opcoesObjetivo.map((op) => (
             <div
               key={op.valor}
               onClick={() => handleAlterarObjetivo(op.valor)}
-              className={`p-4 border rounded-2xl cursor-pointer transition-all ${
+              className={`p-4 border rounded-xl cursor-pointer transition-all ${
                 objetivoAtual === op.valor
-                  ? 'border-[#0068F3] bg-[#0068F3]/10 ring-1 ring-[#0068F3]'
-                  : 'border-gray-200 hover:border-[#0068F3]/50'
+                  ? 'border-[#0068F3] bg-[#0068F3]/[0.04] ring-1 ring-[#0068F3]'
+                  : 'border-gray-200 hover:border-gray-300'
               } ${salvandoObjetivo ? 'opacity-60 pointer-events-none' : ''}`}
             >
-              <span className={`block text-sm font-bold ${objetivoAtual === op.valor ? 'text-[#032D54]' : 'text-[#1A1A1A]'}`}>
+              <span className={`block text-sm font-semibold ${objetivoAtual === op.valor ? 'text-[#0068F3]' : 'text-[#1A1A1A]'}`}>
                 {op.titulo}
               </span>
               <span className="block text-xs text-gray-500 mt-0.5">{op.descricao}</span>
@@ -705,20 +605,20 @@ function SecaoConfiguracoes({ objetivoAtual, onAlterarObjetivo, onExcluirConta }
         </div>
       </section>
 
-      <section className="bg-white rounded-3xl border border-red-100 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-red-100">
-          <h2 className="text-lg font-bold text-red-500">Zona de Perigo</h2>
+      <section className="bg-white rounded-2xl border border-red-100 overflow-hidden">
+        <div className="px-6 py-4.5 border-b border-red-100">
+          <h2 className="text-[15px] font-semibold text-[#A32D2D]">Zona de perigo</h2>
         </div>
-        <div className="p-6 flex items-center justify-between">
+        <div className="p-6 flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-bold text-[#1A1A1A]">Excluir minha conta</p>
-            <p className="text-xs text-gray-400 mt-1">Essa ação é permanente.</p>
+            <p className="text-sm font-semibold text-[#1A1A1A]">Excluir minha conta</p>
+            <p className="text-xs text-gray-500 mt-1">Essa ação é permanente e não pode ser desfeita.</p>
           </div>
           <button
             onClick={onExcluirConta}
-            className="flex items-center gap-2 bg-red-50 text-red-500 text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-red-100 transition-colors cursor-pointer uppercase tracking-widest"
+            className="flex items-center gap-2 bg-white border border-red-200 text-[#A32D2D] text-xs font-semibold px-4 py-2.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer flex-shrink-0"
           >
-            <LuTrash2 size={14} /> Excluir Conta
+            <LuTrash2 size={14} /> Excluir conta
           </button>
         </div>
       </section>
