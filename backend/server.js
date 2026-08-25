@@ -22,8 +22,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// --- Rotas LendLoop ---
-
+// Cria uma notificação para um usuário. Nunca lança erro: uma falha aqui
+// não pode derrubar a rota principal que a chamou (envio de mensagem, etc).
 async function criarNotificacao({ usuario, tipo, titulo, texto, linkPainel = null, estadoNavegacao = {} }) {
   try {
     await Notificacao.create({ usuario, tipo, titulo, texto, linkPainel, estadoNavegacao });
@@ -31,6 +31,8 @@ async function criarNotificacao({ usuario, tipo, titulo, texto, linkPainel = nul
     console.error('Erro ao criar notificação:', erro);
   }
 }
+
+// --- Rotas LendLoop ---
 
 // Cadastro
 app.post('/api/usuarios', async (req, res) => {
@@ -405,6 +407,15 @@ app.post('/api/alugueis', autenticacao, async (req, res) => {
 
     await novoAluguel.save();
 
+    await criarNotificacao({
+      usuario: anuncioEncontrado.locador,
+      tipo: 'solicitacao',
+      titulo: 'Nova solicitação de aluguel',
+      texto: `Você recebeu uma nova solicitação para "${anuncioEncontrado.titulo}".`,
+      linkPainel: '/painelLocador',
+      estadoNavegacao: { abrirAba: 'solicitacoes' }
+    });
+
     res.status(201).json({
       mensagem: 'Solicitação de aluguel enviada com sucesso!',
       aluguel: novoAluguel
@@ -472,6 +483,30 @@ app.patch('/api/alugueis/:id/status', autenticacao, async (req, res) => {
 
     aluguel.status = status;
     await aluguel.save();
+
+    // Notifica quem NÃO fez a alteração (a outra parte da negociação)
+    const anuncioDoAluguel = await Anuncio.findById(aluguel.anuncio);
+    const rotuloStatus = {
+      pendente: 'pendente',
+      aceito: 'aceita',
+      recusado: 'recusada',
+      andamento: 'em andamento',
+      concluido: 'concluída',
+      cancelado: 'cancelada'
+    }[status] || status;
+
+    const quemAlterou = req.usuarioId;
+    const outraParte = quemAlterou === String(aluguel.locador) ? aluguel.locatario : aluguel.locador;
+    const outraParteEhLocador = String(outraParte) === String(aluguel.locador);
+
+    await criarNotificacao({
+      usuario: outraParte,
+      tipo: 'status_aluguel',
+      titulo: `Solicitação ${rotuloStatus}`,
+      texto: `O status da solicitação para "${anuncioDoAluguel?.titulo || 'seu anúncio'}" mudou para: ${rotuloStatus}.`,
+      linkPainel: outraParteEhLocador ? '/painelLocador' : '/painellocatario',
+      estadoNavegacao: { abrirAba: outraParteEhLocador ? 'solicitacoes' : 'alugueis' }
+    });
 
     res.status(200).json({
       mensagem: 'Status do aluguel atualizado com sucesso!',
@@ -583,6 +618,15 @@ app.post('/api/avaliacoes', autenticacao, async (req, res) => {
 
     const novaAvaliacao = new Avaliacao({ aluguel, autor, avaliado, nota, comentario });
     await novaAvaliacao.save();
+
+    await criarNotificacao({
+      usuario: avaliado,
+      tipo: 'avaliacao',
+      titulo: 'Nova avaliação recebida',
+      texto: `Você recebeu uma avaliação de ${nota} estrela${nota === 1 ? '' : 's'}.`,
+      linkPainel: '/meu-perfil',
+      estadoNavegacao: {}
+    });
 
     res.status(201).json({
       mensagem: 'Avaliação enviada com sucesso!',
@@ -770,6 +814,15 @@ app.post('/api/mensagens', autenticacao, async (req, res) => {
 
     const mensagemPopulada = await novaMensagem.populate('remetente', 'nome avatar');
 
+    await criarNotificacao({
+      usuario: destinatario,
+      tipo: 'mensagem',
+      titulo: `Nova mensagem de ${mensagemPopulada.remetente.nome}`,
+      texto: texto.trim().slice(0, 80),
+      linkPainel: null, // resolvido no front, de acordo com o objetivo do usuário logado
+      estadoNavegacao: { abrirConversa: remetente }
+    });
+
     res.status(201).json(mensagemPopulada);
   } catch (erro) {
     res.status(500).json({ erro: 'Erro ao enviar mensagem', detalhes: erro.message });
@@ -789,18 +842,103 @@ app.patch('/api/mensagens/conversa/:conversaId/lida', autenticacao, async (req, 
   }
 });
 
+// --- Notificações ---
+
+// Listar notificações de um usuário (mais recentes primeiro)
+app.get('/api/notificacoes/:usuarioId', autenticacao, async (req, res) => {
+  try {
+    if (req.params.usuarioId !== req.usuarioId) {
+      return res.status(403).json({ erro: 'Você não tem permissão para ver estas notificações.' });
+    }
+
+    const notificacoes = await Notificacao.find({ usuario: req.params.usuarioId })
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    res.status(200).json(notificacoes);
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao buscar notificações' });
+  }
+});
+
+// Contar notificações não lidas (usado no badge do sino)
+app.get('/api/notificacoes/:usuarioId/contagem', autenticacao, async (req, res) => {
+  try {
+    if (req.params.usuarioId !== req.usuarioId) {
+      return res.status(403).json({ erro: 'Você não tem permissão para ver estas notificações.' });
+    }
+
+    const total = await Notificacao.countDocuments({ usuario: req.params.usuarioId, lida: false });
+    res.status(200).json({ total });
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao contar notificações' });
+  }
+});
+
+// Marcar uma notificação como lida
+app.patch('/api/notificacoes/:id/lida', autenticacao, async (req, res) => {
+  try {
+    const notificacao = await Notificacao.findById(req.params.id);
+
+    if (!notificacao) {
+      return res.status(404).json({ erro: 'Notificação não encontrada.' });
+    }
+
+    if (notificacao.usuario.toString() !== req.usuarioId) {
+      return res.status(403).json({ erro: 'Você não tem permissão para alterar esta notificação.' });
+    }
+
+    notificacao.lida = true;
+    await notificacao.save();
+
+    res.status(200).json({ mensagem: 'Notificação marcada como lida.', notificacao });
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao marcar notificação como lida' });
+  }
+});
+
+// Marcar todas as notificações de um usuário como lidas
+app.patch('/api/notificacoes/:usuarioId/marcar-todas-lidas', autenticacao, async (req, res) => {
+  try {
+    if (req.params.usuarioId !== req.usuarioId) {
+      return res.status(403).json({ erro: 'Você não tem permissão para alterar estas notificações.' });
+    }
+
+    await Notificacao.updateMany(
+      { usuario: req.params.usuarioId, lida: false },
+      { lida: true }
+    );
+
+    res.status(200).json({ mensagem: 'Todas as notificações foram marcadas como lidas.' });
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao marcar notificações como lidas' });
+  }
+});
+
+// Excluir uma notificação
+app.delete('/api/notificacoes/:id', autenticacao, async (req, res) => {
+  try {
+    const notificacao = await Notificacao.findById(req.params.id);
+
+    if (!notificacao) {
+      return res.status(404).json({ erro: 'Notificação não encontrada.' });
+    }
+
+    if (notificacao.usuario.toString() !== req.usuarioId) {
+      return res.status(403).json({ erro: 'Você não tem permissão para excluir esta notificação.' });
+    }
+
+    await notificacao.deleteOne();
+
+    res.status(200).json({ mensagem: 'Notificação excluída com sucesso.' });
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao excluir notificação' });
+  }
+});
+
 // ==========================================
 // CONFIGURAÇÃO DO BANCO E SERVIDOR
 // ==========================================
-
-// Error handler global — captura erros do multer/cloudinary e qualquer outro middleware
-app.use((err, req, res, next) => {
-  console.error('Erro capturado pelo handler global:', err);
-  res.status(err.status || 500).json({
-    erro: err.message || 'Erro interno no servidor',
-    tipo: err.name || 'Error'
-  });
-});
 
 const PORT = process.env.PORT || 3000;
 

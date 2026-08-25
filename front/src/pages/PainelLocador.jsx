@@ -4,6 +4,7 @@ import { apiRequest } from '../services/api';
 import logo from '../assets/logo.png'; 
 import { BotaoAvaliar } from '../components/BotaoAvaliar';
 import { PainelMensagens } from '../components/PainelMensagens';
+import { NotificacaoSino } from '../components/NotificacaoSino';
 
 import { 
   LuLayoutDashboard, 
@@ -401,10 +402,7 @@ export default function PainelLocador() {
             {activeTab === 'config' ? 'Configurações' : menuItems.find(i => i.id === activeTab)?.label}
           </h1>
           <div className="flex items-center gap-3">
-            <button className="p-2.5 rounded-full bg-gray-50 text-gray-500 hover:text-[#29C354] transition-colors relative cursor-pointer">
-              <LuBell size={20} />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
+            <NotificacaoSino />
             <button
               onClick={() => navigate('/configuracoes')}
               title="Configurações"
