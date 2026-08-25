@@ -15,6 +15,7 @@ const Pagamento = require('./models/Pagamento');
 const Avaliacao = require('./models/Avaliacao');
 const Conversa = require('./models/Conversa');
 const Mensagem = require('./models/Mensagem');
+const Notificacao = require('./models/Notificacao');
 
 const app = express();
 
@@ -22,6 +23,14 @@ app.use(cors());
 app.use(express.json());
 
 // --- Rotas LendLoop ---
+
+async function criarNotificacao({ usuario, tipo, titulo, texto, linkPainel = null, estadoNavegacao = {} }) {
+  try {
+    await Notificacao.create({ usuario, tipo, titulo, texto, linkPainel, estadoNavegacao });
+  } catch (erro) {
+    console.error('Erro ao criar notificação:', erro);
+  }
+}
 
 // Cadastro
 app.post('/api/usuarios', async (req, res) => {
