@@ -68,6 +68,9 @@ export default function PainelLocador() {
     if (location.state?.abrirConversa) {
       setActiveTab('mensagens');
     }
+    if (location.state?.abrirAba) {
+      setActiveTab(location.state.abrirAba);
+    }
   }, [location.state]);
 
   useEffect(() => {

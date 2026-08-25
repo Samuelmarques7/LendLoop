@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LuShoppingBag, LuPackage, LuSettings } from 'react-icons/lu';
 import logo from '../assets/logocompleta.png';
+import { NotificacaoSino } from './NotificacaoSino';
 
 export function Header() {
   const navigate = useNavigate();
@@ -96,6 +97,8 @@ export function Header() {
             <LuPackage size={16} /> Painel Locador
           </button>
         )}
+
+        {isLogado && <NotificacaoSino />}
 
         {isLogado && (
           <button
