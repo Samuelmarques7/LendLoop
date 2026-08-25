@@ -784,6 +784,15 @@ app.patch('/api/mensagens/conversa/:conversaId/lida', autenticacao, async (req, 
 // CONFIGURAÇÃO DO BANCO E SERVIDOR
 // ==========================================
 
+// Error handler global — captura erros do multer/cloudinary e qualquer outro middleware
+app.use((err, req, res, next) => {
+  console.error('Erro capturado pelo handler global:', err);
+  res.status(err.status || 500).json({
+    erro: err.message || 'Erro interno no servidor',
+    tipo: err.name || 'Error'
+  });
+});
+
 const PORT = process.env.PORT || 3000;
 
 connectDB().then(() => {
