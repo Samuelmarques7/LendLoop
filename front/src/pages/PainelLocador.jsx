@@ -4,6 +4,7 @@ import { apiRequest } from '../services/api';
 import logo from '../assets/logo.png';
 import { BotaoAvaliar } from '../components/BotaoAvaliar';
 import { PainelMensagens } from '../components/PainelMensagens';
+import { NotificacaoSino } from '../components/NotificacaoSino';
 
 import {
   LuLayoutDashboard,
