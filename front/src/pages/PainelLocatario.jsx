@@ -15,12 +15,12 @@ import {
   LuSettings,
   LuCalendar,
   LuMailWarning,
-  LuBell,
   LuX,
   LuCircleCheckBig,
   LuTrash2,
   LuShieldCheck,
-  LuTriangleAlert
+  LuTriangleAlert,
+  LuClock
 } from "react-icons/lu";
 
 export default function PainelLocatario() {
@@ -38,6 +38,8 @@ export default function PainelLocatario() {
   const [todosAlugueis, setTodosAlugueis] = useState([]);
   const [pagamentos, setPagamentos] = useState([]);
   const [mensagensNaoLidas, setMensagensNaoLidas] = useState(0);
+
+  const [aluguelSelecionado, setAluguelSelecionado] = useState(null);
 
   useEffect(() => {
     document.title = 'Painel Locatário';
@@ -58,6 +60,9 @@ export default function PainelLocatario() {
     }
     if (location.state?.abrirConversa) {
       setActiveTab('mensagens');
+    }
+    if (location.state?.abrirAba) {
+      setActiveTab(location.state.abrirAba);
     }
   }, [location.state]);
 
@@ -105,7 +110,7 @@ export default function PainelLocatario() {
   );
 
   const alugueis = useMemo(() => ({
-    andamento: todosAlugueis.filter(a => a.status === 'aceito' || a.status === 'andamento'),
+    andamento: todosAlugueis.filter(a => a.status === 'aceito' || a.status === 'andamento' || a.status === 'aguardando_confirmacao'),
     pendente: todosAlugueis.filter(a => a.status === 'pendente'),
     concluido: todosAlugueis.filter(a => a.status === 'concluido'),
   }), [todosAlugueis]);
@@ -166,6 +171,27 @@ const toneClasses = {
     }
   }
 
+  async function solicitarDevolucao(id) {
+    try {
+      await apiRequest(`/api/alugueis/${id}/status`, {
+        method: 'PATCH',
+        body: { status: 'aguardando_confirmacao' }
+      });
+      setTodosAlugueis(prev => prev.map(a => a._id === id ? { ...a, status: 'aguardando_confirmacao' } : a));
+      setAluguelSelecionado(prev => prev && prev._id === id ? { ...prev, status: 'aguardando_confirmacao' } : prev);
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  function abrirDetalhesAluguel(aluguel) {
+    setAluguelSelecionado(aluguel);
+  }
+
+  function fecharDetalhesAluguel() {
+    setAluguelSelecionado(null);
+  }
+
   async function alterarObjetivo(novoObjetivo) {
     try {
       const data = await apiRequest(`/api/usuarios/${usuarioLogado.id}`, {
@@ -214,10 +240,11 @@ const toneClasses = {
           setAbaPagamentos={setAbaPagamentos}
           onCancelarSolicitacao={cancelarSolicitacao}
           onPagarAgora={pagarAgora}
+          onAbrirDetalhes={abrirDetalhesAluguel}
           usuarioLogadoId={usuarioLogado?.id}
         />;
       case 'alugueis':
-        return <SecaoAlugueis alugueis={alugueis} abaAlugueis={abaAlugueis} setAbaAlugueis={setAbaAlugueis} usuarioLogadoId={usuarioLogado?.id} />;
+        return <SecaoAlugueis alugueis={alugueis} abaAlugueis={abaAlugueis} setAbaAlugueis={setAbaAlugueis} onAbrirDetalhes={abrirDetalhesAluguel} usuarioLogadoId={usuarioLogado?.id} />;
       case 'solicitacoes':
         return <SecaoSolicitacoesEnviadas solicitacoesEnviadas={solicitacoesEnviadas} onCancelarSolicitacao={cancelarSolicitacao} />;
       case 'pagamentos':
@@ -250,9 +277,9 @@ const toneClasses = {
   return (
     <div className="min-h-screen bg-[#FAFAF9] font-sans text-[#1A1A1A]">
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-[1600px] mx-auto w-full h-16 flex items-center px-10 gap-8">
+        <div className="w-full h-19 flex items-center px-8 gap-8">
           <button onClick={() => navigate('/')} className="flex-shrink-0 cursor-pointer">
-            <img src={logo} alt="LendLoop" className="h-8 w-auto" />
+            <img src={logo} alt="LendLoop" className="h-16 w-auto" />
           </button>
 
           <nav className="flex-1 flex items-center gap-1 h-full overflow-x-auto">
@@ -263,13 +290,13 @@ const toneClasses = {
                 <button
                   key={item.id}
                   onClick={() => handleMenuClick(item)}
-                  className={`h-full flex items-center gap-2 px-3.5 text-[13px] font-medium whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
+                  className={`h-full flex items-center gap-2 px-4 text-[15px] font-medium whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
                     isActive
                       ? 'border-[#1A1A1A] text-[#1A1A1A]'
                       : 'border-transparent text-gray-500 hover:text-[#1A1A1A]'
                   }`}
                 >
-                  <Icon size={16} className={isActive ? 'text-[#0068F3]' : 'text-gray-400'} />
+                  <Icon size={20} className={isActive ? 'text-[#0068F3]' : 'text-gray-400'} />
                   {item.label}
                 </button>
               );
@@ -277,23 +304,20 @@ const toneClasses = {
           </nav>
 
           <div className="flex items-center gap-2 flex-shrink-0">
-            <button className="p-2 rounded-lg text-gray-500 hover:bg-gray-50 hover:text-[#1A1A1A] transition-colors relative cursor-pointer">
-              <LuBell size={18} />
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[#D85A30] rounded-full"></span>
-            </button>
+            <NotificacaoSino />
             <button
               onClick={() => navigate('/configuracoes')}
               title="Configurações"
               className="p-2 rounded-lg text-gray-500 hover:bg-gray-50 hover:text-[#1A1A1A] transition-colors cursor-pointer"
             >
-              <LuSettings size={18} />
+              <LuSettings size={22} />
             </button>
 
             <button
               onClick={() => navigate('/meu-perfil')}
               className="flex items-center gap-2.5 pl-3 ml-1 border-l border-gray-200 cursor-pointer group"
             >
-              <div className="w-8 h-8 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center font-semibold text-xs overflow-hidden flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center font-semibold text-sm overflow-hidden flex-shrink-0">
                 {dadosLocatario?.avatar ? (
                   <img src={dadosLocatario.avatar} alt={dadosLocatario.nome} className="w-full h-full object-cover" />
                 ) : (
@@ -301,10 +325,10 @@ const toneClasses = {
                 )}
               </div>
               <div className="hidden lg:block text-left min-w-0">
-                <p className="text-[13px] font-semibold text-[#1A1A1A] whitespace-nowrap leading-tight group-hover:text-[#0068F3] transition-colors">
+                <p className="text-[14px] font-semibold text-[#1A1A1A] whitespace-nowrap leading-tight group-hover:text-[#0068F3] transition-colors">
                   {dadosLocatario?.nome ? dadosLocatario.nome.split(' ').slice(0, 2).join(' ') : 'Carregando...'}
                 </p>
-                <p className="text-[11px] text-gray-400 leading-tight">Locatário</p>
+                <p className="text-[12px] text-gray-400 leading-tight">Locatário</p>
               </div>
             </button>
           </div>
@@ -318,6 +342,13 @@ const toneClasses = {
         </div>
         {renderConteudo()}
       </main>
+
+      <ModalDetalhesAluguel
+        aluguel={aluguelSelecionado}
+        onClose={fecharDetalhesAluguel}
+        onSolicitarDevolucao={solicitarDevolucao}
+        usuarioLogadoId={usuarioLogado?.id}
+      />
     </div>
   );
 }
@@ -326,6 +357,7 @@ function StatusPill({ status }) {
   const map = {
     andamento: { label: 'Em andamento', dot: 'bg-[#0F6E56]', text: 'text-[#0F6E56]', bg: 'bg-[#0F6E56]/[0.08]' },
     aceito: { label: 'Em andamento', dot: 'bg-[#0F6E56]', text: 'text-[#0F6E56]', bg: 'bg-[#0F6E56]/[0.08]' },
+    aguardando_confirmacao: { label: 'Aguardando confirmação', dot: 'bg-[#0068F3]', text: 'text-[#0068F3]', bg: 'bg-[#0068F3]/[0.08]' },
     concluido: { label: 'Concluído', dot: 'bg-gray-400', text: 'text-gray-600', bg: 'bg-gray-100' },
     pendente: { label: 'Pendente', dot: 'bg-amber-500', text: 'text-amber-700', bg: 'bg-amber-500/[0.1]' },
   };
@@ -367,13 +399,17 @@ function EstadoVazio({ texto }) {
   );
 }
 
-function ListaAlugueis({ alugueis, aba, usuarioLogadoId }) {
+function ListaAlugueis({ alugueis, aba, usuarioLogadoId, onAbrirDetalhes }) {
   if (alugueis.length === 0) {
     return <EstadoVazio texto="Nenhum aluguel nesta categoria" />;
   }
 
   return alugueis.map((aluguel) => (
-    <div key={aluguel._id} className="flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-100 last:border-0">
+    <div
+      key={aluguel._id}
+      onClick={() => onAbrirDetalhes(aluguel)}
+      className="flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-100 last:border-0 cursor-pointer"
+    >
       <div className="flex items-center gap-3.5 min-w-0">
         {aluguel.anuncio?.fotos?.[0] ? (
           <img src={aluguel.anuncio.fotos[0]} alt={aluguel.anuncio.titulo} className="w-11 h-11 rounded-lg object-cover flex-shrink-0 border border-gray-200" />
@@ -391,14 +427,6 @@ function ListaAlugueis({ alugueis, aba, usuarioLogadoId }) {
       <div className="flex items-center gap-4 shrink-0">
         <StatusPill status={aluguel.status} />
         <span className="font-semibold text-[#1A1A1A] text-sm w-16 text-right tabular-nums">R$ {aluguel.precoTotal}</span>
-
-        {aba === 'concluido' && aluguel.locador && (
-          <BotaoAvaliar
-            aluguelId={aluguel._id}
-            autorId={usuarioLogadoId}
-            nomeAvaliado={aluguel.locador.nome}
-          />
-        )}
       </div>
     </div>
   ));
@@ -418,7 +446,7 @@ function CardSecao({ titulo, acao, children }) {
   );
 }
 
-function SecaoAlugueis({ alugueis, abaAlugueis, setAbaAlugueis, usuarioLogadoId }) {
+function SecaoAlugueis({ alugueis, abaAlugueis, setAbaAlugueis, onAbrirDetalhes, usuarioLogadoId }) {
   return (
     <CardSecao
       titulo="Meus aluguéis"
@@ -434,7 +462,7 @@ function SecaoAlugueis({ alugueis, abaAlugueis, setAbaAlugueis, usuarioLogadoId 
         />
       }
     >
-      <ListaAlugueis alugueis={alugueis[abaAlugueis]} aba={abaAlugueis} usuarioLogadoId={usuarioLogadoId} />
+      <ListaAlugueis alugueis={alugueis[abaAlugueis]} aba={abaAlugueis} usuarioLogadoId={usuarioLogadoId} onAbrirDetalhes={onAbrirDetalhes} />
     </CardSecao>
   );
 }
@@ -531,7 +559,7 @@ function SecaoPagamentos({ pagamentos, abaPagamentos, setAbaPagamentos, onPagarA
   );
 }
 
-function SecaoPainel({ stats, toneClasses, alugueis, pagamentos, solicitacoesEnviadas, abaAlugueis, setAbaAlugueis, abaPagamentos, setAbaPagamentos, onCancelarSolicitacao, onPagarAgora, usuarioLogadoId }) {
+function SecaoPainel({ stats, toneClasses, alugueis, pagamentos, solicitacoesEnviadas, abaAlugueis, setAbaAlugueis, abaPagamentos, setAbaPagamentos, onCancelarSolicitacao, onPagarAgora, onAbrirDetalhes, usuarioLogadoId }) {
   return (
     <div className="space-y-6">
       <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -552,11 +580,94 @@ function SecaoPainel({ stats, toneClasses, alugueis, pagamentos, solicitacoesEnv
         })}
       </section>
 
-      <SecaoAlugueis alugueis={alugueis} abaAlugueis={abaAlugueis} setAbaAlugueis={setAbaAlugueis} usuarioLogadoId={usuarioLogadoId} />
+      <SecaoAlugueis alugueis={alugueis} abaAlugueis={abaAlugueis} setAbaAlugueis={setAbaAlugueis} onAbrirDetalhes={onAbrirDetalhes} usuarioLogadoId={usuarioLogadoId} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <SecaoSolicitacoesEnviadas solicitacoesEnviadas={solicitacoesEnviadas} onCancelarSolicitacao={onCancelarSolicitacao} />
         <SecaoPagamentos pagamentos={pagamentos} abaPagamentos={abaPagamentos} setAbaPagamentos={setAbaPagamentos} onPagarAgora={onPagarAgora} />
+      </div>
+    </div>
+  );
+}
+
+function ModalDetalhesAluguel({ aluguel, onClose, onSolicitarDevolucao, usuarioLogadoId }) {
+  if (!aluguel) return null;
+
+  const podeSolicitarDevolucao = aluguel.status === 'aceito' || aluguel.status === 'andamento';
+  const aguardandoConfirmacao = aluguel.status === 'aguardando_confirmacao';
+  const concluido = aluguel.status === 'concluido';
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-start mb-4 gap-3">
+          <h2 className="text-lg font-semibold text-[#1A1A1A] leading-tight">{aluguel.anuncio?.titulo || 'Aluguel'}</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-[#1A1A1A] transition-colors cursor-pointer flex-shrink-0"
+          >
+            <LuX size={20} />
+          </button>
+        </div>
+
+        {aluguel.anuncio?.fotos?.[0] && (
+          <img
+            src={aluguel.anuncio.fotos[0]}
+            alt={aluguel.anuncio.titulo}
+            className="w-full h-40 object-cover rounded-xl mb-5 border border-gray-200"
+          />
+        )}
+
+        <div className="space-y-3 mb-6">
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-gray-500">Alugado em</span>
+            <span className="font-semibold text-[#1A1A1A]">{new Date(aluguel.dataInicio).toLocaleDateString('pt-BR')}</span>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-gray-500">Devolução prevista</span>
+            <span className="font-semibold text-[#1A1A1A]">{new Date(aluguel.dataFim).toLocaleDateString('pt-BR')}</span>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-gray-500">Valor total</span>
+            <span className="font-semibold text-[#1A1A1A] tabular-nums">R$ {aluguel.precoTotal}</span>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-gray-500">Status</span>
+            <StatusPill status={aluguel.status} />
+          </div>
+        </div>
+
+        {podeSolicitarDevolucao && (
+          <button
+            onClick={() => onSolicitarDevolucao(aluguel._id)}
+            className="w-full bg-[#1A1A1A] text-white text-sm font-semibold py-3 rounded-lg hover:bg-[#0068F3] transition-colors cursor-pointer"
+          >
+            Marcar como devolvido
+          </button>
+        )}
+
+        {aguardandoConfirmacao && (
+          <div className="flex items-center gap-2 justify-center text-[#0068F3] bg-[#0068F3]/[0.08] text-sm font-semibold py-3 rounded-lg">
+            <LuClock size={16} /> Aguardando confirmação do locador
+          </div>
+        )}
+
+        {concluido && aluguel.locador && (
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-xs text-gray-500">Devolução confirmada pelo locador. Que tal avaliar a experiência?</p>
+            <BotaoAvaliar
+              aluguelId={aluguel._id}
+              autorId={usuarioLogadoId}
+              nomeAvaliado={aluguel.locador.nome}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -34,6 +34,22 @@ async function criarNotificacao({ usuario, tipo, titulo, texto, linkPainel = nul
 
 // --- Rotas LendLoop ---
 
+app.put('/api/anuncios/:id', async (req, res) => {
+  try {
+    const anuncioAtualizado = await Anuncio.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+    if (!anuncioAtualizado) {
+      return res.status(404).json({ erro: 'Anúncio não encontrado' });
+    }
+    res.status(200).json({ mensagem: 'Anúncio atualizado com sucesso!', anuncio: anuncioAtualizado });
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao atualizar anúncio', detalhes: erro.message });
+  }
+});
+
 // Cadastro
 app.post('/api/usuarios', async (req, res) => {
   try {
@@ -472,13 +488,13 @@ app.patch('/api/alugueis/:id/status', autenticacao, async (req, res) => {
     // e se a data de devolução já passou. Evita chamadas diretas à API
     // "concluindo" um aluguel que ainda nem começou.
     if (status === 'concluido') {
-      if (aluguel.status !== 'aceito' && aluguel.status !== 'andamento') {
-        return res.status(400).json({ erro: 'Só é possível concluir um aluguel que está em andamento.' });
+      if (status === 'concluido' && aluguel.status !== 'andamento' && aluguel.status !== 'aguardando_confirmacao') {
+        return res.status(400).json({ erro: 'Só é possível concluir um aluguel que está em andamento ou aguardando confirmação.' });
       }
 
-      if (new Date() < new Date(aluguel.dataFim)) {
-        return res.status(400).json({ erro: 'Ainda não é possível concluir: o período do aluguel não terminou.' });
-      }
+      //if (new Date() < new Date(aluguel.dataFim)) {
+        //return res.status(400).json({ erro: 'Ainda não é possível concluir: o período do aluguel não terminou.' });
+      //}
     }
 
     aluguel.status = status;

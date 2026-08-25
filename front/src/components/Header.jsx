@@ -24,7 +24,7 @@ export function Header() {
       <img
         src={logo}
         alt="LendLoop"
-        className="h-14 w-auto cursor-pointer"
+        className="h-13 w-auto cursor-pointer"
         onClick={() => navigate('/')}
       />
 
