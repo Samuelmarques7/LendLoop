@@ -40,6 +40,7 @@ export default function PainelLocatario() {
   const [mensagensNaoLidas, setMensagensNaoLidas] = useState(0);
 
   const [aluguelSelecionado, setAluguelSelecionado] = useState(null);
+  const [avaliacoesFeitas, setAvaliacoesFeitas] = useState({});
 
   useEffect(() => {
     document.title = 'Painel Locatário';
@@ -104,16 +105,52 @@ export default function PainelLocatario() {
     return () => clearInterval(intervalo);
   }, []);
 
+  useEffect(() => {
+    const concluidos = todosAlugueis.filter(a => a.status === 'concluido');
+    const pendentesVerificacao = concluidos.filter(a => !(a._id in avaliacoesFeitas));
+    if (pendentesVerificacao.length === 0) return;
+
+    let cancelado = false;
+    Promise.all(
+      pendentesVerificacao.map(async (a) => {
+        try {
+          const data = await apiRequest(`/api/avaliacoes/aluguel/${a._id}/autor/${usuarioLogado.id}`);
+          return { id: a._id, avaliado: data.avaliado };
+        } catch {
+          return { id: a._id, avaliado: false };
+        }
+      })
+    ).then((resultados) => {
+      if (cancelado) return;
+      setAvaliacoesFeitas(prev => {
+        const atualizado = { ...prev };
+        resultados.forEach(r => { atualizado[r.id] = r.avaliado; });
+        return atualizado;
+      });
+    });
+
+    return () => { cancelado = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [todosAlugueis]);
+
+  function handleStatusAvaliacao(aluguelId, avaliado) {
+    setAvaliacoesFeitas(prev => ({ ...prev, [aluguelId]: avaliado }));
+  }
+
   const solicitacoesEnviadas = useMemo(
     () => todosAlugueis.filter(a => a.status === 'pendente'),
     [todosAlugueis]
   );
 
-  const alugueis = useMemo(() => ({
-    andamento: todosAlugueis.filter(a => a.status === 'aceito' || a.status === 'andamento' || a.status === 'aguardando_confirmacao'),
-    pendente: todosAlugueis.filter(a => a.status === 'pendente'),
-    concluido: todosAlugueis.filter(a => a.status === 'concluido'),
-  }), [todosAlugueis]);
+  const alugueis = useMemo(() => {
+    const concluidos = todosAlugueis.filter(a => a.status === 'concluido');
+    return {
+      andamento: todosAlugueis.filter(a => a.status === 'aceito' || a.status === 'andamento' || a.status === 'aguardando_confirmacao'),
+      pendente: todosAlugueis.filter(a => a.status === 'pendente'),
+      avaliar: concluidos.filter(a => avaliacoesFeitas[a._id] !== true),
+      concluido: concluidos.filter(a => avaliacoesFeitas[a._id] === true),
+    };
+  }, [todosAlugueis, avaliacoesFeitas]);
 
   const pagamentosPorAba = useMemo(() => ({
     pendentes: pagamentos.filter(p => p.status === 'pendente' || p.status === 'atrasado'),
@@ -242,9 +279,10 @@ const toneClasses = {
           onPagarAgora={pagarAgora}
           onAbrirDetalhes={abrirDetalhesAluguel}
           usuarioLogadoId={usuarioLogado?.id}
+          onStatusAvaliacao={handleStatusAvaliacao}
         />;
       case 'alugueis':
-        return <SecaoAlugueis alugueis={alugueis} abaAlugueis={abaAlugueis} setAbaAlugueis={setAbaAlugueis} onAbrirDetalhes={abrirDetalhesAluguel} usuarioLogadoId={usuarioLogado?.id} />;
+        return <SecaoAlugueis alugueis={alugueis} abaAlugueis={abaAlugueis} setAbaAlugueis={setAbaAlugueis} onAbrirDetalhes={abrirDetalhesAluguel} usuarioLogadoId={usuarioLogado?.id} onStatusAvaliacao={handleStatusAvaliacao} />;
       case 'solicitacoes':
         return <SecaoSolicitacoesEnviadas solicitacoesEnviadas={solicitacoesEnviadas} onCancelarSolicitacao={cancelarSolicitacao} />;
       case 'pagamentos':
@@ -348,6 +386,7 @@ const toneClasses = {
         onClose={fecharDetalhesAluguel}
         onSolicitarDevolucao={solicitarDevolucao}
         usuarioLogadoId={usuarioLogado?.id}
+        onStatusAvaliacao={handleStatusAvaliacao}
       />
     </div>
   );
@@ -377,13 +416,18 @@ function AbaFiltro({ abas, atual, onChange }) {
         <button
           key={aba.key}
           onClick={() => onChange(aba.key)}
-          className={`px-3 py-1.5 rounded-md text-[12px] font-semibold transition-all cursor-pointer ${
+          className={`relative px-3 py-1.5 rounded-md text-[12px] font-semibold transition-all cursor-pointer ${
             atual === aba.key
               ? 'bg-white text-[#1A1A1A] shadow-sm'
               : 'text-gray-500 hover:text-[#1A1A1A]'
           }`}
         >
           {aba.label}
+          {aba.badge > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-[#0068F3] text-white text-[10px] font-bold flex items-center justify-center">
+              {aba.badge}
+            </span>
+          )}
         </button>
       ))}
     </div>
@@ -399,9 +443,9 @@ function EstadoVazio({ texto }) {
   );
 }
 
-function ListaAlugueis({ alugueis, aba, usuarioLogadoId, onAbrirDetalhes }) {
+function ListaAlugueis({ alugueis, aba, usuarioLogadoId, onAbrirDetalhes, onStatusAvaliacao }) {
   if (alugueis.length === 0) {
-    return <EstadoVazio texto="Nenhum aluguel nesta categoria" />;
+    return <EstadoVazio texto={aba === 'avaliar' ? 'Nenhuma avaliação pendente no momento' : 'Nenhum aluguel nesta categoria'} />;
   }
 
   return alugueis.map((aluguel) => (
@@ -424,9 +468,19 @@ function ListaAlugueis({ alugueis, aba, usuarioLogadoId, onAbrirDetalhes }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-4 shrink-0">
-        <StatusPill status={aluguel.status} />
+      <div className="flex items-center gap-3 shrink-0">
+        <StatusPill status={aba === 'avaliar' ? 'concluido' : aluguel.status} />
         <span className="font-semibold text-[#1A1A1A] text-sm w-16 text-right tabular-nums">R$ {aluguel.precoTotal}</span>
+        {aba === 'avaliar' && aluguel.locador && (
+          <div onClick={(e) => e.stopPropagation()}>
+            <BotaoAvaliar
+              aluguelId={aluguel._id}
+              autorId={usuarioLogadoId}
+              nomeAvaliado={aluguel.locador.nome}
+              onStatusChange={onStatusAvaliacao}
+            />
+          </div>
+        )}
       </div>
     </div>
   ));
@@ -446,7 +500,7 @@ function CardSecao({ titulo, acao, children }) {
   );
 }
 
-function SecaoAlugueis({ alugueis, abaAlugueis, setAbaAlugueis, onAbrirDetalhes, usuarioLogadoId }) {
+function SecaoAlugueis({ alugueis, abaAlugueis, setAbaAlugueis, onAbrirDetalhes, usuarioLogadoId, onStatusAvaliacao }) {
   return (
     <CardSecao
       titulo="Meus aluguéis"
@@ -455,6 +509,7 @@ function SecaoAlugueis({ alugueis, abaAlugueis, setAbaAlugueis, onAbrirDetalhes,
           abas={[
             { key: 'andamento', label: 'Em andamento' },
             { key: 'pendente', label: 'Pendente' },
+            { key: 'avaliar', label: 'Aguardando avaliação', badge: alugueis.avaliar.length },
             { key: 'concluido', label: 'Concluído' }
           ]}
           atual={abaAlugueis}
@@ -462,7 +517,7 @@ function SecaoAlugueis({ alugueis, abaAlugueis, setAbaAlugueis, onAbrirDetalhes,
         />
       }
     >
-      <ListaAlugueis alugueis={alugueis[abaAlugueis]} aba={abaAlugueis} usuarioLogadoId={usuarioLogadoId} onAbrirDetalhes={onAbrirDetalhes} />
+      <ListaAlugueis alugueis={alugueis[abaAlugueis]} aba={abaAlugueis} usuarioLogadoId={usuarioLogadoId} onAbrirDetalhes={onAbrirDetalhes} onStatusAvaliacao={onStatusAvaliacao} />
     </CardSecao>
   );
 }
@@ -559,7 +614,7 @@ function SecaoPagamentos({ pagamentos, abaPagamentos, setAbaPagamentos, onPagarA
   );
 }
 
-function SecaoPainel({ stats, toneClasses, alugueis, pagamentos, solicitacoesEnviadas, abaAlugueis, setAbaAlugueis, abaPagamentos, setAbaPagamentos, onCancelarSolicitacao, onPagarAgora, onAbrirDetalhes, usuarioLogadoId }) {
+function SecaoPainel({ stats, toneClasses, alugueis, pagamentos, solicitacoesEnviadas, abaAlugueis, setAbaAlugueis, abaPagamentos, setAbaPagamentos, onCancelarSolicitacao, onPagarAgora, onAbrirDetalhes, usuarioLogadoId, onStatusAvaliacao }) {
   return (
     <div className="space-y-6">
       <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -580,7 +635,7 @@ function SecaoPainel({ stats, toneClasses, alugueis, pagamentos, solicitacoesEnv
         })}
       </section>
 
-      <SecaoAlugueis alugueis={alugueis} abaAlugueis={abaAlugueis} setAbaAlugueis={setAbaAlugueis} onAbrirDetalhes={onAbrirDetalhes} usuarioLogadoId={usuarioLogadoId} />
+      <SecaoAlugueis alugueis={alugueis} abaAlugueis={abaAlugueis} setAbaAlugueis={setAbaAlugueis} onAbrirDetalhes={onAbrirDetalhes} usuarioLogadoId={usuarioLogadoId} onStatusAvaliacao={onStatusAvaliacao} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <SecaoSolicitacoesEnviadas solicitacoesEnviadas={solicitacoesEnviadas} onCancelarSolicitacao={onCancelarSolicitacao} />
@@ -590,7 +645,7 @@ function SecaoPainel({ stats, toneClasses, alugueis, pagamentos, solicitacoesEnv
   );
 }
 
-function ModalDetalhesAluguel({ aluguel, onClose, onSolicitarDevolucao, usuarioLogadoId }) {
+function ModalDetalhesAluguel({ aluguel, onClose, onSolicitarDevolucao, usuarioLogadoId, onStatusAvaliacao }) {
   if (!aluguel) return null;
 
   const podeSolicitarDevolucao = aluguel.status === 'aceito' || aluguel.status === 'andamento';
@@ -665,6 +720,7 @@ function ModalDetalhesAluguel({ aluguel, onClose, onSolicitarDevolucao, usuarioL
               aluguelId={aluguel._id}
               autorId={usuarioLogadoId}
               nomeAvaliado={aluguel.locador.nome}
+              onStatusChange={onStatusAvaliacao}
             />
           </div>
         )}

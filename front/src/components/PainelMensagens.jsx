@@ -1,9 +1,20 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, Fragment } from 'react';
 import { LuSend, LuMessageSquare, LuSearch, LuArrowLeft } from 'react-icons/lu';
 import { apiRequest } from '../services/api';
 
 function formatarHora(data) {
   return new Date(data).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatarDivisorData(data) {
+  const d = new Date(data);
+  const hoje = new Date();
+  const ontem = new Date();
+  ontem.setDate(hoje.getDate() - 1);
+
+  if (d.toDateString() === hoje.toDateString()) return 'Hoje';
+  if (d.toDateString() === ontem.toDateString()) return 'Ontem';
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
 function formatarDataConversa(data) {
@@ -249,20 +260,33 @@ export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#0068F3', conv
               {mensagens.length === 0 ? (
                 <p className="text-center text-xs text-gray-400 mt-4">Nenhuma mensagem ainda. Diga olá.</p>
               ) : (
-                mensagens.map((m) => {
+                mensagens.map((m, index) => {
                   const minha = m.remetente?._id === usuarioLogadoId;
+                  const dataAtual = new Date(m.createdAt).toDateString();
+                  const dataAnterior = index > 0 ? new Date(mensagens[index - 1].createdAt).toDateString() : null;
+                  const mostrarDivisorData = dataAtual !== dataAnterior;
+
                   return (
-                    <div key={m._id} className={`flex ${minha ? 'justify-end' : 'justify-start'}`}>
-                      <div
-                        className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                          minha ? 'text-white rounded-br-sm' : 'bg-white border border-gray-200 text-[#1A1A1A] rounded-bl-sm'
-                        }`}
-                        style={minha ? { backgroundColor: corPrimaria } : {}}
-                      >
-                        <p className="whitespace-pre-wrap break-words">{m.texto}</p>
-                        <p className={`text-[10px] mt-1 ${minha ? 'text-white/70' : 'text-gray-400'}`}>{formatarHora(m.createdAt)}</p>
+                    <Fragment key={m._id}>
+                      {mostrarDivisorData && (
+                        <div className="flex justify-center my-2">
+                          <span className="text-[11px] font-semibold text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
+                            {formatarDivisorData(m.createdAt)}
+                          </span>
+                        </div>
+                      )}
+                      <div className={`flex ${minha ? 'justify-end' : 'justify-start'}`}>
+                        <div
+                          className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                            minha ? 'text-white rounded-br-sm' : 'bg-white border border-gray-200 text-[#1A1A1A] rounded-bl-sm'
+                          }`}
+                          style={minha ? { backgroundColor: corPrimaria } : {}}
+                        >
+                          <p className="whitespace-pre-wrap break-words">{m.texto}</p>
+                          <p className={`text-[10px] mt-1 ${minha ? 'text-white/70' : 'text-gray-400'}`}>{formatarHora(m.createdAt)}</p>
+                        </div>
                       </div>
-                    </div>
+                    </Fragment>
                   );
                 })
               )}

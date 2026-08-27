@@ -50,12 +50,21 @@ function CardAvaliacao({ avaliacao }) {
   );
 }
 
-export function PainelAvaliacoes({ usuarioId }) {
-  const [dados, setDados] = useState(null);
-  const [carregando, setCarregando] = useState(true);
+export function PainelAvaliacoes({ usuarioId, dadosExternos, titulo = 'Avaliações', textoVazio = 'Ainda não há avaliações.' }) {
+  const [dados, setDados] = useState(dadosExternos || null);
+  const [carregando, setCarregando] = useState(dadosExternos === undefined);
   const [modalAberto, setModalAberto] = useState(false);
 
   useEffect(() => {
+    // Quando os dados já vêm prontos de fora (ex: avaliações de um anúncio específico),
+    // usamos eles diretamente e não buscamos por usuário — evita misturar avaliações
+    // de um produto com a média geral do perfil.
+    if (dadosExternos !== undefined) {
+      setDados(dadosExternos);
+      setCarregando(false);
+      return;
+    }
+
     async function carregar() {
       try {
         const resposta = await apiRequest(`/api/avaliacoes/usuario/${usuarioId}`);
@@ -67,7 +76,7 @@ export function PainelAvaliacoes({ usuarioId }) {
       }
     }
     if (usuarioId) carregar();
-  }, [usuarioId]);
+  }, [usuarioId, dadosExternos]);
 
   if (carregando) {
     return (
@@ -85,7 +94,7 @@ export function PainelAvaliacoes({ usuarioId }) {
   return (
     <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-[#1A1A1A]">Avaliações</h2>
+        <h2 className="text-xl font-bold text-[#1A1A1A]">{titulo}</h2>
         {total > 0 && (
           <div className="flex items-center gap-2">
             <Estrelas nota={Math.round(media)} tamanho={18} />
@@ -96,7 +105,7 @@ export function PainelAvaliacoes({ usuarioId }) {
       </div>
 
       {total === 0 ? (
-        <p className="text-gray-400 italic">Ainda não há avaliações.</p>
+        <p className="text-gray-400 italic">{textoVazio}</p>
       ) : (
         <>
           <div className="space-y-5">

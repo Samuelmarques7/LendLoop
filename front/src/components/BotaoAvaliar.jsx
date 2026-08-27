@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { LuStar } from 'react-icons/lu';
 import { apiRequest } from '../services/api';
 
-export function BotaoAvaliar({ aluguelId, autorId, nomeAvaliado }) {
+export function BotaoAvaliar({ aluguelId, autorId, nomeAvaliado, onStatusChange }) {
   const [jaAvaliado, setJaAvaliado] = useState(null);
   const [modalAberto, setModalAberto] = useState(false);
   const [nota, setNota] = useState(0);
@@ -16,11 +16,14 @@ export function BotaoAvaliar({ aluguelId, autorId, nomeAvaliado }) {
       try {
         const data = await apiRequest(`/api/avaliacoes/aluguel/${aluguelId}/autor/${autorId}`);
         setJaAvaliado(data.avaliado);
+        onStatusChange?.(aluguelId, data.avaliado);
       } catch (e) {
         setJaAvaliado(false);
+        onStatusChange?.(aluguelId, false);
       }
     }
     verificar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aluguelId, autorId]);
 
   async function handleEnviar() {
@@ -40,6 +43,7 @@ export function BotaoAvaliar({ aluguelId, autorId, nomeAvaliado }) {
 
       setJaAvaliado(true);
       setModalAberto(false);
+      onStatusChange?.(aluguelId, true);
     } catch (e) {
       setErro(e.message);
     } finally {
