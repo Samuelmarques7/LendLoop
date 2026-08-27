@@ -53,6 +53,8 @@ export default function PainelLocador() {
 
   const [anuncioParaEditar, setAnuncioParaEditar] = useState(null);
   const [anuncioParaExcluir, setAnuncioParaExcluir] = useState(null);
+  const [reservaSelecionada, setReservaSelecionada] = useState(null);
+  const [conversaParaAbrir, setConversaParaAbrir] = useState(location.state?.abrirConversa || null);
 
   const usuarioLogado = JSON.parse(localStorage.getItem('dadosUsuario'));
 
@@ -75,6 +77,7 @@ export default function PainelLocador() {
     }
     if (location.state?.abrirConversa) {
       setActiveTab('mensagens');
+      setConversaParaAbrir(location.state.abrirConversa);
     }
     if (location.state?.abrirAba) {
       setActiveTab(location.state.abrirAba);
@@ -256,6 +259,13 @@ export default function PainelLocador() {
     }
   }
 
+  function abrirChatComLocatario(locatarioId) {
+    if (!locatarioId) return;
+    setConversaParaAbrir(locatarioId);
+    setActiveTab('mensagens');
+    setReservaSelecionada(null);
+  }
+
   function salvarPainelPadrao(painelId) {
     localStorage.setItem('painelPadrao', painelId);
   }
@@ -331,7 +341,7 @@ export default function PainelLocador() {
           </div>
         );
       case 'calendario':
-        return <SecaoCalendario alugueis={alugueis} meusAnuncios={meusAnuncios} />;
+        return <SecaoCalendario alugueis={alugueis} meusAnuncios={meusAnuncios} onAbrirDetalhes={setReservaSelecionada} />;
       case 'ganhos':
         return (
           <SecaoGanhos
@@ -348,7 +358,7 @@ export default function PainelLocador() {
         return <PainelMensagens
           usuarioLogadoId={usuarioLogado?.id}
           corPrimaria="#29C354"
-          conversaParaAbrir={location.state?.abrirConversa}
+          conversaParaAbrir={conversaParaAbrir}
           onConversasAtualizadas={setMensagensNaoLidas}
         />;
       case 'config':
@@ -449,6 +459,12 @@ export default function PainelLocador() {
         anuncio={anuncioParaExcluir}
         onClose={() => setAnuncioParaExcluir(null)}
         onConfirmar={confirmarExcluirAnuncio}
+      />
+
+      <ModalDetalhesReserva
+        reserva={reservaSelecionada}
+        onClose={() => setReservaSelecionada(null)}
+        onAbrirChat={abrirChatComLocatario}
       />
     </div>
   );
@@ -696,7 +712,7 @@ function SecaoSolicitacoes({ solicitacoes, devolucoes, onAceitar, onRecusar, onC
   );
 }
 
-function SecaoCalendario({ alugueis, meusAnuncios }) {
+function SecaoCalendario({ alugueis, meusAnuncios, onAbrirDetalhes }) {
   const [dataAtual, setDataAtual] = useState(new Date());
   const [anuncioFiltro, setAnuncioFiltro] = useState('todos');
 
@@ -793,9 +809,11 @@ function SecaoCalendario({ alugueis, meusAnuncios }) {
             return (
               <div
                 key={`dia-${dia}`}
+                onClick={() => estaOcupado && onAbrirDetalhes?.(reservasDia[0])}
+                title={estaOcupado ? 'Ver detalhes do aluguel' : undefined}
                 className={`h-20 p-2 rounded-xl border flex flex-col justify-between transition-all ${
                   estaOcupado
-                    ? 'border-[#0068F3]/30 bg-[#0068F3]/[0.04]'
+                    ? 'border-[#0068F3]/30 bg-[#0068F3]/[0.04] cursor-pointer hover:border-[#0068F3] hover:bg-[#0068F3]/[0.08]'
                     : 'border-gray-100 hover:border-gray-200 bg-white'
                 }`}
               >
@@ -829,16 +847,33 @@ function SecaoCalendario({ alugueis, meusAnuncios }) {
             </div>
           ) : (
             reservasAtivas.map(r => (
-              <div key={r._id} className="p-3.5 rounded-xl border border-gray-100 bg-[#FAFAF9] space-y-2">
-                <div className="flex justify-between items-start">
+              <div
+                key={r._id}
+                onClick={() => onAbrirDetalhes?.(r)}
+                title="Ver detalhes e conversar"
+                className="p-3.5 rounded-xl border border-gray-100 bg-[#FAFAF9] space-y-2 cursor-pointer hover:border-[#0068F3]/40 hover:bg-[#0068F3]/[0.04] transition-colors group"
+              >
+                <div className="flex justify-between items-start gap-2">
                   <h4 className="font-semibold text-sm text-[#1A1A1A] truncate">{r.anuncio?.titulo}</h4>
-                  <span className="text-[10px] font-semibold text-[#0F6E56] bg-[#0F6E56]/10 px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-semibold text-[#0F6E56] bg-[#0F6E56]/10 px-2 py-0.5 rounded-full flex-shrink-0">
                     Confirmado
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-gray-600">
-                  <LuUser size={14} className="text-gray-400" />
-                  <span>Locatário: <strong className="text-[#1A1A1A]">{r.locatario?.nome || 'Cliente'}</strong></span>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-xs text-gray-600 min-w-0">
+                    <LuUser size={14} className="text-gray-400 flex-shrink-0" />
+                    <span className="truncate">Locatário: <strong className="text-[#1A1A1A]">{r.locatario?.nome || 'Cliente'}</strong></span>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAbrirDetalhes?.(r);
+                    }}
+                    title="Ver detalhes e abrir chat"
+                    className="p-1.5 rounded-lg text-gray-400 group-hover:text-[#0068F3] hover:bg-white transition-colors cursor-pointer flex-shrink-0"
+                  >
+                    <LuMessageSquare size={15} />
+                  </button>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                   <LuCalendar size={14} className="text-gray-400" />
@@ -848,6 +883,85 @@ function SecaoCalendario({ alugueis, meusAnuncios }) {
             ))
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ModalDetalhesReserva({ reserva, onClose, onAbrirChat }) {
+  if (!reserva) return null;
+
+  const locatario = reserva.locatario;
+  const primeiroNome = locatario?.nome?.split(' ')[0] || 'locatário';
+
+  const statusLabel = {
+    aceito: 'Aceito',
+    andamento: 'Em andamento',
+    aguardando_confirmacao: 'Aguardando devolução',
+    concluido: 'Concluído',
+  }[reserva.status] || reserva.status;
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-5" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-semibold text-[#1A1A1A]">Detalhes do aluguel</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-[#1A1A1A] cursor-pointer">
+            <LuX size={20} />
+          </button>
+        </div>
+
+        <div className="flex items-center gap-3 p-3.5 rounded-xl bg-[#FAFAF9] border border-gray-100">
+          {locatario?.avatar ? (
+            <img src={locatario.avatar} alt={locatario.nome} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-[#0068F3] text-white flex items-center justify-center font-semibold flex-shrink-0">
+              {locatario?.nome?.charAt(0).toUpperCase() || '?'}
+            </div>
+          )}
+          <div className="min-w-0">
+            <p className="font-semibold text-sm text-[#1A1A1A] truncate">{locatario?.nome || 'Locatário'}</p>
+            {locatario?.email && <p className="text-xs text-gray-500 truncate">{locatario.email}</p>}
+            {locatario?.telefone && <p className="text-xs text-gray-500 truncate">{locatario.telefone}</p>}
+          </div>
+        </div>
+
+        <div className="space-y-2.5 text-sm">
+          <div className="flex justify-between gap-3">
+            <span className="text-gray-500 flex-shrink-0">Item</span>
+            <span className="font-semibold text-[#1A1A1A] text-right truncate">{reserva.anuncio?.titulo || '—'}</span>
+          </div>
+          <div className="flex justify-between gap-3">
+            <span className="text-gray-500 flex-shrink-0">Período</span>
+            <span className="font-semibold text-[#1A1A1A] text-right">
+              {new Date(reserva.dataInicio).toLocaleDateString('pt-BR')} até {new Date(reserva.dataFim).toLocaleDateString('pt-BR')}
+            </span>
+          </div>
+          {reserva.horarioRetirada && (
+            <div className="flex justify-between gap-3">
+              <span className="text-gray-500 flex-shrink-0">Horário de retirada</span>
+              <span className="font-semibold text-[#1A1A1A]">{reserva.horarioRetirada}</span>
+            </div>
+          )}
+          <div className="flex justify-between gap-3">
+            <span className="text-gray-500 flex-shrink-0">Valor total</span>
+            <span className="font-semibold text-[#1A1A1A]">R$ {Number(reserva.precoTotal || 0).toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between items-center gap-3">
+            <span className="text-gray-500 flex-shrink-0">Status</span>
+            <span className="text-[11px] font-semibold text-[#0F6E56] bg-[#0F6E56]/10 px-2 py-0.5 rounded-full">
+              {statusLabel}
+            </span>
+          </div>
+        </div>
+
+        <button
+          onClick={() => onAbrirChat(locatario?._id)}
+          disabled={!locatario?._id}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-[#1A1A1A] text-white text-xs font-semibold hover:bg-[#0068F3] transition-colors cursor-pointer disabled:opacity-40"
+        >
+          <LuMessageSquare size={15} /> Conversar com {primeiroNome}
+        </button>
       </div>
     </div>
   );
