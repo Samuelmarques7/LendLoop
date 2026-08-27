@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   LuCamera,
   LuSettings,
@@ -34,7 +34,16 @@ function formatarMembroDesde(dataCriacao) {
 
 export default function MeuPerfil() {
   const navigate = useNavigate();
+  const { id: idDaRota } = useParams();
   const fileInputRef = useRef(null);
+
+  const dadosSalvos = localStorage.getItem('dadosUsuario');
+  const usuarioLogadoId = dadosSalvos ? JSON.parse(dadosSalvos).id : null;
+
+  // Sem :id na rota => é a página "/meu-perfil" (sempre o próprio usuário).
+  // Com :id na rota => pode ser o perfil de outra pessoa (ex: clicou no locador em um produto).
+  const ehPerfilProprio = !idDaRota || idDaRota === usuarioLogadoId;
+  const idAlvo = idDaRota || usuarioLogadoId;
 
   const [usuario, setUsuario] = useState(null);
   const [carregando, setCarregando] = useState(true);
@@ -47,17 +56,21 @@ export default function MeuPerfil() {
   const [erroForm, setErroForm] = useState(null);
 
   useEffect(() => {
-    const dadosSalvos = localStorage.getItem('dadosUsuario');
-    if (!dadosSalvos) {
+    // Só exige login para acessar o PRÓPRIO perfil. Perfil de outro usuário é público.
+    if (!idDaRota && !dadosSalvos) {
       navigate('/login');
       return;
     }
 
-    const { id } = JSON.parse(dadosSalvos);
+    if (!idAlvo) {
+      setErro('Usuário não encontrado.');
+      setCarregando(false);
+      return;
+    }
 
     async function carregarUsuario() {
       try {
-        const dados = await apiRequest(`/api/usuarios/${id}`);
+        const dados = await apiRequest(`/api/usuarios/${idAlvo}`);
         setUsuario(dados);
       } catch (e) {
         setErro(e.message);
@@ -67,7 +80,7 @@ export default function MeuPerfil() {
     }
 
     carregarUsuario();
-  }, [navigate]);
+  }, [idAlvo, navigate]);
 
   function atualizarLocalStorage(usuarioAtualizado) {
     const dadosSalvos = JSON.parse(localStorage.getItem('dadosUsuario') || '{}');
@@ -181,7 +194,7 @@ export default function MeuPerfil() {
       <main className="flex-grow w-full pb-16">
         <section className="w-full bg-white border-b border-gray-100">
           <div className="max-w-5xl mx-auto px-6 sm:px-8 py-10 flex flex-col sm:flex-row items-center sm:items-center gap-6">
-            <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
+            <div className={`relative group ${ehPerfilProprio ? 'cursor-pointer' : ''}`} onClick={ehPerfilProprio ? handleAvatarClick : undefined}>
               <div className="w-32 h-32 rounded-full border-4 border-[#F8F9FA] bg-white shadow-md overflow-hidden relative">
                 <img
                   src={usuario.avatar || urlAvatarPadrao(usuario.nome)}
@@ -189,44 +202,50 @@ export default function MeuPerfil() {
                   className="w-full h-full object-cover"
                 />
 
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white backdrop-blur-sm">
-                  <LuCamera size={26} />
-                  <span className="text-[10px] font-bold mt-1 uppercase tracking-widest">
-                    {enviandoAvatar ? 'Enviando...' : 'Alterar'}
-                  </span>
-                </div>
+                {ehPerfilProprio && (
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white backdrop-blur-sm">
+                    <LuCamera size={26} />
+                    <span className="text-[10px] font-bold mt-1 uppercase tracking-widest">
+                      {enviandoAvatar ? 'Enviando...' : 'Alterar'}
+                    </span>
+                  </div>
+                )}
               </div>
 
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                accept="image/*"
-                className="hidden"
-              />
+              {ehPerfilProprio && (
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept="image/*"
+                  className="hidden"
+                />
+              )}
             </div>
 
             <div className="text-center sm:text-left flex-grow">
               <h1 className="text-2xl font-black text-[#1A1A1A]">{usuario.nome}</h1>
-              <p className="text-gray-500 font-medium mt-1">{usuario.email}</p>
+              {ehPerfilProprio && <p className="text-gray-500 font-medium mt-1">{usuario.email}</p>}
               {erro && <p className="text-red-600 text-sm font-medium mt-2">{erro}</p>}
             </div>
 
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={abrirModalEdicao}
-                className="flex items-center gap-2 bg-white border border-gray-200 text-[#1A1A1A] font-bold px-6 py-2.5 rounded-xl hover:border-[#29C354] hover:text-[#29C354] transition-colors shadow-sm cursor-pointer"
-              >
-                <LuSettings size={16} /> Editar Perfil
-              </button>
+            {ehPerfilProprio && (
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={abrirModalEdicao}
+                  className="flex items-center gap-2 bg-white border border-gray-200 text-[#1A1A1A] font-bold px-6 py-2.5 rounded-xl hover:border-[#29C354] hover:text-[#29C354] transition-colors shadow-sm cursor-pointer"
+                >
+                  <LuSettings size={16} /> Editar Perfil
+                </button>
 
-              <button
-                onClick={handleLogout}
-                className="flex items-center justify-center gap-2 bg-white border-2 border-red-100 text-red-500 font-bold px-6 py-2 rounded-xl hover:border-red-400 hover:bg-red-50 transition-colors shadow-sm cursor-pointer"
-              >
-              <LuLogOut size={16} /> Sair
-              </button>
-            </div>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center justify-center gap-2 bg-white border-2 border-red-100 text-red-500 font-bold px-6 py-2 rounded-xl hover:border-red-400 hover:bg-red-50 transition-colors shadow-sm cursor-pointer"
+                >
+                <LuLogOut size={16} /> Sair
+                </button>
+              </div>
+            )}
           </div>
         </section>
 
@@ -234,48 +253,50 @@ export default function MeuPerfil() {
 
           <div className="md:col-span-4 space-y-8">
 
-            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-              <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Alternar Painel</h2>
+            {ehPerfilProprio && (
+              <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Alternar Painel</h2>
 
-              <div className="space-y-3">
-                <button
-                  onClick={() => navigate('/painellocatario')}
-                  className="w-full flex items-center p-4 rounded-2xl border-2 border-transparent hover:border-[#29C354] bg-gray-50 hover:bg-[#29C354]/5 transition-all text-left group cursor-pointer"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-blue-100 text-[#0068F3] flex items-center justify-center shrink-0 mr-4 group-hover:bg-[#29C354] group-hover:text-white transition-colors">
-                    <LuShoppingBag size={24} />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-[#1A1A1A]">Modo Locatário</h3>
-                    <p className="text-xs text-gray-500 mt-0.5">Gerenciar meus aluguéis</p>
-                  </div>
-                </button>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => navigate('/painellocatario')}
+                    className="w-full flex items-center p-4 rounded-2xl border-2 border-transparent hover:border-[#29C354] bg-gray-50 hover:bg-[#29C354]/5 transition-all text-left group cursor-pointer"
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-blue-100 text-[#0068F3] flex items-center justify-center shrink-0 mr-4 group-hover:bg-[#29C354] group-hover:text-white transition-colors">
+                      <LuShoppingBag size={24} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-[#1A1A1A]">Modo Locatário</h3>
+                      <p className="text-xs text-gray-500 mt-0.5">Gerenciar meus aluguéis</p>
+                    </div>
+                  </button>
 
-                <button
-                  onClick={() => navigate('/painelLocador')}
-                  className="w-full flex items-center p-4 rounded-2xl border-2 border-transparent hover:border-[#29C354] bg-gray-50 hover:bg-[#29C354]/5 transition-all text-left group cursor-pointer"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-orange-100 text-orange-500 flex items-center justify-center shrink-0 mr-4 group-hover:bg-[#29C354] group-hover:text-white transition-colors">
-                    <LuPackage size={24} />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-[#1A1A1A]">Modo Locador</h3>
-                    <p className="text-xs text-gray-500 mt-0.5">Meus anúncios e ganhos</p>
-                  </div>
-                </button>
+                  <button
+                    onClick={() => navigate('/painelLocador')}
+                    className="w-full flex items-center p-4 rounded-2xl border-2 border-transparent hover:border-[#29C354] bg-gray-50 hover:bg-[#29C354]/5 transition-all text-left group cursor-pointer"
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-orange-100 text-orange-500 flex items-center justify-center shrink-0 mr-4 group-hover:bg-[#29C354] group-hover:text-white transition-colors">
+                      <LuPackage size={24} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-[#1A1A1A]">Modo Locador</h3>
+                      <p className="text-xs text-gray-500 mt-0.5">Meus anúncios e ganhos</p>
+                    </div>
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
               <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">Informações da Conta</h2>
               <ul className="space-y-4">
-                {usuario.telefone && (
+                {ehPerfilProprio && usuario.telefone && (
                   <li className="flex items-center gap-3 text-sm text-[#1A1A1A] font-medium">
                     <LuPhone className="text-[#29C354]" size={18} /> {usuario.telefone}
                   </li>
                 )}
               </ul>
-              <div className={`flex items-center gap-2 text-sm text-gray-500 font-medium ${usuario.telefone ? 'mt-8 pt-6 border-t border-gray-100' : ''}`}>
+              <div className={`flex items-center gap-2 text-sm text-gray-500 font-medium ${ehPerfilProprio && usuario.telefone ? 'mt-8 pt-6 border-t border-gray-100' : ''}`}>
                 <LuCalendarDays size={18} /> Membro desde {formatarMembroDesde(usuario.createdAt)}
               </div>
             </div>
@@ -283,12 +304,14 @@ export default function MeuPerfil() {
 
           <div className="md:col-span-8 space-y-8">
             <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
-              <h2 className="text-xl font-bold text-[#1A1A1A] mb-4">Sobre mim</h2>
+              <h2 className="text-xl font-bold text-[#1A1A1A] mb-4">Sobre {ehPerfilProprio ? 'mim' : usuario.nome}</h2>
               {usuario.bio ? (
                 <p className="text-gray-600 leading-relaxed whitespace-pre-line">{usuario.bio}</p>
               ) : (
                 <p className="text-gray-400 italic">
-                  Você ainda não escreveu nada sobre você. Clique em "Editar Perfil" para adicionar uma bio.
+                  {ehPerfilProprio
+                    ? 'Você ainda não escreveu nada sobre você. Clique em "Editar Perfil" para adicionar uma bio.'
+                    : 'Este usuário ainda não escreveu uma bio.'}
                 </p>
               )}
             </div>

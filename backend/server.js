@@ -604,8 +604,6 @@ app.patch('/api/pagamentos/:id/status', autenticacao, async (req, res) => {
   }
 });
 
-// --- Avaliação ---
-
 // Criar avaliação (só permitido se o aluguel estiver concluído)
 app.post('/api/avaliacoes', autenticacao, async (req, res) => {
   try {
@@ -632,7 +630,14 @@ app.post('/api/avaliacoes', autenticacao, async (req, res) => {
       return res.status(403).json({ erro: 'Você não faz parte deste aluguel.' });
     }
 
-    const novaAvaliacao = new Avaliacao({ aluguel, autor, avaliado, nota, comentario });
+    const novaAvaliacao = new Avaliacao({
+      aluguel,
+      anuncio: aluguelEncontrado.anuncio,
+      autor,
+      avaliado,
+      nota,
+      comentario
+    });
     await novaAvaliacao.save();
 
     await criarNotificacao({
@@ -675,6 +680,26 @@ app.get('/api/avaliacoes/usuario/:usuarioId', async (req, res) => {
   }
 });
 
+// Listar avaliações de um anúncio (produto) específico — usado na página do produto
+// para não misturar com avaliações de outros anúncios do mesmo locador
+app.get('/api/avaliacoes/anuncio/:anuncioId', async (req, res) => {
+  try {
+    const avaliacoes = await Avaliacao.find({ anuncio: req.params.anuncioId })
+      .populate('autor', 'nome avatar')
+      .sort({ createdAt: -1 });
+
+    const media = avaliacoes.length ? avaliacoes.reduce((soma, a) => soma + a.nota, 0) / avaliacoes.length : 0;
+
+    res.status(200).json({
+      avaliacoes,
+      media: Number(media.toFixed(1)),
+      total: avaliacoes.length
+    });
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao buscar avaliações do anúncio' });
+  }
+});
+
 // Verificar se um aluguel específico já foi avaliado por um autor (usado para mostrar/esconder botão "Avaliar")
 app.get('/api/avaliacoes/aluguel/:aluguelId/autor/:autorId', async (req, res) => {
   try {
@@ -688,43 +713,42 @@ app.get('/api/avaliacoes/aluguel/:aluguelId/autor/:autorId', async (req, res) =>
     res.status(500).json({ erro: 'Erro ao verificar avaliação' });
   }
 });
-
+// Buscar (ou criar, se ainda não existir) a conversa entre dois usuários.
+// Usado ao clicar em "Mensagem ao Anfitrião" e ao abrir uma conversa a partir de uma notificação.
 app.post('/api/conversas', autenticacao, async (req, res) => {
   try {
-    const { usuarioB, anuncio } = req.body;
-    const usuarioA = req.usuarioId;
+    const { usuarioA, usuarioB, anuncio } = req.body;
 
     if (!usuarioA || !usuarioB) {
-      return res.status(400).json({ erro: 'Os dois participantes são obrigatórios.' });
+      return res.status(400).json({ erro: 'usuarioA e usuarioB são obrigatórios.' });
     }
 
-    if (String(usuarioA) === String(usuarioB)) {
-      return res.status(400).json({ erro: 'Não é possível iniciar uma conversa consigo mesmo.' });
+    if (usuarioA !== req.usuarioId) {
+      return res.status(403).json({ erro: 'Você não tem permissão para iniciar esta conversa.' });
     }
 
-    const filtro = {
+    if (usuarioA === usuarioB) {
+      return res.status(400).json({ erro: 'Não é possível iniciar uma conversa com você mesmo.' });
+    }
+
+    let conversa = await Conversa.findOne({
       participantes: { $all: [usuarioA, usuarioB], $size: 2 }
-    };
-    if (anuncio) filtro.anuncio = anuncio;
-
-    let conversa = await Conversa.findOne(filtro);
-
-    if (!conversa) {
-      conversa = new Conversa({
-        participantes: [usuarioA, usuarioB],
-        anuncio: anuncio || null
-      });
-      await conversa.save();
-    }
-
-    const conversaPopulada = await Conversa.findById(conversa._id)
+    })
       .populate('participantes', 'nome avatar')
       .populate('anuncio', 'titulo fotos');
 
-    res.status(200).json(conversaPopulada);
+    if (!conversa) {
+      conversa = await Conversa.create({
+        participantes: [usuarioA, usuarioB],
+        anuncio: anuncio || null
+      });
+      await conversa.populate('participantes', 'nome avatar');
+      await conversa.populate('anuncio', 'titulo fotos');
+    }
+
+    res.status(200).json(conversa);
   } catch (erro) {
-    console.error("ERRO AO INICIAR CONVERSA NO BACKEND:", erro);
-    res.status(500).json({ erro: 'Erro ao iniciar conversa', detalhes: erro.message });
+    res.status(500).json({ erro: 'Erro ao buscar ou criar conversa', detalhes: erro.message });
   }
 });
 

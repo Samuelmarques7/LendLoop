@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
  
 const avaliacaoSchema = new mongoose.Schema({
   aluguel: { type: mongoose.Schema.Types.ObjectId, ref: 'Aluguel', required: true },
+  anuncio: { type: mongoose.Schema.Types.ObjectId, ref: 'Anuncio', required: true }, // produto específico avaliado (evita misturar avaliações de outros anúncios do mesmo locador)
 
   autor: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario', required: true }, // quem está avaliando
   avaliado: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario', required: true }, // quem está sendo avaliado

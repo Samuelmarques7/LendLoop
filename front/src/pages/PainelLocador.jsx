@@ -27,7 +27,9 @@ import {
   LuTriangleAlert,
   LuChevronLeft,
   LuChevronRight,
-  LuUser
+  LuUser,
+  LuHistory,
+  LuStar
 } from "react-icons/lu";
 
 const PAINEIS_DISPONIVEIS = [
@@ -852,6 +854,19 @@ function SecaoCalendario({ alugueis, meusAnuncios }) {
 }
 
 function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, alugueisAndamento, onMarcarDevolvido, usuarioLogadoId }) {
+  const [avaliacoesFeitas, setAvaliacoesFeitas] = useState({});
+  const [verHistoricoCompleto, setVerHistoricoCompleto] = useState(false);
+
+  function handleStatusAvaliacao(aluguelId, avaliado) {
+    setAvaliacoesFeitas(prev => ({ ...prev, [aluguelId]: avaliado }));
+  }
+
+  const pendentesDeAvaliar = alugueisConcluidos.filter(a => avaliacoesFeitas[a._id] === false);
+
+  const listaExibida = verHistoricoCompleto
+    ? alugueisConcluidos
+    : alugueisConcluidos.filter(a => avaliacoesFeitas[a._id] !== true);
+
   return (
     <div className="space-y-6">
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -935,17 +950,42 @@ function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, 
 
       {/* 3. HISTÓRICO DE ALUGUÉIS CONCLUÍDOS (EMBAIXO) */}
       <section className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col">
-        <div className="px-6 py-4.5 border-b border-gray-100">
-          <h2 className="text-[15px] font-semibold text-[#1A1A1A]">Histórico de aluguéis concluídos</h2>
+        <div className="px-6 py-4.5 border-b border-gray-100 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <h2 className="text-[15px] font-semibold text-[#1A1A1A]">
+              {verHistoricoCompleto ? 'Histórico de aluguéis concluídos' : 'Pendentes de avaliação'}
+            </h2>
+            {pendentesDeAvaliar.length > 0 && (
+              <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-[#0068F3] text-white text-[11px] font-semibold">
+                {pendentesDeAvaliar.length}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => setVerHistoricoCompleto(prev => !prev)}
+            className="flex items-center gap-1.5 text-[12px] font-semibold text-gray-500 hover:text-[#0068F3] transition-colors cursor-pointer"
+          >
+            <LuHistory size={14} />
+            {verHistoricoCompleto ? 'Ver só pendentes' : 'Ver histórico completo'}
+          </button>
         </div>
         <div className="p-2 flex-grow">
-          {alugueisConcluidos.length === 0 ? (
+          {listaExibida.length === 0 ? (
             <div className="py-12 text-center text-gray-400">
-              <LuPackageX size={28} className="mx-auto mb-2.5 opacity-40" />
-              <p className="text-sm font-medium">Nenhum aluguel concluído ainda</p>
+              {verHistoricoCompleto ? (
+                <>
+                  <LuPackageX size={28} className="mx-auto mb-2.5 opacity-40" />
+                  <p className="text-sm font-medium">Nenhum aluguel concluído ainda</p>
+                </>
+              ) : (
+                <>
+                  <LuStar size={28} className="mx-auto mb-2.5 opacity-40" />
+                  <p className="text-sm font-medium">Nenhuma avaliação pendente no momento</p>
+                </>
+              )}
             </div>
           ) : (
-            alugueisConcluidos.map((a) => (
+            listaExibida.map((a) => (
               <div key={a._id} className="flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-100 last:border-0">
                 <div className="min-w-0">
                   <h3 className="font-semibold text-[#1A1A1A] text-sm truncate">{a.anuncio?.titulo}</h3>
@@ -962,6 +1002,7 @@ function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, 
                       aluguelId={a._id}
                       autorId={usuarioLogadoId}
                       nomeAvaliado={a.locatario.nome}
+                      onStatusChange={handleStatusAvaliacao}
                     />
                   )}
                 </div>

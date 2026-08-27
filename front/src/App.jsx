@@ -28,9 +28,11 @@ function App() {
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/login" element={<Login />} />
         <Route path="/esqueceu-senha" element={<EsqueceuSenha />} />
-         <Route path="/redefinir-senha" element={<RedefinirSenha />} />
+        <Route path="/redefinir-senha" element={<RedefinirSenha />} />
         <Route path="/meu-perfil" element={<RotaPrivada><MeuPerfil /></RotaPrivada>} />
         <Route path="/configuracoes" element={<RotaPrivada><Configuracoes /></RotaPrivada>} />
+        <Route path="/produto/:id" element={<DetalhesProduto />} />
+        <Route path="/usuario/:id" element={<MeuPerfil />} />
       </Routes>
     </BrowserRouter>
   );

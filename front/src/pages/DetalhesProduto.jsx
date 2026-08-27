@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom"; // <-- ADICIONADO useNavigate
 import { apiRequest } from "../services/api";
 import { MediaAvaliacao } from "../components/MediaAvaliacao";
+import { PainelAvaliacoes } from "../components/PainelAvaliacoes";
 
 import { 
   LuStar, 
@@ -51,7 +52,7 @@ export function DetalhesProduto() {
         setAnuncio(dados);
 
         try {
-          const dadosAvaliacoes = await apiRequest(`/api/avaliacoes/usuario/${dados.locador._id}`);
+          const dadosAvaliacoes = await apiRequest(`/api/avaliacoes/anuncio/${id}`);
           setAvaliacoesLocador(dadosAvaliacoes);
         } catch (e) {
           setAvaliacoesLocador(null);
@@ -272,7 +273,10 @@ export function DetalhesProduto() {
 
             <section className="border-t border-gray-200 pt-10">
               <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-4">
+                <div
+                  className="flex items-center gap-4 cursor-pointer group"
+                  onClick={() => navigate(`/usuario/${anuncio.locador._id}`)}
+                >
                   {anuncio.locador.avatar ? (
                     <img src={anuncio.locador.avatar} alt={anuncio.locador.nome} className="w-16 h-16 rounded-full object-cover" />
                   ) : (
@@ -281,12 +285,12 @@ export function DetalhesProduto() {
                     </div>
                   )}
                  <div>
-                    <h2 className="text-xl font-bold text-[#1A1A1A]">{anuncio.locador.nome}</h2>
+                    <h2 className="text-xl font-bold text-[#1A1A1A] group-hover:text-[#29C354] transition-colors">{anuncio.locador.nome}</h2>
                     {formatarMembroDesde(anuncio.locador.createdAt) && (
                       <p className="text-sm text-gray-500">{formatarMembroDesde(anuncio.locador.createdAt)}</p>
                     )}
                     <div className="mt-1">
-                      <MediaAvaliacao dadosExternos={avaliacoesLocador} tamanho="sm" />
+                      <MediaAvaliacao usuarioId={anuncio.locador._id} tamanho="sm" />
                     </div>
                   </div>
                 </div>
@@ -305,6 +309,14 @@ export function DetalhesProduto() {
                   {anuncio.locador.bio}
                 </p>
               )}
+            </section>
+
+            <section className="border-t border-gray-200 pt-10">
+              <PainelAvaliacoes
+                dadosExternos={avaliacoesLocador}
+                titulo="Avaliações deste produto"
+                textoVazio="Este produto ainda não recebeu avaliações."
+              />
             </section>
 
           </div>
