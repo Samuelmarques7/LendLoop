@@ -28,6 +28,7 @@ function formatarMembroDesde(data) {
 
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
+import SeloVerificado from "../components/SeloVerificado";
 
 export function DetalhesProduto() {
   const { id } = useParams();
@@ -141,7 +142,11 @@ export function DetalhesProduto() {
 
       setMensagem({tipo: 'sucesso', texto: 'Solicitação de aluguel enviada com sucesso!'});
     } catch (e) {
-      setMensagem({tipo: 'erro', texto: e.message});
+      setMensagem({
+        tipo: 'erro',
+        texto: e.message,
+        acao: e.data?.verificacaoNecessaria ? { label: 'Verificar identidade', rota: '/configuracoes' } : null,
+      });
     } finally {
       setEnviando(false);
     }
@@ -285,7 +290,10 @@ export function DetalhesProduto() {
                     </div>
                   )}
                  <div>
-                    <h2 className="text-xl font-bold text-[#1A1A1A] group-hover:text-[#29C354] transition-colors">{anuncio.locador.nome}</h2>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-xl font-bold text-[#1A1A1A] group-hover:text-[#29C354] transition-colors">{anuncio.locador.nome}</h2>
+                      {anuncio.locador.verificacao?.status === 'aprovado' && <SeloVerificado tamanho="sm" />}
+                    </div>
                     {formatarMembroDesde(anuncio.locador.createdAt) && (
                       <p className="text-sm text-gray-500">{formatarMembroDesde(anuncio.locador.createdAt)}</p>
                     )}
@@ -387,6 +395,14 @@ export function DetalhesProduto() {
               {mensagem && (
                 <div className={`p-3 mb-3 rounded-lg text-sm font-medium ${mensagem.tipo === 'sucesso' ? 'bg-[#29C354]/10 text-[#032D54] border border-[#29C354]/30' : 'bg-red-50 text-red-700 border border-red-200'}`}>
                   {mensagem.texto}
+                  {mensagem.acao && (
+                    <button
+                      onClick={() => navigate(mensagem.acao.rota)}
+                      className="block mt-2 font-bold underline underline-offset-2 cursor-pointer"
+                    >
+                      {mensagem.acao.label}
+                    </button>
+                  )}
                 </div>
               )}
 

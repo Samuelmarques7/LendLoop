@@ -36,10 +36,19 @@ function CriarAnuncio ()
     const navigate = useNavigate()
     const usuarioLogado = JSON.parse(localStorage.getItem('dadosUsuario'))
 
+    const [statusVerificacao, setStatusVerificacao] = useState(null)
+    const [carregandoVerificacao, setCarregandoVerificacao] = useState(true)
+
     useEffect(() => {
         if (!usuarioLogado) {
             navigate('/login')
+            return
         }
+
+        apiRequest(`/api/usuarios/${usuarioLogado.id}/verificacao`)
+            .then((dados) => setStatusVerificacao(dados.status))
+            .catch(() => setStatusVerificacao('nao_enviado'))
+            .finally(() => setCarregandoVerificacao(false))
     }, [])
 
     const [step, setStep] = useState(1)
@@ -322,6 +331,46 @@ function CriarAnuncio ()
     function removerFoto(index)
     {
         setFotos(fotos.filter((foto, i) => i !== index))
+    }
+
+    if (carregandoVerificacao) {
+        return (
+            <div className="min-h-screen bg-[#F8F9FA] flex flex-col">
+                <Header />
+                <div className="flex-1 flex items-center justify-center text-gray-400">Carregando...</div>
+                <Footer />
+            </div>
+        )
+    }
+
+    if (statusVerificacao !== 'aprovado') {
+        const mensagens = {
+            nao_enviado: 'Você ainda não enviou seus documentos de identidade.',
+            pendente: 'Seus documentos estão em análise pela nossa equipe.',
+            rejeitado: 'Sua verificação foi recusada. Envie os documentos novamente.',
+        }
+
+        return (
+            <div className="min-h-screen bg-[#F8F9FA] flex flex-col">
+                <Header />
+                <div className="flex-1 flex items-center justify-center px-6">
+                    <div className="max-w-md w-full bg-white border border-gray-100 rounded-3xl shadow-sm p-8 text-center">
+                        <h1 className="text-xl font-black text-[#1A1A1A] mb-2">Identidade verificada é necessária</h1>
+                        <p className="text-gray-500 text-sm mb-6">
+                            Para publicar um anúncio no LendLoop, sua identidade precisa ser verificada primeiro.
+                            {' '}{mensagens[statusVerificacao] || mensagens.nao_enviado}
+                        </p>
+                        <button
+                            onClick={() => navigate('/configuracoes')}
+                            className="w-full bg-[#032D54] text-white font-bold py-3 rounded-xl hover:bg-[#021f3a] transition-colors cursor-pointer"
+                        >
+                            Ir para verificação de identidade
+                        </button>
+                    </div>
+                </div>
+                <Footer />
+            </div>
+        )
     }
 
     return (

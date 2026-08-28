@@ -12,6 +12,7 @@ import {
 } from 'react-icons/lu';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
+import SeloVerificado from '../components/SeloVerificado';
 import { apiRequest, API_URL } from '../services/api';
 import { PainelAvaliacoes } from '../components/PainelAvaliacoes';
 
@@ -224,7 +225,10 @@ export default function MeuPerfil() {
             </div>
 
             <div className="text-center sm:text-left flex-grow">
-              <h1 className="text-2xl font-black text-[#1A1A1A]">{usuario.nome}</h1>
+              <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
+                <h1 className="text-2xl font-black text-[#1A1A1A]">{usuario.nome}</h1>
+                {usuario.verificacao?.status === 'aprovado' && <SeloVerificado />}
+              </div>
               {ehPerfilProprio && <p className="text-gray-500 font-medium mt-1">{usuario.email}</p>}
               {erro && <p className="text-red-600 text-sm font-medium mt-2">{erro}</p>}
             </div>
