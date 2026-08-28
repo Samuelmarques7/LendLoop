@@ -12,6 +12,8 @@ import RedefinirSenha from './pages/RedefinirSenha';
 import MeuPerfil from './pages/MeuPerfil';
 import Configuracoes from './pages/Configuracoes';
 import RotaPrivada from './components/RotaPrivada';
+import { RotaAdmin } from './components/RotaAdmin';
+import PainelAdmin from './pages/PainelAdmin';
 
 import './index.css';
 
@@ -31,8 +33,13 @@ function App() {
         <Route path="/redefinir-senha" element={<RedefinirSenha />} />
         <Route path="/meu-perfil" element={<RotaPrivada><MeuPerfil /></RotaPrivada>} />
         <Route path="/configuracoes" element={<RotaPrivada><Configuracoes /></RotaPrivada>} />
-        <Route path="/produto/:id" element={<DetalhesProduto />} />
         <Route path="/usuario/:id" element={<MeuPerfil />} />
+
+        {/* Rotas Protegidas do Administrador (Padrão Outlet) */}
+        <Route element={<RotaAdmin />}>
+          <Route path="/paineladmin" element={<PainelAdmin />} />
+        </Route>
+        
       </Routes>
     </BrowserRouter>
   );

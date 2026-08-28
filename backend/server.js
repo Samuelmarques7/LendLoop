@@ -3,6 +3,9 @@ const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const upload = require('./config/upload');
+const uploadVerificacao = require('./config/uploadVerificacao');
+const cloudinary = require('./config/cloudinary');
+const autenticacaoAdmin = require('./middlewares/autenticacaoAdmin');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
@@ -34,16 +37,23 @@ async function criarNotificacao({ usuario, tipo, titulo, texto, linkPainel = nul
 
 // --- Rotas LendLoop ---
 
-app.put('/api/anuncios/:id', async (req, res) => {
+app.put('/api/anuncios/:id', autenticacao, async (req, res) => {
   try {
+    const anuncioExistente = await Anuncio.findById(req.params.id);
+    if (!anuncioExistente) {
+      return res.status(404).json({ erro: 'Anúncio não encontrado' });
+    }
+
+    if (anuncioExistente.locador.toString() !== req.usuarioId) {
+      return res.status(403).json({ erro: 'Você não tem permissão para editar este anúncio.' });
+    }
+
     const anuncioAtualizado = await Anuncio.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true }
     );
-    if (!anuncioAtualizado) {
-      return res.status(404).json({ erro: 'Anúncio não encontrado' });
-    }
+
     res.status(200).json({ mensagem: 'Anúncio atualizado com sucesso!', anuncio: anuncioAtualizado });
   } catch (erro) {
     res.status(500).json({ erro: 'Erro ao atualizar anúncio', detalhes: erro.message });
@@ -200,6 +210,8 @@ app.post('/api/login', async (req, res) => {
         avatar: usuario.avatar,
         localizacao: usuario.localizacao,
         objetivo: usuario.objetivo,
+        papel: usuario.papel, // <--- AQUI ESTAVA 'role', MUDAMOS PARA 'papel'
+        verificacao: usuario.verificacao,
         createdAt: usuario.createdAt,
       }
     });
@@ -292,6 +304,14 @@ app.post('/api/upload', upload.array('fotos', 6), async (req, res) => {
 // Criar anúncio
 app.post('/api/anuncios', autenticacao, async (req, res) => {
   try {
+    const solicitante = await Usuario.findById(req.usuarioId).select('verificacao');
+    if (solicitante?.verificacao?.status !== 'aprovado') {
+      return res.status(403).json({
+        erro: 'Você precisa ter sua identidade verificada para publicar um anúncio.',
+        verificacaoNecessaria: true
+      });
+    }
+
     const { titulo, descricao, categoria, subcategorias, especificacoes, fotos, endereco, disponivel, precos, status } = req.body;
 
     const novoAnuncio = new Anuncio({
@@ -356,7 +376,7 @@ app.get('/api/anuncios', async (req, res) => {
 // Buscar um anúncio específico (usado em DetalhesProduto)
 app.get('/api/anuncios/:id', async (req, res) => {
   try {
-    const anuncio = await Anuncio.findById(req.params.id).populate('locador', 'nome email bio avatar createdAt');
+    const anuncio = await Anuncio.findById(req.params.id).populate('locador', 'nome email bio avatar createdAt verificacao.status');
     if (!anuncio) {
       return res.status(404).json({ erro: 'Anúncio não encontrado' });
     }
@@ -401,6 +421,14 @@ app.delete('/api/anuncios/:id', autenticacao, async (req, res) => {
 // Criar solicitação de aluguel (botão "Solicitar Aluguel" em DetalhesProduto)
 app.post('/api/alugueis', autenticacao, async (req, res) => {
   try {
+    const solicitante = await Usuario.findById(req.usuarioId).select('verificacao');
+    if (solicitante?.verificacao?.status !== 'aprovado') {
+      return res.status(403).json({
+        erro: 'Você precisa ter sua identidade verificada para solicitar um aluguel.',
+        verificacaoNecessaria: true
+      });
+    }
+
     const { anuncio, dataInicio, dataFim, horarioRetirada, precoTotal, taxaServico, caucao } = req.body;
 
     const anuncioEncontrado = await Anuncio.findById(anuncio);
@@ -973,6 +1001,157 @@ app.delete('/api/notificacoes/:id', autenticacao, async (req, res) => {
     res.status(200).json({ mensagem: 'Notificação excluída com sucesso.' });
   } catch (erro) {
     res.status(500).json({ erro: 'Erro ao excluir notificação' });
+  }
+});
+
+app.post(
+  '/api/usuarios/:id/verificacao',
+  autenticacao,
+  uploadVerificacao.fields([
+    { name: 'frente', maxCount: 1 },
+    { name: 'verso', maxCount: 1 }, // <-- Adicionado aqui
+    { name: 'selfie', maxCount: 1 }
+  ]),
+  async (req, res) => {
+    try {
+      if (req.usuarioId !== req.params.id) {
+        return res.status(403).json({ erro: 'Você não tem permissão.' });
+      }
+
+      const frente = req.files?.frente?.[0];
+      const verso = req.files?.verso?.[0]; // <-- Capturando o verso
+      const selfie = req.files?.selfie?.[0];
+
+      if (!frente || !verso || !selfie) {
+        return res.status(400).json({ erro: 'Envie a frente, o verso e a selfie.' });
+      }
+
+      const usuario = await Usuario.findByIdAndUpdate(
+        req.params.id,
+        {
+          verificacao: {
+            status: 'pendente',
+            documentoFrente: frente.filename,
+            documentoVerso: verso.filename, // <-- Salvando no banco se quiser criar o campo no model
+            selfie: selfie.filename,
+            enviadoEm: new Date()
+          }
+        },
+        { new: true }
+      ).select('-senha');
+
+      res.status(200).json({ mensagem: 'Documentos enviados com sucesso!', verificacao: usuario.verificacao });
+    } catch (erro) {
+      res.status(500).json({ erro: 'Erro ao enviar documentos', detalhes: erro.message });
+    }
+  }
+);
+
+// Usuário consulta o status da própria verificação
+app.get('/api/usuarios/:id/verificacao', autenticacao, async (req, res) => {
+  try {
+    if (req.usuarioId !== req.params.id) {
+      return res.status(403).json({ erro: 'Você não tem permissão para ver esta verificação.' });
+    }
+
+    const usuario = await Usuario.findById(req.params.id).select('verificacao');
+    if (!usuario) {
+      return res.status(404).json({ erro: 'Usuário não encontrado' });
+    }
+
+    res.status(200).json(usuario.verificacao);
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao buscar verificação' });
+  }
+});
+
+// --- Painel administrativo de verificação (somente admin) ---
+
+// Lista usuários por status de verificação (padrão: pendentes)
+app.get('/api/admin/verificacoes', autenticacao, autenticacaoAdmin, async (req, res) => {
+  try {
+    const status = req.query.status || 'pendente';
+
+    const usuarios = await Usuario.find({ 'verificacao.status': status })
+      .select('nome email telefone verificacao createdAt')
+      .sort({ 'verificacao.enviadoEm': 1 });
+
+    res.status(200).json(usuarios);
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao buscar verificações' });
+  }
+});
+
+// Gera uma URL assinada e temporária para o admin ver o documento/selfie
+app.get('/api/admin/verificacoes/:usuarioId/documento/:campo', autenticacao, autenticacaoAdmin, async (req, res) => {
+  try {
+    const { usuarioId, campo } = req.params;
+
+    if (!['documentoFrente', 'selfie'].includes(campo)) {
+      return res.status(400).json({ erro: 'Campo inválido.' });
+    }
+
+    const usuario = await Usuario.findById(usuarioId).select('verificacao');
+    const publicId = usuario?.verificacao?.[campo];
+
+    if (!publicId) {
+      return res.status(404).json({ erro: 'Arquivo não encontrado.' });
+    }
+
+    const url = cloudinary.url(publicId, {
+      type: 'authenticated',
+      sign_url: true,
+      secure: true
+    });
+
+    res.status(200).json({ url });
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao gerar link do documento', detalhes: erro.message });
+  }
+});
+
+// Aprova ou rejeita a verificação de um usuário
+app.patch('/api/admin/verificacoes/:usuarioId', autenticacao, autenticacaoAdmin, async (req, res) => {
+  try {
+    const { acao, motivo } = req.body; // acao: 'aprovar' | 'rejeitar'
+
+    if (!['aprovar', 'rejeitar'].includes(acao)) {
+      return res.status(400).json({ erro: 'Ação inválida. Use "aprovar" ou "rejeitar".' });
+    }
+
+    const usuario = await Usuario.findById(req.params.usuarioId);
+    if (!usuario) {
+      return res.status(404).json({ erro: 'Usuário não encontrado.' });
+    }
+
+    if (usuario.verificacao.status !== 'pendente') {
+      return res.status(400).json({ erro: 'Esta verificação já foi analisada ou não foi enviada.' });
+    }
+
+    usuario.verificacao.status = acao === 'aprovar' ? 'aprovado' : 'rejeitado';
+    usuario.verificacao.motivoRejeicao = acao === 'rejeitar' ? (motivo || '') : '';
+    usuario.verificacao.revisadoEm = new Date();
+    usuario.verificacao.revisadoPor = req.usuarioId;
+
+    await usuario.save();
+
+    await criarNotificacao({
+      usuario: usuario._id,
+      tipo: 'verificacao',
+      titulo: acao === 'aprovar' ? 'Identidade verificada!' : 'Verificação de identidade recusada',
+      texto: acao === 'aprovar'
+        ? 'Sua identidade foi verificada. Agora você tem o selo de verificado no perfil.'
+        : `Sua verificação não foi aprovada. Motivo: ${motivo || 'documentos ilegíveis ou inconsistentes.'}`,
+      linkPainel: '/configuracoes',
+      estadoNavegacao: {}
+    });
+
+    res.status(200).json({
+      mensagem: acao === 'aprovar' ? 'Usuário verificado com sucesso.' : 'Verificação rejeitada.',
+      verificacao: usuario.verificacao
+    });
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao atualizar verificação', detalhes: erro.message });
   }
 });
 

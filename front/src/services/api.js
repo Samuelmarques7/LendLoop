@@ -34,7 +34,9 @@ export async function apiRequest(caminho, options = {}) {
     const data = await response.json().catch(() => null);
 
     if(!response.ok) {
-        throw new Error(data?.erro || 'Erro inesperado no servidor.');
+        const erro = new Error(data?.erro || 'Erro inesperado no servidor.');
+        erro.data = data; // permite checar flags como `verificacaoNecessaria` sem parsear a mensagem
+        throw erro;
     }
 
     return data;

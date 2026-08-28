@@ -4,16 +4,25 @@ const usuarioSchema = new mongoose.Schema({
   nome: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   senha: { type: String, required: true },
-  telefone: { type: String, required: false },
-  objetivo: { type: String, enum: ['ambos', 'locatario', 'locador'], default: 'ambos' },
-  bio: { type: String, default: "" },
+  cep: { type: String }, // Campo de CEP adicionado
+  telefone: { type: String }, // Removida a obrigatoriedade (required: true)
   avatar: { type: String, default: "" },
-  localizacao: { type: String, default: "" },
-  ativo: { type: Boolean, default: true},
-  tokenRecuperacaoSenha: { type: String, default: null },
-  tokenRecuperacaoExpira: { type: Date, default: null }
+  objetivo: { type: String, enum: ['ambos', 'locatario', 'locador'], default: 'ambos' },
+  
+  // Campos para Admin e KYC
+  papel: { type: String, enum: ['usuario', 'admin'], default: 'usuario' },
+  cpf: { type: String, default: "" },
+  verificacao: {
+    status: { type: String, enum: ['nao_enviado', 'pendente', 'aprovado', 'rejeitado'], default: 'nao_enviado' },
+    documentoFrente: { type: String, default: '' },
+    selfie: { type: String, default: '' },
+    enviadoEm: { type: Date, default: null },
+    motivoRejeicao: { type: String, default: '' },
+    revisadoEm: { type: Date, default: null },
+    revisadoPor: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario', default: null }
+  }
 }, {
-  timestamps: true 
+  timestamps: true
 });
 
 module.exports = mongoose.model('Usuario', usuarioSchema);

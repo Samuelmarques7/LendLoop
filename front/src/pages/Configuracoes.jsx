@@ -5,9 +5,11 @@ import {
   LuTrash2,
   LuUserCog,
   LuShieldAlert,
+  LuIdCard,
 } from 'react-icons/lu';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
+import { VerificacaoIdentidade } from '../components/VerificacaoIdentidade';
 import { apiRequest } from '../services/api';
 
 const OPCOES_OBJETIVO = [
@@ -117,11 +119,29 @@ export default function Configuracoes() {
 
             {usuarioLogado ? (
               <>
-                {/* Tipo de conta */}
+                {/* Verificação de identidade (Movido para o topo) */}
+                <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                  <div className="p-6 border-b border-gray-100 flex items-center gap-3">
+                    <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#0F6E56]/10 text-[#0F6E56]">
+                      <LuIdCard size={20} />
+                    </span>
+                    <div>
+                      <h2 className="text-lg font-bold text-[#1A1A1A]">Verificação de Identidade (KYC)</h2>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Envie seus documentos oficiais para liberar todos os recursos da plataforma.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="p-6 bg-gray-50/50">
+                    <VerificacaoIdentidade usuarioId={usuarioLogado.id} />
+                  </div>
+                </section>
+
+                {/* Tipo de conta (Movido para baixo) */}
                 <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
                   <div className="p-6 border-b border-gray-100 flex items-center gap-3">
                     <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#0068F3]/10 text-[#0068F3]">
-                      <LuUserCog size={18} />
+                      <LuUserCog size={20} />
                     </span>
                     <div>
                       <h2 className="text-lg font-bold text-[#1A1A1A]">Tipo de Conta</h2>
@@ -156,7 +176,7 @@ export default function Configuracoes() {
                 <section className="bg-white rounded-3xl border border-red-100 shadow-sm overflow-hidden">
                   <div className="p-6 border-b border-red-100 flex items-center gap-3">
                     <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-red-50 text-red-500">
-                      <LuShieldAlert size={18} />
+                      <LuShieldAlert size={20} />
                     </span>
                     <h2 className="text-lg font-bold text-red-500">Zona de Perigo</h2>
                   </div>
