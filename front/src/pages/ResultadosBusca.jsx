@@ -15,18 +15,7 @@ import {
 } from "react-icons/lu";
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
-
-const categoriasDisponiveis = [
-  { value: 'ferramentas', label: 'Ferramentas' },
-  { value: 'eletronicos', label: 'Eletrônicos' },
-  { value: 'eletrodomesticos', label: 'Eletrodomésticos' },
-  { value: 'veiculos', label: 'Veículos' },
-  { value: 'esportes-lazer', label: 'Esportes e Lazer' },
-  { value: 'instrumentos-musicais', label: 'Instrumentos Musicais' },
-  { value: 'fotografia', label: 'Câmeras e Fotografia' },
-  { value: 'festas-eventos', label: 'Festas e Eventos' },
-  { value: 'outros', label: 'Outros' },
-];
+import { CATEGORIAS } from '../constants/categorias';
 
 export function ResultadosBusca() {
   const navigate = useNavigate(); 
@@ -38,7 +27,9 @@ export function ResultadosBusca() {
   const [dataFim, setDataFim] = useState(searchParams.get('dataFim') || '');
   const [precoMin, setPrecoMin] = useState('');
   const [precoMax, setPrecoMax] = useState('');
-  const [categoriasSelecionadas, setCategoriasSelecionadas] = useState([]);
+  const [categoriasSelecionadas, setCategoriasSelecionadas] = useState(
+    () => (searchParams.get('categoria') || '').split(',').filter(Boolean)
+  );
 
   async function buscarAnuncios() {
     const params = new URLSearchParams();
@@ -75,6 +66,22 @@ export function ResultadosBusca() {
     setCategoriasSelecionadas([]);
   }
 
+  // Texto do cabeçalho reflete o filtro que veio da Home (categoria ou busca),
+  // em vez de sempre mostrar "Ferramentas" fixo.
+  function obterSubtitulo() {
+    if (categoriasSelecionadas.length === 1) {
+      const cat = CATEGORIAS.find(c => c.value === categoriasSelecionadas[0]);
+      if (cat) return `${cat.label} disponíveis em Santa Rita do Sapucaí, MG`;
+    }
+    if (categoriasSelecionadas.length > 1) {
+      return `${categoriasSelecionadas.length} categorias selecionadas em Santa Rita do Sapucaí, MG`;
+    }
+    if (busca) {
+      return `Resultados para "${busca}" em Santa Rita do Sapucaí, MG`;
+    }
+    return 'Itens disponíveis em Santa Rita do Sapucaí, MG';
+  }
+
   useEffect(() => {
     buscarAnuncios();
   }, []);
@@ -89,7 +96,7 @@ export function ResultadosBusca() {
           <div className="flex justify-between items-end mb-6">
             <div>
               <h1 className="text-2xl font-bold text-[#1A1A1A]">Resultados da Busca</h1>
-              <p className="text-gray-400 text-sm mt-1">Ferramentas disponíveis em Santa Rita do Sapucaí, MG</p>
+              <p className="text-gray-400 text-sm mt-1">{obterSubtitulo()}</p>
             </div>
             <span className="text-[#0068F3] text-[10px] font-bold bg-blue-50 px-3 py-1.5 rounded-full uppercase tracking-wider">
               {produtos.length} itens encontrados
@@ -103,7 +110,7 @@ export function ResultadosBusca() {
                 <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input 
                   type="text" 
-                  placeholder="Ex: Furadeira, Barraca..." 
+                  placeholder="Ex: Furadeira, Barraca, categoria ou subcategoria..." 
                   value={busca}
                   onChange={(e) => setBusca(e.target.value)}
                   className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm focus:ring-2 focus:ring-[#29C354]/20 focus:border-[#29C354] outline-none transition-all" />
@@ -184,7 +191,7 @@ export function ResultadosBusca() {
                 <div>
                     <h4 className="text-sm font-bold text-[#1A1A1A] mb-3">Categoria</h4>
                     <div className="space-y-2">
-                    {categoriasDisponiveis.map((cat) => (
+                    {CATEGORIAS.map((cat) => (
                         <label key={cat.value} className="flex items-center gap-3 text-sm text-gray-500 cursor-pointer group">
                         <input
                           type="checkbox"

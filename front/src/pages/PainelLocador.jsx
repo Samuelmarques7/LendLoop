@@ -889,6 +889,7 @@ function SecaoCalendario({ alugueis, meusAnuncios, onAbrirDetalhes }) {
 }
 
 function ModalDetalhesReserva({ reserva, onClose, onAbrirChat }) {
+  const navigate = useNavigate();
   if (!reserva) return null;
 
   const locatario = reserva.locatario;
@@ -911,7 +912,10 @@ function ModalDetalhesReserva({ reserva, onClose, onAbrirChat }) {
           </button>
         </div>
 
-        <div className="flex items-center gap-3 p-3.5 rounded-xl bg-[#FAFAF9] border border-gray-100">
+        <div
+          onClick={() => locatario?._id && navigate(`/usuario/${locatario._id}`)}
+          className="flex items-center gap-3 p-3.5 rounded-xl bg-[#FAFAF9] border border-gray-100 cursor-pointer hover:border-[#0068F3]/30 transition-colors"
+        >
           {locatario?.avatar ? (
             <img src={locatario.avatar} alt={locatario.nome} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
           ) : (

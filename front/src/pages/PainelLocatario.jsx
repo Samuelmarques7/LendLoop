@@ -41,6 +41,7 @@ export default function PainelLocatario() {
 
   const [aluguelSelecionado, setAluguelSelecionado] = useState(null);
   const [avaliacoesFeitas, setAvaliacoesFeitas] = useState({});
+  const [conversaParaAbrir, setConversaParaAbrir] = useState(location.state?.abrirConversa || null);
 
   useEffect(() => {
     document.title = 'Painel Locatário';
@@ -229,6 +230,13 @@ const toneClasses = {
     setAluguelSelecionado(null);
   }
 
+  function abrirChatComLocador(locadorId) {
+    if (!locadorId) return;
+    setConversaParaAbrir(locadorId);
+    setActiveTab('mensagens');
+    setAluguelSelecionado(null);
+  }
+
   async function alterarObjetivo(novoObjetivo) {
     try {
       const data = await apiRequest(`/api/usuarios/${usuarioLogado.id}`, {
@@ -291,7 +299,7 @@ const toneClasses = {
         return <PainelMensagens
           usuarioLogadoId={usuarioLogado?.id}
           corPrimaria="#0068F3"
-          conversaParaAbrir={location.state?.abrirConversa}
+          conversaParaAbrir={conversaParaAbrir}
           onConversasAtualizadas={setMensagensNaoLidas}
         />;
       case 'config':
@@ -387,6 +395,7 @@ const toneClasses = {
         onSolicitarDevolucao={solicitarDevolucao}
         usuarioLogadoId={usuarioLogado?.id}
         onStatusAvaliacao={handleStatusAvaliacao}
+        onAbrirChat={abrirChatComLocador}
       />
     </div>
   );
@@ -645,9 +654,12 @@ function SecaoPainel({ stats, toneClasses, alugueis, pagamentos, solicitacoesEnv
   );
 }
 
-function ModalDetalhesAluguel({ aluguel, onClose, onSolicitarDevolucao, usuarioLogadoId, onStatusAvaliacao }) {
+function ModalDetalhesAluguel({ aluguel, onClose, onSolicitarDevolucao, usuarioLogadoId, onStatusAvaliacao, onAbrirChat }) {
+  const navigate = useNavigate();
   if (!aluguel) return null;
 
+  const locador = aluguel.locador;
+  const primeiroNome = locador?.nome?.split(' ')[0] || 'locador';
   const podeSolicitarDevolucao = aluguel.status === 'aceito' || aluguel.status === 'andamento';
   const aguardandoConfirmacao = aluguel.status === 'aguardando_confirmacao';
   const concluido = aluguel.status === 'concluido';
@@ -679,6 +691,25 @@ function ModalDetalhesAluguel({ aluguel, onClose, onSolicitarDevolucao, usuarioL
           />
         )}
 
+        {locador && (
+          <div
+            onClick={() => locador?._id && navigate(`/usuario/${locador._id}`)}
+            className="flex items-center gap-3 p-3.5 rounded-xl bg-[#FAFAF9] border border-gray-100 mb-5 cursor-pointer hover:border-[#0068F3]/30 transition-colors"
+          >
+            {locador?.avatar ? (
+              <img src={locador.avatar} alt={locador.nome} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-[#0068F3] text-white flex items-center justify-center font-semibold flex-shrink-0">
+                {locador?.nome?.charAt(0).toUpperCase() || '?'}
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="font-semibold text-sm text-[#1A1A1A] truncate">{locador?.nome || 'Locador'}</p>
+              {locador?.email && <p className="text-xs text-gray-500 truncate">{locador.email}</p>}
+            </div>
+          </div>
+        )}
+
         <div className="space-y-3 mb-6">
           <div className="flex justify-between items-center text-sm">
             <span className="text-gray-500">Alugado em</span>
@@ -697,6 +728,16 @@ function ModalDetalhesAluguel({ aluguel, onClose, onSolicitarDevolucao, usuarioL
             <StatusPill status={aluguel.status} />
           </div>
         </div>
+
+        {podeSolicitarDevolucao && (
+          <button
+            onClick={() => onAbrirChat?.(locador?._id)}
+            disabled={!locador?._id}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-gray-200 text-[#1A1A1A] text-xs font-semibold hover:border-[#0068F3] hover:text-[#0068F3] transition-colors cursor-pointer disabled:opacity-40 mb-3"
+          >
+            <LuMessageSquare size={15} /> Conversar com {primeiroNome}
+          </button>
+        )}
 
         {podeSolicitarDevolucao && (
           <button

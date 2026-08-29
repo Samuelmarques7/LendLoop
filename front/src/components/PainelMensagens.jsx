@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, Fragment } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { LuSend, LuMessageSquare, LuSearch, LuArrowLeft } from 'react-icons/lu';
 import { apiRequest } from '../services/api';
 
@@ -29,6 +30,7 @@ function formatarDataConversa(data) {
 }
 
 export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#0068F3', conversaParaAbrir, onConversasAtualizadas }) {
+  const navigate = useNavigate();
   const [conversas, setConversas] = useState([]);
   const [carregandoConversas, setCarregandoConversas] = useState(true);
   const [conversaAtivaId, setConversaAtivaId] = useState(null);
@@ -239,17 +241,26 @@ export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#0068F3', conv
                 <LuArrowLeft size={18} />
               </button>
               {outroParticipante?.avatar ? (
-                <img src={outroParticipante.avatar} alt={outroParticipante.nome} className="w-9 h-9 rounded-full object-cover" />
+                <img
+                  src={outroParticipante.avatar}
+                  alt={outroParticipante.nome}
+                  onClick={() => outroParticipante?._id && navigate(`/usuario/${outroParticipante._id}`)}
+                  className="w-9 h-9 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                />
               ) : (
                 <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-semibold"
+                  onClick={() => outroParticipante?._id && navigate(`/usuario/${outroParticipante._id}`)}
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-semibold cursor-pointer hover:opacity-80 transition-opacity"
                   style={{ backgroundColor: corPrimaria }}
                 >
                   {outroParticipante?.nome?.[0]?.toUpperCase() || '?'}
                 </div>
               )}
-              <div className="min-w-0">
-                <p className="font-semibold text-sm text-[#1A1A1A] truncate">{outroParticipante?.nome || 'Usuário removido'}</p>
+              <div
+                className="min-w-0 cursor-pointer"
+                onClick={() => outroParticipante?._id && navigate(`/usuario/${outroParticipante._id}`)}
+              >
+                <p className="font-semibold text-sm text-[#1A1A1A] truncate hover:text-[#29C354] transition-colors">{outroParticipante?.nome || 'Usuário removido'}</p>
                 {conversaAtiva?.anuncio?.titulo && (
                   <p className="text-[11px] text-gray-400 truncate">sobre {conversaAtiva.anuncio.titulo}</p>
                 )}

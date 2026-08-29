@@ -58,16 +58,7 @@ export function Header() {
           
           /* === VISUAL DO USUÁRIO NORMAL (LOCADOR/LOCATÁRIO) === */
           <>
-            {isLogado ? (
-              <div className="flex items-center gap-4">       
-                <button 
-                  onClick={() => navigate('/meu-perfil')}
-                  className="text-[#032D54] hover:text-[#29C354] font-semibold transition-colors cursor-pointer"
-                >
-                  Meu Perfil
-                </button>
-              </div>
-            ) : (
+            {!isLogado && (
               <button 
                 onClick={() => navigate('/login')}
                 className="text-[#032D54] hover:text-[#29C354] font-semibold transition-colors cursor-pointer"
@@ -126,16 +117,37 @@ export function Header() {
               </button>
             )}
 
-            {isLogado && <NotificacaoSino />}
-
             {isLogado && (
-              <button
-                onClick={abrirConfiguracoes}
-                title="Configurações"
-                className="p-2.5 rounded-full bg-gray-50 text-gray-500 hover:text-[#29C354] hover:bg-gray-100 transition-colors cursor-pointer"
-              >
-                <LuSettings size={18} />
-              </button>
+              <div className="flex items-center gap-2">
+                <NotificacaoSino />
+
+                <button
+                  onClick={abrirConfiguracoes}
+                  title="Configurações"
+                  className="p-2.5 rounded-full bg-gray-50 text-gray-500 hover:text-[#29C354] hover:bg-gray-100 transition-colors cursor-pointer"
+                >
+                  <LuSettings size={18} />
+                </button>
+
+                <button
+                  onClick={() => navigate('/meu-perfil')}
+                  className="flex items-center gap-2.5 pl-3 ml-1 border-l border-gray-200 cursor-pointer group"
+                >
+                  <div className="w-9 h-9 rounded-full bg-[#032D54] text-white flex items-center justify-center font-semibold text-sm overflow-hidden flex-shrink-0">
+                    {dadosUsuario?.avatar ? (
+                      <img src={dadosUsuario.avatar} alt={dadosUsuario.nome} className="w-full h-full object-cover" />
+                    ) : (
+                      dadosUsuario?.nome?.charAt(0).toUpperCase() || 'U'
+                    )}
+                  </div>
+                  <div className="hidden lg:block text-left min-w-0">
+                    <p className="text-[14px] font-semibold text-[#032D54] whitespace-nowrap leading-tight group-hover:text-[#29C354] transition-colors">
+                      {dadosUsuario?.nome ? dadosUsuario.nome.split(' ').slice(0, 2).join(' ') : 'Carregando...'}
+                    </p>
+                    <p className="text-[12px] text-gray-400 leading-tight">Ver perfil</p>
+                  </div>
+                </button>
+              </div>
             )}
           </>
         )}

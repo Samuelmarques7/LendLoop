@@ -342,6 +342,7 @@ app.get('/api/anuncios', async (req, res) => {
       filtro.$or = [
         { titulo: regex },
         { descricao: regex },
+        { subcategorias: regex },
       ];
     }
 

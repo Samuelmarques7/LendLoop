@@ -6,30 +6,7 @@ import { apiRequest, API_URL } from '../services/api'
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
 import { SeletorLocalizacao } from '../components/SeletorLocalizao'
-
-const categoriasDisponiveis = [
-    { value: 'ferramentas', label: 'Ferramentas' },
-    { value: 'eletronicos', label: 'Eletrônicos' },
-    { value: 'eletrodomesticos', label: 'Eletrodomésticos' },
-    { value: 'veiculos', label: 'Veículos' },
-    { value: 'esportes-lazer', label: 'Esportes e Lazer' },
-    { value: 'instrumentos-musicais', label: 'Instrumentos Musicais' },
-    { value: 'fotografia', label: 'Câmeras e Fotografia' },
-    { value: 'festas-eventos', label: 'Festas e Eventos' },
-    { value: 'outros', label: 'Outros' },
-]
-
-const especificacoesSugeridas = {
-    'ferramentas': ['Voltagem', 'Potência (W)', 'Marca', 'Modelo', 'Estado de conservação'],
-    'eletronicos': ['Voltagem', 'Marca', 'Modelo', 'Garantia', 'Estado de conservação'],
-    'eletrodomesticos': ['Voltagem', 'Marca', 'Modelo', 'Capacidade', 'Estado de conservação'],
-    'veiculos': ['Marca', 'Modelo', 'Ano', 'Combustível', 'Quilometragem'],
-    'esportes-lazer': ['Marca', 'Tamanho', 'Estado de conservação'],
-    'instrumentos-musicais': ['Marca', 'Modelo', 'Estado de conservação'],
-    'fotografia': ['Marca', 'Modelo', 'Resolução', 'Acessórios inclusos'],
-    'festas-eventos': ['Quantidade', 'Tamanho', 'Cor'],
-    'outros': ['Marca', 'Modelo', 'Estado de conservação'],
-}
+import { CATEGORIAS as categoriasDisponiveis, ESPECIFICACOES_SUGERIDAS as especificacoesSugeridas } from '../constants/categorias'
 
 function CriarAnuncio ()
 {

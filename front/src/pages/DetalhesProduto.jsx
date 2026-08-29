@@ -29,6 +29,7 @@ function formatarMembroDesde(data) {
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import SeloVerificado from "../components/SeloVerificado";
+import { buscarCategoriaPorValor } from "../constants/categorias";
 
 export function DetalhesProduto() {
   const { id } = useParams();
@@ -200,6 +201,24 @@ export function DetalhesProduto() {
               <LuMapPin className="text-[#29C354]" size={18}/> {anuncio.endereco.cidade}, {anuncio.endereco.estado}
             </span>
           </div>
+
+          {(anuncio.categoria || anuncio.subcategorias?.length > 0) && (
+            <div className="flex flex-wrap items-center gap-2 mt-4">
+              {anuncio.categoria && (
+                <span className="bg-green-50 text-[#29C354] text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider border border-[#29C354]/20">
+                  {buscarCategoriaPorValor(anuncio.categoria)?.label || anuncio.categoria}
+                </span>
+              )}
+              {anuncio.subcategorias?.map((sub, index) => (
+                <span
+                  key={index}
+                  className="bg-green-50 text-[#29C354] text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider border border-[#29C354]/20"
+                >
+                  {sub}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-4 grid-rows-2 gap-4 h-[400px] mb-12 rounded-3xl overflow-hidden">
