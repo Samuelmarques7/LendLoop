@@ -4,6 +4,7 @@ import { LuEye, LuEyeOff } from 'react-icons/lu';
 import {apiRequest } from '../services/api';
 import { MedidorForcaSenha } from '../components/MedidorForcaSenha';
 import { senhaEhForteOSuficiente } from '../utils/forcaSenha';
+import { emailEhValido } from '../utils/validarEmail';
 
 export default function Cadastro() {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ export default function Cadastro() {
   });
   
   const [mensagem, setMensagem] = useState(null);
+  const [erroEmail, setErroEmail] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
 
   const handleCepChange = (e) => {
@@ -40,6 +42,15 @@ export default function Cadastro() {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (e.target.name === 'email' && erroEmail) setErroEmail('');
+  };
+
+  const handleBlurEmail = () => {
+    if (formData.email && !emailEhValido(formData.email)) {
+      setErroEmail('Digite um e-mail válido, ex: joao@email.com');
+    } else {
+      setErroEmail('');
+    }
   };
 
   const handleObjetivoChange = (valor) => {
@@ -49,6 +60,12 @@ export default function Cadastro() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMensagem(null);
+
+    if (!emailEhValido(formData.email)) {
+      setErroEmail('Digite um e-mail válido, ex: joao@email.com');
+      setMensagem({ tipo: 'erro', texto: 'Verifique se o e-mail foi digitado corretamente.' });
+      return;
+    }
 
     if (!senhaEhForteOSuficiente(formData.senha)) {
       setMensagem({
@@ -102,8 +119,9 @@ export default function Cadastro() {
 
           <div>
             <label className="block text-sm font-medium text-[#1A1A1A] mb-1">E-mail</label>
-            <input type="email" name="email" value={formData.email} onChange={handleChange} required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0297AA] outline-none text-[#1A1A1A]" placeholder="joao@email.com"/>
+            <input type="email" name="email" value={formData.email} onChange={handleChange} onBlur={handleBlurEmail} required
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none text-[#1A1A1A] ${erroEmail ? 'border-red-400 focus:ring-red-200' : 'border-gray-300 focus:ring-[#0297AA]'}`} placeholder="joao@email.com"/>
+            {erroEmail && <p className="text-xs text-red-500 mt-1">{erroEmail}</p>}
           </div>
 
           <div>

@@ -42,6 +42,7 @@ export function DetalhesProduto() {
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
   const [horarioRetirada, setHorarioRetirada] = useState("09:00");
+  const [horarioDevolucao, setHorarioDevolucao] = useState("17:00");
   const [enviando, setEnviando] = useState(false);
   const [mensagem, setMensagem] = useState(null);
   const [avaliacoesLocador, setAvaliacoesLocador] = useState(null);
@@ -52,6 +53,11 @@ export function DetalhesProduto() {
         setCarregando(true);
         const dados = await apiRequest(`/api/anuncios/${id}`);
         setAnuncio(dados);
+
+        // Conecta o horário padrão do formulário de reserva com o que o
+        // locador definiu ao anunciar o item, em vez de usar um valor fixo.
+        if (dados?.precos?.horarioRetirada) setHorarioRetirada(dados.precos.horarioRetirada);
+        if (dados?.precos?.horarioDevolucao) setHorarioDevolucao(dados.precos.horarioDevolucao);
 
         try {
           const dadosAvaliacoes = await apiRequest(`/api/avaliacoes/anuncio/${id}`);
@@ -135,6 +141,7 @@ export function DetalhesProduto() {
           dataInicio,
           dataFim,
           horarioRetirada,
+          horarioDevolucao,
           precoTotal: total,
           taxaServico,
           caucao: anuncio.precos.caucao,
@@ -381,13 +388,23 @@ export function DetalhesProduto() {
                     />
                   </div>
                 </div>
-                <div className="border border-gray-200 rounded-xl p-3 relative">
-                  <label className="block text-[9px] font-bold text-gray-400 uppercase mb-1">Horário de Retirada</label>
-                  <input 
-                    type="time" 
-                    value={horarioRetirada} 
-                    onChange={(e) => setHorarioRetirada(e.target.value)}
-                    className="w-full text-sm font-bold outline-none bg-transparent cursor-pointer" />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="border border-gray-200 rounded-xl p-3 relative">
+                    <label className="block text-[9px] font-bold text-gray-400 uppercase mb-1">Horário de Retirada</label>
+                    <input 
+                      type="time" 
+                      value={horarioRetirada} 
+                      onChange={(e) => setHorarioRetirada(e.target.value)}
+                      className="w-full text-sm font-bold outline-none bg-transparent cursor-pointer" />
+                  </div>
+                  <div className="border border-gray-200 rounded-xl p-3 relative">
+                    <label className="block text-[9px] font-bold text-gray-400 uppercase mb-1">Horário de Devolução</label>
+                    <input 
+                      type="time" 
+                      value={horarioDevolucao} 
+                      onChange={(e) => setHorarioDevolucao(e.target.value)}
+                      className="w-full text-sm font-bold outline-none bg-transparent cursor-pointer" />
+                  </div>
                 </div>
               </div>
 

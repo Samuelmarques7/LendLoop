@@ -8,6 +8,7 @@ const aluguelSchema = new mongoose.Schema({
   dataInicio: { type: Date, required: true },
   dataFim: { type: Date, required: true },
   horarioRetirada: { type: String, default: '09:00' },
+  horarioDevolucao: { type: String, default: '17:00' },
  
   precoTotal: { type: Number, required: true },
   taxaServico: { type: Number, default: 0 },

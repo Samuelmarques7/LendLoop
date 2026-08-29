@@ -3,26 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { LuWrench, LuMonitor, LuDumbbell, LuFlower2, LuPartyPopper, LuSearch, LuClock, LuTrendingUp, LuX } from 'react-icons/lu';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
-
-const CHAVE_BUSCAS_RECENTES = 'buscasRecentes';
-const MAX_BUSCAS_RECENTES = 5;
-
-const sugestoesPopulares = [
-  'Furadeira',
-  'Câmera fotográfica',
-  'Bicicleta',
-  'Barraca de camping',
-  'Controle xbox',
-];
-
-function carregarBuscasRecentes() {
-  try {
-    const salvas = JSON.parse(localStorage.getItem(CHAVE_BUSCAS_RECENTES) || '[]');
-    return Array.isArray(salvas) ? salvas : [];
-  } catch {
-    return [];
-  }
-}
+import { useBuscasRecentes } from '../hooks/useBuscasRecentes';
+import { SUGESTOES_POPULARES, BANCO_DE_PALAVRAS } from '../constants/buscasPopulares';
 
 const categorias = [
   { nome: 'Ferramentas', icone: <LuWrench size={32} />, categoria: 'ferramentas' },
@@ -44,16 +26,31 @@ const passosAnfitriao = [
   { titulo: 'Ganhar Dinheiro', descricao: 'Receba automaticamente quando o período de aluguel terminar' },
 ];
 
+// Função para destacar a parte da palavra que o usuário está digitando
+function destacarTexto(texto, busca) {
+  if (!busca) return texto;
+  const regex = new RegExp(`(${busca})`, 'gi');
+  const partes = texto.split(regex);
+  return (
+    <span>
+      {partes.map((parte, i) => 
+        parte.toLowerCase() === busca.toLowerCase() 
+          ? <span key={i} className="text-gray-400 font-normal">{parte}</span> 
+          : <span key={i} className="text-[#1A1A1A] font-bold">{parte}</span>
+      )}
+    </span>
+  );
+}
+
 export function PaginaInicial() {
   const navigate = useNavigate(); 
   const [buscaHome, setBuscaHome] = useState('');
-  const [buscasRecentes, setBuscasRecentes] = useState(carregarBuscasRecentes);
+  const { buscasRecentes, salvarBuscaRecente, removerBuscaRecente, limparBuscasRecentes } = useBuscasRecentes();
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
   const buscaRef = useRef(null);
 
   const isLogado = localStorage.getItem('usuarioLogado') === 'true';
 
-  // Fecha o dropdown ao clicar fora da barra de busca
   useEffect(() => {
     function handleClickFora(e) {
       if (buscaRef.current && !buscaRef.current.contains(e.target)) {
@@ -63,32 +60,6 @@ export function PaginaInicial() {
     document.addEventListener('mousedown', handleClickFora);
     return () => document.removeEventListener('mousedown', handleClickFora);
   }, []);
-
-  function salvarBuscaRecente(termo) {
-    const termoLimpo = termo.trim();
-    if (!termoLimpo) return;
-
-    setBuscasRecentes((atual) => {
-      const semDuplicata = atual.filter((b) => b.toLowerCase() !== termoLimpo.toLowerCase());
-      const atualizado = [termoLimpo, ...semDuplicata].slice(0, MAX_BUSCAS_RECENTES);
-      localStorage.setItem(CHAVE_BUSCAS_RECENTES, JSON.stringify(atualizado));
-      return atualizado;
-    });
-  }
-
-  function removerBuscaRecente(termo, e) {
-    e.stopPropagation();
-    setBuscasRecentes((atual) => {
-      const atualizado = atual.filter((b) => b !== termo);
-      localStorage.setItem(CHAVE_BUSCAS_RECENTES, JSON.stringify(atualizado));
-      return atualizado;
-    });
-  }
-
-  function limparBuscasRecentes() {
-    localStorage.removeItem(CHAVE_BUSCAS_RECENTES);
-    setBuscasRecentes([]);
-  }
 
   function executarBusca(termo) {
     const termoFinal = (termo ?? buscaHome).trim();
@@ -118,6 +89,26 @@ export function PaginaInicial() {
     navigate(`/busca?${params.toString()}`);
   }
 
+  // Lógica inteligente de previsão (Autocomplete) usando as variáveis importadas
+  const buscaLower = buscaHome.toLowerCase().trim();
+  
+  const recentesFiltradas = buscaLower 
+    ? buscasRecentes.filter(t => t.toLowerCase().includes(buscaLower))
+    : buscasRecentes;
+    
+  const sugestoesFiltradas = buscaLower
+    ? BANCO_DE_PALAVRAS.filter(t => t.toLowerCase().includes(buscaLower))
+        .sort((a, b) => {
+          const aStarts = a.toLowerCase().startsWith(buscaLower);
+          const bStarts = b.toLowerCase().startsWith(buscaLower);
+          if (aStarts && !bStarts) return -1;
+          if (!aStarts && bStarts) return 1;
+          return 0;
+        }).slice(0, 6)
+    : SUGESTOES_POPULARES;
+
+  const mostrarDropdown = mostrarSugestoes && (buscaLower !== '' || recentesFiltradas.length > 0 || sugestoesFiltradas.length > 0);
+
   return (
     <div className="min-h-screen flex flex-col">
 
@@ -146,7 +137,7 @@ export function PaginaInicial() {
                 onFocus={() => setMostrarSugestoes(true)}
                 onChange={(e) => setBuscaHome(e.target.value)}
                 onKeyDown={(e) => {if (e.key === 'Enter') handleBuscarHome();}}
-                className="flex-1 py-4 text-[#1A1A1A] outline-none text-base"
+                className="flex-1 py-4 text-[#1A1A1A] outline-none text-base font-medium"
               />
               <button 
                 onClick={handleBuscarHome}
@@ -156,29 +147,43 @@ export function PaginaInicial() {
               </button>
             </div>
 
-            {mostrarSugestoes && (
+            {mostrarDropdown && (
               <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-20">
+                
+                {buscaLower && (
+                  <div className="py-2 border-b border-gray-50 bg-[#0068F3]/5">
+                    <button
+                      onClick={() => handleBuscarHome()}
+                      className="w-full flex items-center gap-3 px-4 py-2 hover:bg-[#0068F3]/10 text-[#0068F3] transition-colors cursor-pointer text-sm font-bold"
+                    >
+                      <LuSearch size={16} className="shrink-0" />
+                      Buscar por "{buscaHome}"
+                    </button>
+                  </div>
+                )}
 
-                {buscasRecentes.length > 0 && (
+                {recentesFiltradas.length > 0 && (
                   <div className="py-2">
                     <div className="flex items-center justify-between px-4 py-1.5">
-                      <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Buscas recentes</span>
-                      <button
-                        onClick={limparBuscasRecentes}
-                        className="text-xs text-[#0068F3] hover:text-[#032D54] font-medium cursor-pointer"
-                      >
-                        Limpar
-                      </button>
+                      <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Buscas recentes</span>
+                      {!buscaLower && (
+                        <button
+                          onClick={limparBuscasRecentes}
+                          className="text-[11px] text-[#0068F3] hover:text-[#032D54] font-bold cursor-pointer uppercase tracking-wider"
+                        >
+                          Limpar
+                        </button>
+                      )}
                     </div>
-                    {buscasRecentes.map((termo) => (
+                    {recentesFiltradas.map((termo) => (
                       <button
                         key={termo}
                         onClick={() => handleClicarSugestao(termo)}
                         className="w-full flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors cursor-pointer group"
                       >
-                        <span className="flex items-center gap-3 text-[#1A1A1A] text-sm">
+                        <span className="flex items-center gap-3 text-gray-600 text-sm font-medium">
                           <LuClock size={16} className="text-gray-400 shrink-0" />
-                          {termo}
+                          {destacarTexto(termo, buscaLower)}
                         </span>
                         <span
                           onClick={(e) => removerBuscaRecente(termo, e)}
@@ -192,25 +197,35 @@ export function PaginaInicial() {
                   </div>
                 )}
 
-                {buscasRecentes.length > 0 && (
+                {recentesFiltradas.length > 0 && sugestoesFiltradas.length > 0 && (
                   <div className="border-t border-gray-100" />
                 )}
 
-                <div className="py-2">
-                  <div className="px-4 py-1.5">
-                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Sugestões</span>
+                {sugestoesFiltradas.length > 0 && (
+                  <div className="py-2">
+                    <div className="px-4 py-1.5">
+                      <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                        {buscaLower ? 'Sugestões para você' : 'Buscas populares'}
+                      </span>
+                    </div>
+                    {sugestoesFiltradas.map((termo) => (
+                      <button
+                        key={termo}
+                        onClick={() => handleClicarSugestao(termo)}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors cursor-pointer text-sm"
+                      >
+                        {buscaLower ? (
+                          <LuSearch size={16} className="text-gray-400 shrink-0" />
+                        ) : (
+                          <LuTrendingUp size={16} className="text-[#29C354] shrink-0" />
+                        )}
+                        <span className="flex-1 text-left">
+                          {destacarTexto(termo, buscaLower)}
+                        </span>
+                      </button>
+                    ))}
                   </div>
-                  {sugestoesPopulares.map((termo) => (
-                    <button
-                      key={termo}
-                      onClick={() => handleClicarSugestao(termo)}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors cursor-pointer text-[#1A1A1A] text-sm"
-                    >
-                      <LuTrendingUp size={16} className="text-[#29C354] shrink-0" />
-                      {termo}
-                    </button>
-                  ))}
-                </div>
+                )}
               </div>
             )}
           </div>
