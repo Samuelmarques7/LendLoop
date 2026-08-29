@@ -947,6 +947,12 @@ function ModalDetalhesReserva({ reserva, onClose, onAbrirChat }) {
               <span className="font-semibold text-[#1A1A1A]">{reserva.horarioRetirada}</span>
             </div>
           )}
+          {reserva.horarioDevolucao && (
+            <div className="flex justify-between gap-3">
+              <span className="text-gray-500 flex-shrink-0">Horário de devolução</span>
+              <span className="font-semibold text-[#1A1A1A]">{reserva.horarioDevolucao}</span>
+            </div>
+          )}
           <div className="flex justify-between gap-3">
             <span className="text-gray-500 flex-shrink-0">Valor total</span>
             <span className="font-semibold text-[#1A1A1A]">R$ {Number(reserva.precoTotal || 0).toFixed(2)}</span>

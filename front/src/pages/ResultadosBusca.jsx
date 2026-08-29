@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { apiRequest } from '../services/api';
 import {
@@ -11,11 +11,31 @@ import {
   LuStar,
   LuChevronLeft,
   LuChevronRight,
-  LuPackageX
+  LuPackageX,
+  LuClock,
+  LuTrendingUp,
+  LuX
 } from "react-icons/lu";
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { CATEGORIAS } from '../constants/categorias';
+import { useBuscasRecentes } from '../hooks/useBuscasRecentes';
+import { SUGESTOES_POPULARES, BANCO_DE_PALAVRAS } from '../constants/buscasPopulares';
+
+function destacarTexto(texto, busca) {
+  if (!busca) return texto;
+  const regex = new RegExp(`(${busca})`, 'gi');
+  const partes = texto.split(regex);
+  return (
+    <span>
+      {partes.map((parte, i) => 
+        parte.toLowerCase() === busca.toLowerCase() 
+          ? <span key={i} className="text-gray-400 font-normal">{parte}</span> 
+          : <span key={i} className="text-[#1A1A1A] font-bold">{parte}</span>
+      )}
+    </span>
+  );
+}
 
 export function ResultadosBusca() {
   const navigate = useNavigate(); 
@@ -31,10 +51,25 @@ export function ResultadosBusca() {
     () => (searchParams.get('categoria') || '').split(',').filter(Boolean)
   );
 
-  async function buscarAnuncios() {
+  const { buscasRecentes, salvarBuscaRecente, removerBuscaRecente, limparBuscasRecentes } = useBuscasRecentes();
+  const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
+  const buscaRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickFora(e) {
+      if (buscaRef.current && !buscaRef.current.contains(e.target)) {
+        setMostrarSugestoes(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickFora);
+    return () => document.removeEventListener('mousedown', handleClickFora);
+  }, []);
+
+  async function buscarAnuncios(termoBusca) {
     const params = new URLSearchParams();
-    
-    if (busca) params.append('busca', busca);
+    const buscaAtual = termoBusca ?? busca;
+
+    if (buscaAtual) params.append('busca', buscaAtual);
     if (dataInicio) params.append('dataInicio', dataInicio);
     if (dataFim) params.append('dataFim', dataFim);
     if (precoMin) params.append('precoMin', precoMin);
@@ -48,7 +83,16 @@ export function ResultadosBusca() {
 
   function handleSubmitBusca(e){
     e.preventDefault();
+    setMostrarSugestoes(false);
+    if (busca.trim()) salvarBuscaRecente(busca);
     buscarAnuncios();
+  }
+
+  function handleClicarSugestao(termo) {
+    setBusca(termo);
+    setMostrarSugestoes(false);
+    salvarBuscaRecente(termo);
+    buscarAnuncios(termo);
   }
 
   function toggleCategoria(valor) {
@@ -66,8 +110,6 @@ export function ResultadosBusca() {
     setCategoriasSelecionadas([]);
   }
 
-  // Texto do cabeçalho reflete o filtro que veio da Home (categoria ou busca),
-  // em vez de sempre mostrar "Ferramentas" fixo.
   function obterSubtitulo() {
     if (categoriasSelecionadas.length === 1) {
       const cat = CATEGORIAS.find(c => c.value === categoriasSelecionadas[0]);
@@ -85,6 +127,26 @@ export function ResultadosBusca() {
   useEffect(() => {
     buscarAnuncios();
   }, []);
+
+  // Lógica inteligente de previsão (Autocomplete)
+  const buscaLower = busca.toLowerCase().trim();
+  
+  const recentesFiltradas = buscaLower 
+    ? buscasRecentes.filter(t => t.toLowerCase().includes(buscaLower))
+    : buscasRecentes;
+    
+  const sugestoesFiltradas = buscaLower
+    ? BANCO_DE_PALAVRAS.filter(t => t.toLowerCase().includes(buscaLower))
+        .sort((a, b) => {
+          const aStarts = a.toLowerCase().startsWith(buscaLower);
+          const bStarts = b.toLowerCase().startsWith(buscaLower);
+          if (aStarts && !bStarts) return -1;
+          if (!aStarts && bStarts) return 1;
+          return 0;
+        }).slice(0, 6)
+    : SUGESTOES_POPULARES;
+
+  const mostrarDropdown = mostrarSugestoes && (buscaLower !== '' || recentesFiltradas.length > 0 || sugestoesFiltradas.length > 0);
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] font-sans text-[#1A1A1A] flex flex-col">
@@ -104,7 +166,7 @@ export function ResultadosBusca() {
           </div>
 
           <form onSubmit={handleSubmitBusca} className="grid grid-cols-1 md:grid-cols-12 gap-3">
-            <div className="md:col-span-5 relative">
+            <div ref={buscaRef} className="md:col-span-5 relative">
               <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5 ml-1">O que você busca?</label>
               <div className="relative">
                 <LuSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -112,9 +174,100 @@ export function ResultadosBusca() {
                   type="text" 
                   placeholder="Ex: Furadeira, Barraca, categoria ou subcategoria..." 
                   value={busca}
+                  onFocus={() => setMostrarSugestoes(true)}
                   onChange={(e) => setBusca(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm focus:ring-2 focus:ring-[#29C354]/20 focus:border-[#29C354] outline-none transition-all" />
+                  className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm focus:ring-2 focus:ring-[#29C354]/20 focus:border-[#29C354] outline-none transition-all font-medium" />
               </div>
+
+              {mostrarDropdown && (
+                <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-20">
+
+                  {buscaLower && (
+                    <div className="py-2 border-b border-gray-50 bg-[#0068F3]/5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMostrarSugestoes(false);
+                          if (busca.trim()) salvarBuscaRecente(busca);
+                          buscarAnuncios(busca);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2 hover:bg-[#0068F3]/10 text-[#0068F3] transition-colors cursor-pointer text-sm font-bold"
+                      >
+                        <LuSearch size={16} className="shrink-0" />
+                        Buscar por "{busca}"
+                      </button>
+                    </div>
+                  )}
+
+                  {recentesFiltradas.length > 0 && (
+                    <div className="py-2">
+                      <div className="flex items-center justify-between px-4 py-1.5">
+                        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Buscas recentes</span>
+                        {!buscaLower && (
+                          <button
+                            type="button"
+                            onClick={limparBuscasRecentes}
+                            className="text-[11px] text-[#0068F3] hover:text-[#032D54] font-bold cursor-pointer uppercase tracking-wider"
+                          >
+                            Limpar
+                          </button>
+                        )}
+                      </div>
+                      {recentesFiltradas.map((termo) => (
+                        <button
+                          type="button"
+                          key={termo}
+                          onClick={() => handleClicarSugestao(termo)}
+                          className="w-full flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors cursor-pointer group"
+                        >
+                          <span className="flex items-center gap-3 text-gray-600 text-sm font-medium">
+                            <LuClock size={16} className="text-gray-400 shrink-0" />
+                            {destacarTexto(termo, buscaLower)}
+                          </span>
+                          <span
+                            onClick={(e) => removerBuscaRecente(termo, e)}
+                            className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 cursor-pointer"
+                            title="Remover"
+                          >
+                            <LuX size={14} />
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {recentesFiltradas.length > 0 && sugestoesFiltradas.length > 0 && (
+                    <div className="border-t border-gray-100" />
+                  )}
+
+                  {sugestoesFiltradas.length > 0 && (
+                    <div className="py-2">
+                      <div className="px-4 py-1.5">
+                        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                          {buscaLower ? 'Sugestões para você' : 'Buscas populares'}
+                        </span>
+                      </div>
+                      {sugestoesFiltradas.map((termo) => (
+                        <button
+                          type="button"
+                          key={termo}
+                          onClick={() => handleClicarSugestao(termo)}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors cursor-pointer text-sm"
+                        >
+                          {buscaLower ? (
+                            <LuSearch size={16} className="text-gray-400 shrink-0" />
+                          ) : (
+                            <LuTrendingUp size={16} className="text-[#29C354] shrink-0" />
+                          )}
+                          <span className="flex-1 text-left">
+                            {destacarTexto(termo, buscaLower)}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="md:col-span-2">

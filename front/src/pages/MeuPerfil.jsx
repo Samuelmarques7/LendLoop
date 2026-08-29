@@ -8,7 +8,8 @@ import {
   LuCalendarDays,
   LuPhone,
   LuX,
-  LuLogOut
+  LuLogOut,
+  LuShieldCheck // Ícone adicionado para a verificação
 } from 'react-icons/lu';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
@@ -41,8 +42,6 @@ export default function MeuPerfil() {
   const dadosSalvos = localStorage.getItem('dadosUsuario');
   const usuarioLogadoId = dadosSalvos ? JSON.parse(dadosSalvos).id : null;
 
-  // Sem :id na rota => é a página "/meu-perfil" (sempre o próprio usuário).
-  // Com :id na rota => pode ser o perfil de outra pessoa (ex: clicou no locador em um produto).
   const ehPerfilProprio = !idDaRota || idDaRota === usuarioLogadoId;
   const idAlvo = idDaRota || usuarioLogadoId;
 
@@ -57,7 +56,6 @@ export default function MeuPerfil() {
   const [erroForm, setErroForm] = useState(null);
 
   useEffect(() => {
-    // Só exige login para acessar o PRÓPRIO perfil. Perfil de outro usuário é público.
     if (!idDaRota && !dadosSalvos) {
       navigate('/login');
       return;
@@ -88,7 +86,8 @@ export default function MeuPerfil() {
     localStorage.setItem('dadosUsuario', JSON.stringify({
       ...dadosSalvos,
       nome: usuarioAtualizado.nome,
-      email: usuarioAtualizado.email
+      email: usuarioAtualizado.email,
+      avatar: usuarioAtualizado.avatar
     }));
   }
 
@@ -126,6 +125,7 @@ export default function MeuPerfil() {
       });
 
       setUsuario(resposta.usuario);
+      atualizarLocalStorage(resposta.usuario);
     } catch (e) {
       setErro(e.message);
     } finally {
@@ -188,6 +188,13 @@ export default function MeuPerfil() {
     );
   }
 
+  const objetivoUsuario = usuario.objetivo || 'ambos';
+  
+  // Variável para organizar a linha divisória da seção "Informações da Conta"
+  const temTelefone = ehPerfilProprio && usuario.telefone;
+  const temVerificacao = usuario.verificacao?.status === 'aprovado';
+  const mostrarLinhaDivisoria = temTelefone || temVerificacao;
+
   return (
     <div className="min-h-screen bg-[#F8F9FA] font-sans flex flex-col text-[#1A1A1A]">
       <Header />
@@ -227,7 +234,7 @@ export default function MeuPerfil() {
             <div className="text-center sm:text-left flex-grow">
               <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
                 <h1 className="text-2xl font-black text-[#1A1A1A]">{usuario.nome}</h1>
-                {usuario.verificacao?.status === 'aprovado' && <SeloVerificado />}
+                {temVerificacao && <SeloVerificado />}
               </div>
               {ehPerfilProprio && <p className="text-gray-500 font-medium mt-1">{usuario.email}</p>}
               {erro && <p className="text-red-600 text-sm font-medium mt-2">{erro}</p>}
@@ -259,34 +266,40 @@ export default function MeuPerfil() {
 
             {ehPerfilProprio && (
               <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Alternar Painel</h2>
+                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">
+                  {objetivoUsuario === 'ambos' ? 'Alternar Painel' : 'Meu Painel'}
+                </h2>
 
                 <div className="space-y-3">
-                  <button
-                    onClick={() => navigate('/painellocatario')}
-                    className="w-full flex items-center p-4 rounded-2xl border-2 border-transparent hover:border-[#29C354] bg-gray-50 hover:bg-[#29C354]/5 transition-all text-left group cursor-pointer"
-                  >
-                    <div className="w-12 h-12 rounded-xl bg-blue-100 text-[#0068F3] flex items-center justify-center shrink-0 mr-4 group-hover:bg-[#29C354] group-hover:text-white transition-colors">
-                      <LuShoppingBag size={24} />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-[#1A1A1A]">Modo Locatário</h3>
-                      <p className="text-xs text-gray-500 mt-0.5">Gerenciar meus aluguéis</p>
-                    </div>
-                  </button>
+                  {(objetivoUsuario === 'ambos' || objetivoUsuario === 'locatario') && (
+                    <button
+                      onClick={() => navigate('/painellocatario')}
+                      className="w-full flex items-center p-4 rounded-2xl border-2 border-transparent hover:border-[#29C354] bg-gray-50 hover:bg-[#29C354]/5 transition-all text-left group cursor-pointer"
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-blue-100 text-[#0068F3] flex items-center justify-center shrink-0 mr-4 group-hover:bg-[#29C354] group-hover:text-white transition-colors">
+                        <LuShoppingBag size={24} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-[#1A1A1A]">Modo Locatário</h3>
+                        <p className="text-xs text-gray-500 mt-0.5">Gerenciar meus aluguéis</p>
+                      </div>
+                    </button>
+                  )}
 
-                  <button
-                    onClick={() => navigate('/painelLocador')}
-                    className="w-full flex items-center p-4 rounded-2xl border-2 border-transparent hover:border-[#29C354] bg-gray-50 hover:bg-[#29C354]/5 transition-all text-left group cursor-pointer"
-                  >
-                    <div className="w-12 h-12 rounded-xl bg-orange-100 text-orange-500 flex items-center justify-center shrink-0 mr-4 group-hover:bg-[#29C354] group-hover:text-white transition-colors">
-                      <LuPackage size={24} />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-[#1A1A1A]">Modo Locador</h3>
-                      <p className="text-xs text-gray-500 mt-0.5">Meus anúncios e ganhos</p>
-                    </div>
-                  </button>
+                  {(objetivoUsuario === 'ambos' || objetivoUsuario === 'locador') && (
+                    <button
+                      onClick={() => navigate('/painelLocador')}
+                      className="w-full flex items-center p-4 rounded-2xl border-2 border-transparent hover:border-[#29C354] bg-gray-50 hover:bg-[#29C354]/5 transition-all text-left group cursor-pointer"
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-orange-100 text-orange-500 flex items-center justify-center shrink-0 mr-4 group-hover:bg-[#29C354] group-hover:text-white transition-colors">
+                        <LuPackage size={24} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-[#1A1A1A]">Modo Locador</h3>
+                        <p className="text-xs text-gray-500 mt-0.5">Meus anúncios e ganhos</p>
+                      </div>
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -294,13 +307,23 @@ export default function MeuPerfil() {
             <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
               <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">Informações da Conta</h2>
               <ul className="space-y-4">
-                {ehPerfilProprio && usuario.telefone && (
+                {/* Exibe o telefone (apenas se for o próprio perfil e o telefone estiver preenchido) */}
+                {temTelefone && (
                   <li className="flex items-center gap-3 text-sm text-[#1A1A1A] font-medium">
                     <LuPhone className="text-[#29C354]" size={18} /> {usuario.telefone}
                   </li>
                 )}
+                
+                {/* Exibe o status de verificação (visível para o dono da conta E visitantes, garantindo confiança!) */}
+                {temVerificacao && (
+                  <li className="flex items-center gap-3 text-sm text-[#1A1A1A] font-medium">
+                    <LuShieldCheck className="text-[#29C354]" size={18} /> Documentação verificada
+                  </li>
+                )}
               </ul>
-              <div className={`flex items-center gap-2 text-sm text-gray-500 font-medium ${ehPerfilProprio && usuario.telefone ? 'mt-8 pt-6 border-t border-gray-100' : ''}`}>
+
+              {/* Data de registro no site, com a linha no topo só se existir o telefone ou a verificação */}
+              <div className={`flex items-center gap-2 text-sm text-gray-500 font-medium ${mostrarLinhaDivisoria ? 'mt-8 pt-6 border-t border-gray-100' : ''}`}>
                 <LuCalendarDays size={18} /> Membro desde {formatarMembroDesde(usuario.createdAt)}
               </div>
             </div>

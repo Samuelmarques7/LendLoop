@@ -719,6 +719,18 @@ function ModalDetalhesAluguel({ aluguel, onClose, onSolicitarDevolucao, usuarioL
             <span className="text-gray-500">Devolução prevista</span>
             <span className="font-semibold text-[#1A1A1A]">{new Date(aluguel.dataFim).toLocaleDateString('pt-BR')}</span>
           </div>
+          {aluguel.horarioRetirada && (
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-500">Horário de retirada</span>
+              <span className="font-semibold text-[#1A1A1A]">{aluguel.horarioRetirada}</span>
+            </div>
+          )}
+          {aluguel.horarioDevolucao && (
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-500">Horário de devolução</span>
+              <span className="font-semibold text-[#1A1A1A]">{aluguel.horarioDevolucao}</span>
+            </div>
+          )}
           <div className="flex justify-between items-center text-sm">
             <span className="text-gray-500">Valor total</span>
             <span className="font-semibold text-[#1A1A1A] tabular-nums">R$ {aluguel.precoTotal}</span>

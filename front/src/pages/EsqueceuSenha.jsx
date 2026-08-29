@@ -1,15 +1,31 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiRequest } from '../services/api';
+import { emailEhValido } from '../utils/validarEmail';
 
 export default function EsqueceuSenha() {
   const [email, setEmail] = useState('');
   const [mensagem, setMensagem] = useState(null);
+  const [erroEmail, setErroEmail] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const handleBlurEmail = () => {
+    if (email && !emailEhValido(email)) {
+      setErroEmail('Digite um e-mail válido, ex: joao@email.com');
+    } else {
+      setErroEmail('');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMensagem(null);
+
+    if (!emailEhValido(email)) {
+      setErroEmail('Digite um e-mail válido, ex: joao@email.com');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -48,11 +64,13 @@ export default function EsqueceuSenha() {
             <input 
               type="email" 
               value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
+              onChange={(e) => { setEmail(e.target.value); if (erroEmail) setErroEmail(''); }} 
+              onBlur={handleBlurEmail}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0297AA] outline-none text-[#1A1A1A]" 
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none text-[#1A1A1A] ${erroEmail ? 'border-red-400 focus:ring-red-200' : 'border-gray-300 focus:ring-[#0297AA]'}`} 
               placeholder="joao@email.com"
             />
+            {erroEmail && <p className="text-xs text-red-500 mt-1">{erroEmail}</p>}
           </div>
 
           <button 

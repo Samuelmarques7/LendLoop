@@ -6,6 +6,9 @@ import {
   LuUserCog,
   LuShieldAlert,
   LuIdCard,
+  LuCircleCheck,
+  LuTimer,
+  LuCircleX
 } from 'react-icons/lu';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
@@ -23,6 +26,8 @@ export default function Configuracoes() {
 
   const [usuarioLogado, setUsuarioLogado] = useState(null);
   const [objetivoAtual, setObjetivoAtual] = useState('ambos');
+  const [statusVerificacao, setStatusVerificacao] = useState('nao_enviado'); 
+  const [motivoRejeicao, setMotivoRejeicao] = useState(''); // Guarda o motivo que o admin escreveu
   const [salvandoObjetivo, setSalvandoObjetivo] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
   const [erro, setErro] = useState('');
@@ -44,7 +49,47 @@ export default function Configuracoes() {
 
     setUsuarioLogado(dados);
     setObjetivoAtual(dados.objetivo || 'ambos');
+    
+    // Carrega o status salvo na memória primeiro para não a tela não piscar
+    setStatusVerificacao(dados.verificacao?.status || 'nao_enviado');
+    setMotivoRejeicao(dados.verificacao?.motivoRejeicao || '');
+
+    // Busca silenciosa no servidor para garantir que estamos mostrando o status real (caso o admin tenha aprovado/rejeitado)
+    async function sincronizarKYC() {
+      try {
+        const verificacaoAtualizada = await apiRequest(`/api/usuarios/${dados.id}/verificacao`);
+        
+        setStatusVerificacao(verificacaoAtualizada.status || 'nao_enviado');
+        setMotivoRejeicao(verificacaoAtualizada.motivoRejeicao || '');
+
+        // Atualiza a memória do navegador para o resto do site saber da novidade
+        const dadosAtualizados = { ...dados, verificacao: verificacaoAtualizada };
+        setUsuarioLogado(dadosAtualizados);
+        localStorage.setItem('dadosUsuario', JSON.stringify(dadosAtualizados));
+      } catch (e) {
+        console.error("Erro ao sincronizar status de verificação:", e);
+      }
+    }
+
+    sincronizarKYC();
   }, []);
+
+  function handleVerificacaoEnviada(novoStatus) {
+    setStatusVerificacao(novoStatus); 
+    
+    if (usuarioLogado) {
+      const atualizado = {
+        ...usuarioLogado,
+        verificacao: {
+          ...usuarioLogado.verificacao,
+          status: novoStatus,
+          motivoRejeicao: '' // Limpa o erro se ele enviou de novo
+        }
+      };
+      setUsuarioLogado(atualizado);
+      localStorage.setItem('dadosUsuario', JSON.stringify(atualizado));
+    }
+  }
 
   async function handleAlterarObjetivo(valor) {
     if (!usuarioLogado || valor === objetivoAtual) return;
@@ -119,7 +164,7 @@ export default function Configuracoes() {
 
             {usuarioLogado ? (
               <>
-                {/* Verificação de identidade (Movido para o topo) */}
+                {/* === SESSÃO DE VERIFICAÇÃO DE IDENTIDADE (KYC) === */}
                 <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
                   <div className="p-6 border-b border-gray-100 flex items-center gap-3">
                     <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#0F6E56]/10 text-[#0F6E56]">
@@ -132,12 +177,60 @@ export default function Configuracoes() {
                       </p>
                     </div>
                   </div>
+                  
                   <div className="p-6 bg-gray-50/50">
-                    <VerificacaoIdentidade usuarioId={usuarioLogado.id} />
+                    {/* ESTADO 1: APROVADO */}
+                    {statusVerificacao === 'aprovado' && (
+                      <div className="bg-[#29C354]/10 border border-[#29C354]/30 rounded-2xl p-6 flex items-center gap-4 animate-fade-in">
+                        <LuCircleCheck size={36} className="text-[#29C354] flex-shrink-0" />
+                        <div>
+                          <h3 className="text-[#0F6E56] font-bold text-lg">Identidade Verificada!</h3>
+                          <p className="text-[#0F6E56]/80 text-sm mt-1">
+                            Sua documentação foi aprovada com sucesso. Você já possui acesso total e seguro à plataforma.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ESTADO 2: PENDENTE */}
+                    {statusVerificacao === 'pendente' && (
+                      <div className="bg-[#0068F3]/10 border border-[#0068F3]/30 rounded-2xl p-6 flex items-center gap-4 animate-fade-in">
+                        <LuTimer size={36} className="text-[#0068F3] flex-shrink-0" />
+                        <div>
+                          <h3 className="text-[#0068F3] font-bold text-lg">Documentação em Análise</h3>
+                          <p className="text-[#0068F3]/80 text-sm mt-1">
+                            Recebemos seus documentos! Nossa equipe fará a validação em breve. Fique de olho nas notificações.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ESTADO 3: NÃO ENVIADO OU REJEITADO */}
+                    {(statusVerificacao === 'nao_enviado' || statusVerificacao === 'rejeitado') && (
+                      <div className="animate-fade-in">
+                        {statusVerificacao === 'rejeitado' && (
+                          <div className="bg-red-50 border border-red-100 rounded-2xl p-5 mb-6 flex items-center gap-4">
+                            <LuCircleX size={28} className="text-red-500 flex-shrink-0" />
+                            <div>
+                              <h3 className="text-red-600 font-bold text-base">Verificação Recusada</h3>
+                              <p className="text-red-500/80 text-sm mt-0.5">
+                                {motivoRejeicao || 'Houve um problema com as fotos enviadas. Por favor, envie novamente com imagens nítidas.'}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Formulário de Envio (Só aparece se não estiver pendente ou aprovado) */}
+                        <VerificacaoIdentidade 
+                          usuarioId={usuarioLogado.id} 
+                          onVerificacaoEnviada={handleVerificacaoEnviada} 
+                        />
+                      </div>
+                    )}
                   </div>
                 </section>
 
-                {/* Tipo de conta (Movido para baixo) */}
+                {/* === TIPO DE CONTA === */}
                 <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
                   <div className="p-6 border-b border-gray-100 flex items-center gap-3">
                     <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#0068F3]/10 text-[#0068F3]">
@@ -172,7 +265,7 @@ export default function Configuracoes() {
                   </div>
                 </section>
 
-                {/* Zona de perigo */}
+                {/* === ZONA DE PERIGO === */}
                 <section className="bg-white rounded-3xl border border-red-100 shadow-sm overflow-hidden">
                   <div className="p-6 border-b border-red-100 flex items-center gap-3">
                     <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-red-50 text-red-500">

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LuEye, LuEyeOff } from 'react-icons/lu';
 import {apiRequest } from '../services/api';
+import { emailEhValido } from '../utils/validarEmail';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -11,16 +12,32 @@ export default function Login() {
   });
   
   const [mensagem, setMensagem] = useState(null);
+  const [erroEmail, setErroEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [mostrarSenha, setMostrarSenha] = useState(false);
 
   const handleChange = (e) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
+    if (e.target.name === 'email' && erroEmail) setErroEmail('');
+  };
+
+  const handleBlurEmail = () => {
+    if (credentials.email && !emailEhValido(credentials.email)) {
+      setErroEmail('Digite um e-mail válido, ex: joao@email.com');
+    } else {
+      setErroEmail('');
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMensagem(null);
+
+    if (!emailEhValido(credentials.email)) {
+      setErroEmail('Digite um e-mail válido, ex: joao@email.com');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -68,10 +85,12 @@ export default function Login() {
               name="email" 
               value={credentials.email} 
               onChange={handleChange} 
+              onBlur={handleBlurEmail}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0297AA] outline-none text-[#1A1A1A]" 
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none text-[#1A1A1A] ${erroEmail ? 'border-red-400 focus:ring-red-200' : 'border-gray-300 focus:ring-[#0297AA]'}`} 
               placeholder="joao@email.com"
             />
+            {erroEmail && <p className="text-xs text-red-500 mt-1">{erroEmail}</p>}
           </div>
 
           <div>

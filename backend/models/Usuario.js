@@ -15,6 +15,7 @@ const usuarioSchema = new mongoose.Schema({
   verificacao: {
     status: { type: String, enum: ['nao_enviado', 'pendente', 'aprovado', 'rejeitado'], default: 'nao_enviado' },
     documentoFrente: { type: String, default: '' },
+    documentoVerso: { type: String, default: '' },
     selfie: { type: String, default: '' },
     enviadoEm: { type: Date, default: null },
     motivoRejeicao: { type: String, default: '' },

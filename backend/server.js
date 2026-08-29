@@ -19,11 +19,12 @@ const Avaliacao = require('./models/Avaliacao');
 const Conversa = require('./models/Conversa');
 const Mensagem = require('./models/Mensagem');
 const Notificacao = require('./models/Notificacao');
-
 const app = express();
+const path = require('path');
 
 app.use(cors());
 app.use(express.json());
+app.use('/uploads/documentos', express.static(path.join(__dirname, 'uploads/documentos')));
 
 // Cria uma notificação para um usuário. Nunca lança erro: uma falha aqui
 // não pode derrubar a rota principal que a chamou (envio de mensagem, etc).
@@ -430,7 +431,7 @@ app.post('/api/alugueis', autenticacao, async (req, res) => {
       });
     }
 
-    const { anuncio, dataInicio, dataFim, horarioRetirada, precoTotal, taxaServico, caucao } = req.body;
+    const { anuncio, dataInicio, dataFim, horarioRetirada, horarioDevolucao, precoTotal, taxaServico, caucao } = req.body;
 
     const anuncioEncontrado = await Anuncio.findById(anuncio);
 
@@ -446,7 +447,9 @@ app.post('/api/alugueis', autenticacao, async (req, res) => {
       anuncio,
       locatario: req.usuarioId,
       locador: anuncioEncontrado.locador,
-      dataInicio, dataFim, horarioRetirada,
+      dataInicio, dataFim,
+      horarioRetirada: horarioRetirada || anuncioEncontrado.precos?.horarioRetirada,
+      horarioDevolucao: horarioDevolucao || anuncioEncontrado.precos?.horarioDevolucao,
       precoTotal, taxaServico, caucao
     });
 
@@ -1083,27 +1086,22 @@ app.get('/api/admin/verificacoes', autenticacao, autenticacaoAdmin, async (req, 
   }
 });
 
-// Gera uma URL assinada e temporária para o admin ver o documento/selfie
 app.get('/api/admin/verificacoes/:usuarioId/documento/:campo', autenticacao, autenticacaoAdmin, async (req, res) => {
   try {
     const { usuarioId, campo } = req.params;
 
-    if (!['documentoFrente', 'selfie'].includes(campo)) {
+    if (!['documentoFrente', 'documentoVerso', 'selfie'].includes(campo)) {
       return res.status(400).json({ erro: 'Campo inválido.' });
     }
 
     const usuario = await Usuario.findById(usuarioId).select('verificacao');
-    const publicId = usuario?.verificacao?.[campo];
+    const filename = usuario?.verificacao?.[campo];
 
-    if (!publicId) {
+    if (!filename) {
       return res.status(404).json({ erro: 'Arquivo não encontrado.' });
     }
 
-    const url = cloudinary.url(publicId, {
-      type: 'authenticated',
-      sign_url: true,
-      secure: true
-    });
+    const url = `${req.protocol}://${req.get('host')}/uploads/documentos/${filename}`;
 
     res.status(200).json({ url });
   } catch (erro) {
