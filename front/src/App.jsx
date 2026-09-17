@@ -14,34 +14,38 @@ import Configuracoes from './pages/Configuracoes';
 import RotaPrivada from './components/RotaPrivada';
 import { RotaAdmin } from './components/RotaAdmin';
 import PainelAdmin from './pages/PainelAdmin';
+import { NotificacaoProvider } from './context/NotificacaoContext';
+import { Toast } from './components/Toast';
 
 import './index.css';
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<PaginaInicial />} />
-        <Route path="/busca" element={<ResultadosBusca />} />
-        <Route path="/criar-anuncio" element={<RotaPrivada><CriarAnuncio /></RotaPrivada>} />
-        <Route path="/produto/:id" element={<DetalhesProduto />} />
-        <Route path="/painellocatario" element={<RotaPrivada><PainelLocatario /></RotaPrivada>} />
-        <Route path="/painelLocador" element={<RotaPrivada><PainelLocador /></RotaPrivada>} />
-        <Route path="/cadastro" element={<Cadastro />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/esqueceu-senha" element={<EsqueceuSenha />} />
-        <Route path="/redefinir-senha" element={<RedefinirSenha />} />
-        <Route path="/meu-perfil" element={<RotaPrivada><MeuPerfil /></RotaPrivada>} />
-        <Route path="/configuracoes" element={<RotaPrivada><Configuracoes /></RotaPrivada>} />
-        <Route path="/usuario/:id" element={<MeuPerfil />} />
+    <NotificacaoProvider>
+      <Toast />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<PaginaInicial />} />
+          <Route path="/busca" element={<ResultadosBusca />} />
+          <Route path="/criar-anuncio" element={<RotaPrivada><CriarAnuncio /></RotaPrivada>} />
+          <Route path="/produto/:id" element={<DetalhesProduto />} />
+          <Route path="/painellocatario" element={<RotaPrivada><PainelLocatario /></RotaPrivada>} />
+          <Route path="/painelLocador" element={<RotaPrivada><PainelLocador /></RotaPrivada>} />
+          <Route path="/cadastro" element={<Cadastro />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/esqueceu-senha" element={<EsqueceuSenha />} />
+          <Route path="/redefinir-senha" element={<RedefinirSenha />} />
+          <Route path="/meu-perfil" element={<RotaPrivada><MeuPerfil /></RotaPrivada>} />
+          <Route path="/configuracoes" element={<RotaPrivada><Configuracoes /></RotaPrivada>} />
+          <Route path="/usuario/:id" element={<MeuPerfil />} />
 
-        {/* Rotas Protegidas do Administrador (Padrão Outlet) */}
-        <Route element={<RotaAdmin />}>
-          <Route path="/paineladmin" element={<PainelAdmin />} />
-        </Route>
-        
-      </Routes>
-    </BrowserRouter>
+          {/* Rotas Protegidas do Administrador (Padrão Outlet) */}
+          <Route element={<RotaAdmin />}>
+            <Route path="/paineladmin" element={<PainelAdmin />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </NotificacaoProvider>
   );
 }
 

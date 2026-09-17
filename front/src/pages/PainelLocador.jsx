@@ -5,6 +5,7 @@ import logo from '../assets/logo.png';
 import { BotaoAvaliar } from '../components/BotaoAvaliar';
 import { PainelMensagens } from '../components/PainelMensagens';
 import { NotificacaoSino } from '../components/NotificacaoSino';
+import {useNotificacao} from '../context/NotificacaoContext';
 
 import {
   LuLayoutDashboard,
@@ -57,6 +58,7 @@ export default function PainelLocador() {
   const [conversaParaAbrir, setConversaParaAbrir] = useState(location.state?.abrirConversa || null);
 
   const usuarioLogado = JSON.parse(localStorage.getItem('dadosUsuario'));
+  const { notificar } = useNotificacao();
 
   useEffect(() => {
     document.title = 'Painel Locador';
@@ -202,8 +204,9 @@ export default function PainelLocador() {
         body: { status: 'aceito' }
       });
       setAlugueis(prev => prev.map(a => a._id === id ? { ...a, status: 'aceito' } : a));
+      notificar('Solicitação aceita com sucesso!', 'sucesso');
     } catch (e) {
-      alert(e.message);
+      notificar(e.message, 'erro');
     }
   }
 
@@ -214,8 +217,9 @@ export default function PainelLocador() {
         body: { status: 'recusado' }
       });
       setAlugueis(prev => prev.map(a => a._id === id ? { ...a, status: 'recusado' } : a));
+      notificar('Solicitação recusada!', 'sucesso');
     } catch (e) {
-      alert(e.message);
+      notificar(e.message, 'erro');
     }
   }
 
@@ -226,8 +230,9 @@ export default function PainelLocador() {
         body: { status: 'concluido' }
       });
       setAlugueis(prev => prev.map(a => a._id === id ? { ...a, status: 'concluido' } : a));
+      notificar('Aluguel marcado como concluído!', 'sucesso');
     } catch (e) {
-      alert(e.message);
+      notificar(e.message, 'erro');
     }
   }
 
@@ -240,8 +245,9 @@ export default function PainelLocador() {
       });
       setMeusAnuncios(prev => prev.filter(a => a._id !== anuncioParaExcluir._id));
       setAnuncioParaExcluir(null);
+      notificar('Anúncio excluído com sucesso!', 'sucesso');
     } catch (e) {
-      alert(e.message);
+      notificar(e.message, 'erro');
     }
   }
 
@@ -254,8 +260,9 @@ export default function PainelLocador() {
       const anuncioSalvo = res?.anuncio || anuncioEditado;
       setMeusAnuncios(prev => prev.map(a => a._id === anuncioSalvo._id ? { ...a, ...anuncioSalvo } : a));
       setAnuncioParaEditar(null);
+      notificar('Anúncio atualizado com sucesso!', 'sucesso');
     } catch (e) {
-      alert(e.message);
+      notificar(e.message, 'erro');
     }
   }
 
@@ -278,10 +285,12 @@ export default function PainelLocador() {
       await apiRequest(`/api/usuarios/${usuarioLogado.id}`, {
         method: 'DELETE'
       });
+      localStorage.removeItem('usuarioLogado');
       localStorage.removeItem('dadosUsuario');
+      localStorage.removeItem('token');
       navigate('/login');
     } catch (e) {
-      alert(e.message);
+      notificar(e.message, 'erro');
     }
   }
 
@@ -299,7 +308,7 @@ export default function PainelLocador() {
         navigate('/painellocatario', { replace: true });
       }
     } catch (e) {
-      alert(e.message);
+      notificar(e.message, 'erro');
     }
   }
 

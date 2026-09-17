@@ -5,6 +5,7 @@ import logo from '../assets/logo.png';
 import { BotaoAvaliar } from '../components/BotaoAvaliar';
 import { PainelMensagens } from '../components/PainelMensagens';
 import { NotificacaoSino } from '../components/NotificacaoSino';
+import { useNotificacao } from '../context/NotificacaoContext';
 
 import {
   LuLayoutDashboard,
@@ -29,6 +30,7 @@ export default function PainelLocatario() {
   const location = useLocation();
 
   const usuarioLogado = JSON.parse(localStorage.getItem('dadosUsuario'));
+  const { notificar } = useNotificacao();
 
   const [dadosLocatario, setDadosLocatario] = useState(null);
 
@@ -192,8 +194,9 @@ const toneClasses = {
         body: { status: 'cancelado' }
       })
       setTodosAlugueis(prev => prev.filter(s => s._id !== id));
+      notificar('Solicitação cancelada!', 'sucesso');
     } catch (e) {
-      alert(e.message);
+      notificar(e.message, 'erro');
     }
   }
 
@@ -204,8 +207,9 @@ const toneClasses = {
         body: { status: 'confirmado' }
       })
       setPagamentos(prev => prev.map(p => p._id === id ? { ...p, status: 'confirmado' } : p));
+      notificar('Pagamento confirmardo com sucesso!', 'sucesso');
     } catch (e) {
-      alert(e.message);
+      notificar(e.message, 'erro');
     }
   }
 
@@ -217,9 +221,10 @@ const toneClasses = {
       });
       setTodosAlugueis(prev => prev.map(a => a._id === id ? { ...a, status: 'aguardando_confirmacao' } : a));
       setAluguelSelecionado(prev => prev && prev._id === id ? { ...prev, status: 'aguardando_confirmacao' } : prev);
-    } catch (e) {
-      alert(e.message);
-    }
+      notificar('Devolução solicitada! Aguarde a confirmação do locador.', 'sucesso');
+  } catch (e) {
+    notificar(e.message, 'erro');
+  }
   }
 
   function abrirDetalhesAluguel(aluguel) {
@@ -251,7 +256,7 @@ const toneClasses = {
         navigate('/painelLocador', { replace: true });
       }
     } catch (e) {
-      alert(e.message);
+      notificar(e.message, 'erro')
     }
   }
 
@@ -264,9 +269,11 @@ const toneClasses = {
         method: 'DELETE'
       });
       localStorage.removeItem('dadosUsuario');
+      localStorage.removeItem('usuarioLogado');
+      localStorage.removeItem('token');
       navigate('/login');
     } catch (e) {
-      alert(e.message);
+      notificar(e.message, 'erro');
     }
   }
 

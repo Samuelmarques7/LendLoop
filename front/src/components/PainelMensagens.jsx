@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LuSend, LuMessageSquare, LuSearch, LuArrowLeft } from 'react-icons/lu';
 import { apiRequest } from '../services/api';
+import { useNotificacao } from '../context/NotificacaoContext';
 
 function formatarHora(data) {
   return new Date(data).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -30,7 +31,10 @@ function formatarDataConversa(data) {
 }
 
 export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#0068F3', conversaParaAbrir, onConversasAtualizadas }) {
+
   const navigate = useNavigate();
+  const { notificar } = useNotificacao();
+
   const [conversas, setConversas] = useState([]);
   const [carregandoConversas, setCarregandoConversas] = useState(true);
   const [conversaAtivaId, setConversaAtivaId] = useState(null);
@@ -83,7 +87,7 @@ export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#0068F3', conv
           }
         } catch (erro) {
           console.error("Erro ao iniciar a conversa:", erro);
-          alert("Não foi possível carregar o chat. Tente novamente.");
+          notificar('Não foi possível carregar o chat. Tente novamente mais tarde.', 'erro');
         }
       }
     }
@@ -145,7 +149,7 @@ export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#0068F3', conv
       setMensagens(prev => [...prev, novaMensagem]);
       buscarConversas();
     } catch (e) {
-      alert(e.message);
+      notificar(e.message, 'erro');
       setTextoNovaMensagem(texto);
     } finally {
       setEnviando(false);
