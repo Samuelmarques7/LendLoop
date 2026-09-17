@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { LuShieldCheck, LuCheck, LuX, LuLoaderCircle, LuUser, LuMaximize2, LuCircleX } from 'react-icons/lu';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
-import { apiRequest, apiURL } from '../services/api';
+import { apiRequest, API_URL } from '../services/api';
 
 const ABAS = [
   { valor: 'pendente', titulo: 'Pendentes' },
