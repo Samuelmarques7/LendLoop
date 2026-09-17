@@ -16,6 +16,8 @@ import { RotaAdmin } from './components/RotaAdmin';
 import PainelAdmin from './pages/PainelAdmin';
 import { NotificacaoProvider } from './context/NotificacaoContext';
 import { Toast } from './components/Toast';
+import { ConfirmacaoProvider} from './context/ConfirmacaoContext';
+import { ModalConfirmacao} from './components/ModalConfirmacao';
 
 import './index.css';
 
@@ -23,7 +25,9 @@ function App() {
   return (
     <NotificacaoProvider>
       <Toast />
-      <BrowserRouter>
+      <ConfirmacaoProvider>
+        <ModalConfirmacao />
+        <BrowserRouter>
         <Routes>
           <Route path="/" element={<PaginaInicial />} />
           <Route path="/busca" element={<ResultadosBusca />} />
@@ -45,6 +49,7 @@ function App() {
           </Route>
         </Routes>
       </BrowserRouter>
+      </ConfirmacaoProvider>
     </NotificacaoProvider>
   );
 }

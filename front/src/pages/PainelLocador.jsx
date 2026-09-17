@@ -6,6 +6,7 @@ import { BotaoAvaliar } from '../components/BotaoAvaliar';
 import { PainelMensagens } from '../components/PainelMensagens';
 import { NotificacaoSino } from '../components/NotificacaoSino';
 import {useNotificacao} from '../context/NotificacaoContext';
+import { useConfirmacao } from '../context/ConfirmacaoContext';
 
 import {
   LuLayoutDashboard,
@@ -59,6 +60,7 @@ export default function PainelLocador() {
 
   const usuarioLogado = JSON.parse(localStorage.getItem('dadosUsuario'));
   const { notificar } = useNotificacao();
+  const confirmar = useConfirmacao();
 
   useEffect(() => {
     document.title = 'Painel Locador';
@@ -278,9 +280,14 @@ export default function PainelLocador() {
   }
 
   async function excluirConta() {
-    const confirmar = window.confirm('Tem certeza que deseja excluir sua conta? Essa ação não pode ser desfeita.');
-    if (!confirmar) return;
-
+    const confirmado = await confirmar({
+      titulo: 'Excluir conta',
+      mensagem: 'Tem certeza que deeja excluir sua conta? Essa ação não pode ser desfeita.',
+      textoConfirmar: 'Excluir conta',
+      variante: 'perigo',
+    });
+    if(!confirmado) return;
+    
     try {
       await apiRequest(`/api/usuarios/${usuarioLogado.id}`, {
         method: 'DELETE'

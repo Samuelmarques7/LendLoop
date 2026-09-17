@@ -14,6 +14,7 @@ import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { VerificacaoIdentidade } from '../components/VerificacaoIdentidade';
 import { apiRequest } from '../services/api';
+import { useConfirmacao } from '../context/ConfirmacaoContext';
 
 const OPCOES_OBJETIVO = [
   { valor: 'ambos', titulo: 'Ambos', descricao: 'Quero alugar e também disponibilizar meus itens' },
@@ -116,8 +117,13 @@ export default function Configuracoes() {
   async function handleExcluirConta() {
     if (!usuarioLogado) return;
 
-    const confirmar = window.confirm('Tem certeza que deseja excluir sua conta? Essa ação não pode ser desfeita.');
-    if (!confirmar) return;
+    const confirmado = await confirmar({
+      titulo: 'Excluir conta',
+      mensagem: 'Tem certeza que deseja excluir sua conta? Essa ação não pode ser desfeita.',
+      textoConfirmar: 'Excluir conta',
+      variante: 'perigo',
+    });
+    if (!confirmado) return;
 
     setErro('');
     setExcluindo(true);
