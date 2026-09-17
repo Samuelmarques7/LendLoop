@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { LuShieldCheck, LuCheck, LuX, LuLoaderCircle, LuUser, LuMaximize2, LuCircleX } from 'react-icons/lu';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
-import { apiRequest } from '../services/api';
+import { apiRequest, apiURL } from '../services/api';
 
 const ABAS = [
   { valor: 'pendente', titulo: 'Pendentes' },
@@ -48,13 +48,20 @@ export default function PainelAdmin() {
 
   // Função isolada para buscar cada imagem sem quebrar a tela se der erro
   async function buscarImagem(usuarioId, campo) {
-    try {
-      const res = await apiRequest(`/api/admin/verificacoes/${usuarioId}/documento/${campo}`);
-      return res.url;
-    } catch (error) {
-      return ''; // Retorna vazio silenciosamente se o servidor recusar ou não achar a foto
-    }
+  try {
+    const token = localStorage.getItem('token');
+    const resposta = await fetch(`${API_URL}/api/admin/verificacoes/${usuarioId}/documento/${campo}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (!resposta.ok) return '';
+
+    const blob = await resposta.blob();
+    return URL.createObjectURL(blob);
+  } catch (error) {
+    return '';
   }
+}
 
   async function abrirVerificacao(usuario) {
     setSelecionado(usuario);

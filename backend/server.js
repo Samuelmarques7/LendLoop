@@ -24,7 +24,7 @@ const path = require('path');
 
 app.use(cors());
 app.use(express.json());
-app.use('/uploads/documentos', express.static(path.join(__dirname, 'uploads/documentos')));
+
 
 // Cria uma notificação para um usuário. Nunca lança erro: uma falha aqui
 // não pode derrubar a rota principal que a chamou (envio de mensagem, etc).
@@ -1101,11 +1101,15 @@ app.get('/api/admin/verificacoes/:usuarioId/documento/:campo', autenticacao, aut
       return res.status(404).json({ erro: 'Arquivo não encontrado.' });
     }
 
-    const url = `${req.protocol}://${req.get('host')}/uploads/documentos/${filename}`;
+    const caminhoArquivo = path.join(__dirname, 'uploads/documentos', filename);
 
-    res.status(200).json({ url });
+    res.sendFile(caminhoArquivo, (erro) => {
+      if (erro && !res.headersSent) {
+        res.status(404).json({ erro: 'Arquivo não encontrado no servidor.' });
+      }
+    });
   } catch (erro) {
-    res.status(500).json({ erro: 'Erro ao gerar link do documento', detalhes: erro.message });
+    res.status(500).json({ erro: 'Erro ao buscar documento', detalhes: erro.message });
   }
 });
 
