@@ -82,13 +82,14 @@ export default function Cadastro() {
             });
 
       localStorage.setItem('usuarioLogado', 'true');
+      localStorage.setItem('token', data.token);
       localStorage.setItem('dadosUsuario', JSON.stringify(data.usuario));
 
       setMensagem({ tipo: 'sucesso', texto: 'Conta criada com sucesso! Redirecionando...' });
       setFormData({ nome: '', email: '', senha: '', telefone: '',cep: '', localizacao: '', objetivo: 'ambos' });
         
       setTimeout(() => {
-        navigate(-1);
+        navigate('/');
       }, 1000);
     } catch (error) {
       setMensagem({ tipo: 'erro', texto: error.message });

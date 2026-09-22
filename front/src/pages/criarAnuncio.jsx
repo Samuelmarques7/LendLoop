@@ -131,7 +131,7 @@ function CriarAnuncio ()
         horarioDevolucao: '17:00'
     })
 
-    const [mensagem, setMensagem] = useState(null)
+    const [, setMensagem] = useState(null)
 
     function adicionarSubcategoria()
     {
@@ -246,7 +246,7 @@ function CriarAnuncio ()
         try {
             const urlsFotos = await handleUploadFotos()
 
-            const data = await apiRequest('/api/anuncios', {
+            await apiRequest('/api/anuncios', {
                 method: 'POST',
                 body: {
                     titulo,
@@ -278,7 +278,7 @@ function CriarAnuncio ()
         try {
             const urlsFotos = await handleUploadFotos()
 
-            const data = await apiRequest('/api/anuncios', {
+            await apiRequest('/api/anuncios', {
                 method: 'POST',
                 body: {
                     titulo,

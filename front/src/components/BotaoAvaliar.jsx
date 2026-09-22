@@ -17,7 +17,7 @@ export function BotaoAvaliar({ aluguelId, autorId, nomeAvaliado, onStatusChange 
         const data = await apiRequest(`/api/avaliacoes/aluguel/${aluguelId}/autor/${autorId}`);
         setJaAvaliado(data.avaliado);
         onStatusChange?.(aluguelId, data.avaliado);
-      } catch (e) {
+      } catch {
         setJaAvaliado(false);
         onStatusChange?.(aluguelId, false);
       }

@@ -1222,13 +1222,13 @@ function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, 
 }
 
 function ModalEditarAnuncio({ anuncio, onClose, onSalvar }) {
-  if (!anuncio) return null;
+  const [titulo, setTitulo] = useState(anuncio?.titulo || '');
+  const [descricao, setDescricao] = useState(anuncio?.descricao || '');
+  const [precoPorDia, setPrecoPorDia] = useState(anuncio?.precos?.precoPorDia || 0);
+  const [caucao, setCaucao] = useState(anuncio?.precos?.caucao || 0);
+  const [status, setStatus] = useState(anuncio?.status || 'publicado');
 
-  const [titulo, setTitulo] = useState(anuncio.titulo || '');
-  const [descricao, setDescricao] = useState(anuncio.descricao || '');
-  const [precoPorDia, setPrecoPorDia] = useState(anuncio.precos?.precoPorDia || 0);
-  const [caucao, setCaucao] = useState(anuncio.precos?.caucao || 0);
-  const [status, setStatus] = useState(anuncio.status || 'publicado');
+  if (!anuncio) return null;
 
   function handleSubmit(e) {
     e.preventDefault();

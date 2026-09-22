@@ -24,6 +24,7 @@ const OPCOES_OBJETIVO = [
 
 export default function Configuracoes() {
   const navigate = useNavigate();
+  const confirmar = useConfirmacao();
 
   const [usuarioLogado, setUsuarioLogado] = useState(null);
   const [objetivoAtual, setObjetivoAtual] = useState('ambos');

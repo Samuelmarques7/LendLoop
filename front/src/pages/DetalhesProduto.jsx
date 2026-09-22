@@ -62,7 +62,7 @@ export function DetalhesProduto() {
         try {
           const dadosAvaliacoes = await apiRequest(`/api/avaliacoes/anuncio/${id}`);
           setAvaliacoesLocador(dadosAvaliacoes);
-        } catch (e) {
+        } catch {
           setAvaliacoesLocador(null);
         }
       } catch (e) {

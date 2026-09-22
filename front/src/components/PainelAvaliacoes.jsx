@@ -69,7 +69,7 @@ export function PainelAvaliacoes({ usuarioId, dadosExternos, titulo = 'Avalia√ß√
       try {
         const resposta = await apiRequest(`/api/avaliacoes/usuario/${usuarioId}`);
         setDados(resposta);
-      } catch (e) {
+      } catch {
         setDados(null);
       } finally {
         setCarregando(false);
