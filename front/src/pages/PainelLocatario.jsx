@@ -7,6 +7,7 @@ import { PainelMensagens } from '../components/PainelMensagens';
 import { NotificacaoSino } from '../components/NotificacaoSino';
 import { useNotificacao } from '../context/NotificacaoContext';
 import { useConfirmacao } from '../context/ConfirmacaoContext';
+import { VistoriaFotos } from '../components/VistoriaFotos';
 
 import {
   LuLayoutDashboard,
@@ -46,6 +47,7 @@ export default function PainelLocatario() {
   const [aluguelSelecionado, setAluguelSelecionado] = useState(null);
   const [avaliacoesFeitas, setAvaliacoesFeitas] = useState({});
   const [conversaParaAbrir, setConversaParaAbrir] = useState(location.state?.abrirConversa || null);
+  const [enviandoVistoria, setEnviandoVistoria] = useState(false);
 
   useEffect(() => {
     document.title = 'Painel Locatário';
@@ -215,17 +217,36 @@ const toneClasses = {
     }
   }
 
-  async function solicitarDevolucao(id) {
+  async function solicitarDevolucao(id, arquivos) {
+    setEnviandoVistoria(true);
     try {
+      const formulario = new FormData();
+      arquivos.forEach((arquivo) => formulario.append('fotos', arquivo));
+      const vistoria = await apiRequest(`/api/alugueis/${id}/vistoria/devolucao`, {
+        method: 'POST', body: formulario
+      });
       await apiRequest(`/api/alugueis/${id}/status`, {
         method: 'PATCH',
         body: { status: 'aguardando_confirmacao' }
       });
-      setTodosAlugueis(prev => prev.map(a => a._id === id ? { ...a, status: 'aguardando_confirmacao' } : a));
-      setAluguelSelecionado(prev => prev && prev._id === id ? { ...prev, status: 'aguardando_confirmacao' } : prev);
+      // A resposta de upload traz apenas os IDs de anúncio e locador. Mantém os
+      // objetos populados já carregados para o modal não perder nome e avatar.
+      const atualizarAluguel = (anterior) => ({
+        ...anterior,
+        ...vistoria.aluguel,
+        anuncio: anterior.anuncio,
+        locador: anterior.locador,
+        status: 'aguardando_confirmacao'
+      });
+      setTodosAlugueis(prev => prev.map(a => a._id === id ? atualizarAluguel(a) : a));
+      setAluguelSelecionado(prev => prev && prev._id === id ? atualizarAluguel(prev) : prev);
       notificar('Devolução solicitada! Aguarde a confirmação do locador.', 'sucesso');
+      return true;
   } catch (e) {
     notificar(e.message, 'erro');
+    return false;
+  } finally {
+    setEnviandoVistoria(false);
   }
   }
 
@@ -407,6 +428,7 @@ const toneClasses = {
         aluguel={aluguelSelecionado}
         onClose={fecharDetalhesAluguel}
         onSolicitarDevolucao={solicitarDevolucao}
+        enviandoVistoria={enviandoVistoria}
         usuarioLogadoId={usuarioLogado?.id}
         onStatusAvaliacao={handleStatusAvaliacao}
         onAbrirChat={abrirChatComLocador}
@@ -668,8 +690,9 @@ function SecaoPainel({ stats, toneClasses, alugueis, pagamentos, solicitacoesEnv
   );
 }
 
-function ModalDetalhesAluguel({ aluguel, onClose, onSolicitarDevolucao, usuarioLogadoId, onStatusAvaliacao, onAbrirChat }) {
+function ModalDetalhesAluguel({ aluguel, onClose, onSolicitarDevolucao, enviandoVistoria, usuarioLogadoId, onStatusAvaliacao, onAbrirChat }) {
   const navigate = useNavigate();
+  const [mostrarVistoria, setMostrarVistoria] = useState(false);
   if (!aluguel) return null;
 
   const locador = aluguel.locador;
@@ -767,11 +790,28 @@ function ModalDetalhesAluguel({ aluguel, onClose, onSolicitarDevolucao, usuarioL
 
         {podeSolicitarDevolucao && (
           <button
-            onClick={() => onSolicitarDevolucao(aluguel._id)}
+            onClick={() => setMostrarVistoria(true)}
             className="w-full bg-[#1A1A1A] text-white text-sm font-semibold py-3 rounded-lg hover:bg-[#0068F3] transition-colors cursor-pointer"
           >
-            Marcar como devolvido
+            Registrar devolução com fotos
           </button>
+        )}
+
+        {mostrarVistoria && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" onClick={() => !enviandoVistoria && setMostrarVistoria(false)}>
+            <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+              <div className="mb-5 flex items-start justify-between gap-3">
+                <div><h3 className="text-lg font-bold text-[#1A1A1A]">Vistoria de devolução</h3><p className="mt-1 text-sm text-gray-500">{aluguel.anuncio?.titulo}</p></div>
+                <button onClick={() => setMostrarVistoria(false)} className="text-gray-400 hover:text-gray-800" aria-label="Fechar"><LuX size={20} /></button>
+              </div>
+              <VistoriaFotos
+                titulo="Mostre como o item está sendo devolvido"
+                descricao="Fotografe os mesmos detalhes da retirada, incluindo acessórios. O locador poderá comparar os registros antes de confirmar o recebimento."
+                onEnviar={async (arquivos) => { if (await onSolicitarDevolucao(aluguel._id, arquivos)) setMostrarVistoria(false); }}
+                enviando={enviandoVistoria}
+              />
+            </div>
+          </div>
         )}
 
         {aguardandoConfirmacao && (

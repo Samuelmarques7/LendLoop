@@ -7,6 +7,7 @@ import { PainelMensagens } from '../components/PainelMensagens';
 import { NotificacaoSino } from '../components/NotificacaoSino';
 import {useNotificacao} from '../context/NotificacaoContext';
 import { useConfirmacao } from '../context/ConfirmacaoContext';
+import { VistoriaFotos } from '../components/VistoriaFotos';
 
 import {
   LuLayoutDashboard,
@@ -31,7 +32,8 @@ import {
   LuChevronRight,
   LuUser,
   LuHistory,
-  LuStar
+  LuStar,
+  LuCamera
 } from "react-icons/lu";
 
 const PAINEIS_DISPONIVEIS = [
@@ -56,6 +58,8 @@ export default function PainelLocador() {
   const [anuncioParaEditar, setAnuncioParaEditar] = useState(null);
   const [anuncioParaExcluir, setAnuncioParaExcluir] = useState(null);
   const [reservaSelecionada, setReservaSelecionada] = useState(null);
+  const [aluguelParaVistoria, setAluguelParaVistoria] = useState(null);
+  const [enviandoVistoria, setEnviandoVistoria] = useState(false);
   const [conversaParaAbrir, setConversaParaAbrir] = useState(location.state?.abrirConversa || null);
 
   const usuarioLogado = JSON.parse(localStorage.getItem('dadosUsuario'));
@@ -212,6 +216,26 @@ export default function PainelLocador() {
     }
   }
 
+  async function registrarVistoriaRetirada(arquivos) {
+    if (!aluguelParaVistoria) return;
+    setEnviandoVistoria(true);
+    try {
+      const formulario = new FormData();
+      arquivos.forEach((arquivo) => formulario.append('fotos', arquivo));
+      const resposta = await apiRequest(`/api/alugueis/${aluguelParaVistoria._id}/vistoria/retirada`, {
+        method: 'POST', body: formulario
+      });
+      const aluguelAtualizado = resposta.aluguel;
+      setAlugueis((prev) => prev.map((a) => a._id === aluguelAtualizado._id ? aluguelAtualizado : a));
+      setAluguelParaVistoria(null);
+      await aceitarSolicitacao(aluguelAtualizado._id);
+    } catch (e) {
+      notificar(e.message, 'erro');
+    } finally {
+      setEnviandoVistoria(false);
+    }
+  }
+
   async function recusarSolicitacao(id) {
     try {
       await apiRequest(`/api/alugueis/${id}/status`, {
@@ -329,6 +353,7 @@ export default function PainelLocador() {
           solicitacoes={solicitacoesPendentes}
           devolucoes={devolucoesPendentes}
           onAceitar={aceitarSolicitacao}
+          onAbrirVistoria={(aluguel) => setAluguelParaVistoria(aluguel)}
           onRecusar={recusarSolicitacao}
           onConfirmarDevolucao={marcarComoDevolvido}
           onNovoAnuncio={() => navigate('/criar-anuncio')}
@@ -351,6 +376,7 @@ export default function PainelLocador() {
               solicitacoes={solicitacoesPendentes}
               devolucoes={devolucoesPendentes}
               onAceitar={aceitarSolicitacao}
+              onAbrirVistoria={(aluguel) => setAluguelParaVistoria(aluguel)}
               onRecusar={recusarSolicitacao}
               onConfirmarDevolucao={marcarComoDevolvido}
             />
@@ -482,11 +508,41 @@ export default function PainelLocador() {
         onClose={() => setReservaSelecionada(null)}
         onAbrirChat={abrirChatComLocatario}
       />
+
+      <ModalVistoriaRetirada
+        aluguel={aluguelParaVistoria}
+        onClose={() => !enviandoVistoria && setAluguelParaVistoria(null)}
+        onEnviar={registrarVistoriaRetirada}
+        enviando={enviandoVistoria}
+      />
     </div>
   );
 }
 
 // ---------------- COMPONENTES DAS SEÇÕES ----------------
+
+function ModalVistoriaRetirada({ aluguel, onClose, onEnviar, enviando }) {
+  if (!aluguel) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-bold text-[#1A1A1A]">Vistoria antes da retirada</h2>
+            <p className="mt-1 text-sm text-gray-500">{aluguel.anuncio?.titulo || 'Item do aluguel'}</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-800" aria-label="Fechar"><LuX size={20} /></button>
+        </div>
+        <VistoriaFotos
+          titulo="Registre o estado atual do item"
+          descricao="Fotografe todos os ângulos, acessórios e eventuais marcas. Este registro será compartilhado com o locatário e protege ambas as partes."
+          onEnviar={onEnviar}
+          enviando={enviando}
+        />
+      </div>
+    </div>
+  );
+}
 
 function CardAnuncio({ anuncio, onAbrirAnuncio, onEditarAnuncio, onPedirExcluirAnuncio }) {
   return (
@@ -539,7 +595,7 @@ function CardAnuncio({ anuncio, onAbrirAnuncio, onEditarAnuncio, onPedirExcluirA
   );
 }
 
-function SecaoPainel({ stats, toneClasses, meusAnuncios, solicitacoes, devolucoes, onAceitar, onRecusar, onConfirmarDevolucao, onNovoAnuncio, onAbrirAnuncio, onEditarAnuncio, onPedirExcluirAnuncio }) {
+function SecaoPainel({ stats, toneClasses, meusAnuncios, solicitacoes, devolucoes, onAceitar, onAbrirVistoria, onRecusar, onConfirmarDevolucao, onNovoAnuncio, onAbrirAnuncio, onEditarAnuncio, onPedirExcluirAnuncio }) {
   return (
     <div className="space-y-6">
       <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -596,6 +652,7 @@ function SecaoPainel({ stats, toneClasses, meusAnuncios, solicitacoes, devolucoe
           solicitacoes={solicitacoes} 
           devolucoes={devolucoes} 
           onAceitar={onAceitar} 
+          onAbrirVistoria={onAbrirVistoria}
           onRecusar={onRecusar} 
           onConfirmarDevolucao={onConfirmarDevolucao} 
         />
@@ -639,7 +696,7 @@ function SecaoAnuncios({ meusAnuncios, onNovoAnuncio, onAbrirAnuncio, onEditarAn
   );
 }
 
-function SecaoSolicitacoes({ solicitacoes, devolucoes, onAceitar, onRecusar, onConfirmarDevolucao }) {
+function SecaoSolicitacoes({ solicitacoes, devolucoes, onAbrirVistoria, onRecusar, onConfirmarDevolucao }) {
   const total = solicitacoes.length + (devolucoes?.length || 0);
 
   return (
@@ -676,6 +733,15 @@ function SecaoSolicitacoes({ solicitacoes, devolucoes, onAceitar, onRecusar, onC
                     Aguardando confirmação
                   </span>
                 </div>
+                {req.vistoriaDevolucao?.fotos?.length > 0 && (
+                  <div className="mb-3 grid grid-cols-4 gap-2">
+                    {req.vistoriaDevolucao.fotos.slice(0, 4).map((foto, indice) => (
+                      <a key={foto} href={foto} target="_blank" rel="noreferrer" className="aspect-square overflow-hidden rounded-lg border border-[#0068F3]/20">
+                        <img src={foto} alt={`Foto da devolução ${indice + 1}`} className="h-full w-full object-cover transition hover:scale-105" />
+                      </a>
+                    ))}
+                  </div>
+                )}
                 <div className="mt-3">
                   <button
                     onClick={() => onConfirmarDevolucao(req._id)}
@@ -707,10 +773,10 @@ function SecaoSolicitacoes({ solicitacoes, devolucoes, onAceitar, onRecusar, onC
                 </div>
                 <div className="flex gap-2 mt-3">
                   <button
-                    onClick={() => onAceitar(req._id)}
+                    onClick={() => onAbrirVistoria(req)}
                     className="flex-1 flex items-center justify-center gap-2 bg-[#1A1A1A] text-white text-xs font-semibold py-2.5 rounded-lg hover:bg-[#0F6E56] transition-colors cursor-pointer"
                   >
-                    <LuCheck size={14} /> Aceitar
+                    <LuCamera size={14} /> Fotografar e aceitar
                   </button>
                   <button
                     onClick={() => onRecusar(req._id)}
