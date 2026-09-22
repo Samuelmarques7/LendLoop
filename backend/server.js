@@ -22,8 +22,17 @@ const Notificacao = require('./models/Notificacao');
 const app = express();
 const path = require('path');
 
-app.use(cors());
+const origensPermitidas = (process.env.FRONTEND_URL || 'http://localhost:5173')
+  .split(',')
+  .map((origem) => origem.trim())
+  .filter(Boolean);
+
+app.use(cors({ origin: origensPermitidas }));
 app.use(express.json());
+
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', servico: 'lendloop-api' });
+});
 
 
 // Cria uma notificação para um usuário. Nunca lança erro: uma falha aqui
@@ -65,19 +74,26 @@ app.put('/api/anuncios/:id', autenticacao, async (req, res) => {
 app.post('/api/usuarios', async (req, res) => {
   try {
     const { nome, email, senha, telefone, localizacao, objetivo } = req.body;
+    if (!nome?.trim() || !email?.trim() || !senha || senha.length < 8) {
+      return res.status(400).json({ erro: 'Nome, e-mail e senha com pelo menos 8 caracteres são obrigatórios.' });
+    }
     const senhaCriptografada = await bcrypt.hash(senha, 10);
     const novoUsuario = new Usuario({ nome, email, senha: senhaCriptografada, telefone, localizacao, objetivo });
 
     await novoUsuario.save();
+    const token = jwt.sign({ id: novoUsuario._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
     res.status(201).json({
       mensagem: 'Usuário criado com sucesso no LendLoop!',
+      token,
       usuario: {
         id: novoUsuario._id,
         nome: novoUsuario.nome,
         email: novoUsuario.email,
         localizacao: novoUsuario.localizacao,
         objetivo: novoUsuario.objetivo,
+        papel: novoUsuario.papel,
+        verificacao: novoUsuario.verificacao,
         createdAt: novoUsuario.createdAt
       }
     });
@@ -286,7 +302,7 @@ app.post('/api/redefinir-senha', async (req, res) => {
 });
 
 // --- Upload de Fotos ---
-app.post('/api/upload', upload.array('fotos', 6), async (req, res) => {
+app.post('/api/upload', autenticacao, upload.array('fotos', 6), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ erro: 'Nenhuma foto enviada.' });
@@ -339,7 +355,8 @@ app.get('/api/anuncios', async (req, res) => {
     const filtro = { status: 'publicado' };
 
     if (busca) {
-      const regex = new RegExp(busca, 'i'); // 'i' para case-insensitive
+      const termoSeguro = String(busca).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(termoSeguro, 'i');
       filtro.$or = [
         { titulo: regex },
         { descricao: regex },
@@ -431,7 +448,7 @@ app.post('/api/alugueis', autenticacao, async (req, res) => {
       });
     }
 
-    const { anuncio, dataInicio, dataFim, horarioRetirada, horarioDevolucao, precoTotal, taxaServico, caucao } = req.body;
+    const { anuncio, dataInicio, dataFim, horarioRetirada, horarioDevolucao } = req.body;
 
     const anuncioEncontrado = await Anuncio.findById(anuncio);
 
@@ -443,14 +460,55 @@ app.post('/api/alugueis', autenticacao, async (req, res) => {
       return res.status(400).json({ erro: 'Você não pode alugar seu próprio anúncio.' });
     }
 
+    const inicio = new Date(dataInicio);
+    const fim = new Date(dataFim);
+    if (Number.isNaN(inicio.getTime()) || Number.isNaN(fim.getTime()) || fim <= inicio) {
+      return res.status(400).json({ erro: 'Informe um período de aluguel válido.' });
+    }
+
+    const inicioDia = new Date(inicio);
+    inicioDia.setHours(0, 0, 0, 0);
+    const fimDia = new Date(fim);
+    fimDia.setHours(0, 0, 0, 0);
+    const dias = Math.ceil((fimDia - inicioDia) / (1000 * 60 * 60 * 24));
+    const datasDisponiveis = new Set((anuncioEncontrado.disponivel || []).map((data) => {
+      const dia = new Date(data);
+      dia.setHours(0, 0, 0, 0);
+      return dia.getTime();
+    }));
+    for (let indice = 0; indice < dias; indice += 1) {
+      const dia = new Date(inicioDia);
+      dia.setDate(dia.getDate() + indice);
+      if (datasDisponiveis.size && !datasDisponiveis.has(dia.getTime())) {
+        return res.status(409).json({ erro: 'O anúncio não está disponível durante todo o período escolhido.' });
+      }
+    }
+
+    const conflito = await Aluguel.exists({
+      anuncio: anuncioEncontrado._id,
+      status: { $in: ['pendente', 'aceito', 'andamento', 'aguardando_confirmacao'] },
+      dataInicio: { $lt: fim },
+      dataFim: { $gt: inicio }
+    });
+    if (conflito) {
+      return res.status(409).json({ erro: 'Já existe uma solicitação para parte desse período.' });
+    }
+
+    const precoPorDia = Number(anuncioEncontrado.precos?.precoPorDia || 0);
+    const subtotal = dias * precoPorDia;
+    const taxaCalculada = subtotal * 0.03;
+    const caucaoCalculada = anuncioEncontrado.precos?.exigirCaucao ? Number(anuncioEncontrado.precos.caucao || 0) : 0;
+
     const novoAluguel = new Aluguel({
       anuncio,
       locatario: req.usuarioId,
       locador: anuncioEncontrado.locador,
-      dataInicio, dataFim,
+      dataInicio: inicio, dataFim: fim,
       horarioRetirada: horarioRetirada || anuncioEncontrado.precos?.horarioRetirada,
       horarioDevolucao: horarioDevolucao || anuncioEncontrado.precos?.horarioDevolucao,
-      precoTotal, taxaServico, caucao
+      precoTotal: subtotal + taxaCalculada + caucaoCalculada,
+      taxaServico: taxaCalculada,
+      caucao: caucaoCalculada
     });
 
     await novoAluguel.save();
@@ -934,6 +992,11 @@ app.post('/api/mensagens', autenticacao, async (req, res) => {
       return res.status(403).json({ erro: 'Você não faz parte desta conversa.' });
     }
 
+    const ehDestinatario = conversaExistente.participantes.some(p => p.toString() === destinatario);
+    if (!ehDestinatario || destinatario === remetente) {
+      return res.status(400).json({ erro: 'O destinatário precisa ser o outro participante da conversa.' });
+    }
+
     const novaMensagem = new Mensagem({ conversa, remetente, destinatario, texto: texto.trim() });
     await novaMensagem.save();
 
@@ -1083,14 +1146,16 @@ app.post(
       const frente = req.files?.frente?.[0];
       const verso = req.files?.verso?.[0]; // <-- Capturando o verso
       const selfie = req.files?.selfie?.[0];
+      const cpf = String(req.body.cpf || '').replace(/\D/g, '');
 
-      if (!frente || !verso || !selfie) {
-        return res.status(400).json({ erro: 'Envie a frente, o verso e a selfie.' });
+      if (!frente || !verso || !selfie || cpf.length !== 11) {
+        return res.status(400).json({ erro: 'Envie a frente, o verso, a selfie e um CPF válido.' });
       }
 
       const usuario = await Usuario.findByIdAndUpdate(
         req.params.id,
         {
+          cpf,
           verificacao: {
             status: 'pendente',
             documentoFrente: frente.filename,
@@ -1221,6 +1286,10 @@ app.patch('/api/admin/verificacoes/:usuarioId', autenticacao, autenticacaoAdmin,
 // ==========================================
 
 const PORT = process.env.PORT || 3000;
+
+if (!process.env.MONGO_URI || !process.env.JWT_SECRET) {
+  throw new Error('MONGO_URI e JWT_SECRET precisam estar configurados no ambiente.');
+}
 
 connectDB().then(() => {
   app.listen(PORT, () => {

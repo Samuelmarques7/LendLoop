@@ -22,7 +22,7 @@ export function MediaAvaliacao({ usuarioId, dadosExternos, tamanho = 'md', class
       try {
         const resposta = await apiRequest(`/api/avaliacoes/usuario/${usuarioId}`);
         setDados(resposta);
-      } catch (e) {
+      } catch {
         setDados(null);
       }
     }

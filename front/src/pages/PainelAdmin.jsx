@@ -39,7 +39,7 @@ export default function PainelAdmin() {
     try {
       const dados = await apiRequest(`/api/admin/verificacoes?status=${status}`);
       setUsuarios(dados);
-    } catch (e) {
+    } catch {
       setErro('Não foi possível carregar a lista de usuários.');
     } finally {
       setCarregando(false);
@@ -58,7 +58,7 @@ export default function PainelAdmin() {
 
     const blob = await resposta.blob();
     return URL.createObjectURL(blob);
-  } catch (error) {
+  } catch {
     return '';
   }
 }
@@ -83,7 +83,7 @@ export default function PainelAdmin() {
         documentoVerso: verso, 
         selfie: selfie 
       });
-    } catch (e) {
+    } catch {
       setErro('Ocorreu um erro ao carregar os documentos.');
     } finally {
       setCarregandoDocumentos(false);

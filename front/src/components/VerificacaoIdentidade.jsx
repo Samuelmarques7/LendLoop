@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { LuCloudUpload, LuShieldCheck, LuTriangleAlert, LuCircleCheck } from "react-icons/lu";
+import { API_URL } from '../services/api';
 
 export function VerificacaoIdentidade({ usuarioId, statusAtual, onVerificacaoEnviada }) {
   const [cpf, setCpf] = useState('');
@@ -51,8 +52,7 @@ export function VerificacaoIdentidade({ usuarioId, statusAtual, onVerificacaoEnv
 
       const token = localStorage.getItem('token');
 
-      // ATENÇÃO: Se o seu backend rodar em outra porta (ex: 5000), mude o "3000" aqui abaixo!
-      const res = await fetch(`http://localhost:3000/api/usuarios/${usuarioId}/verificacao`, {
+      const res = await fetch(`${API_URL}/api/usuarios/${usuarioId}/verificacao`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -67,7 +67,7 @@ export function VerificacaoIdentidade({ usuarioId, statusAtual, onVerificacaoEnv
       let data;
       try {
         data = JSON.parse(textoResposta);
-      } catch (err) {
+      } catch {
         // Se cair aqui, o servidor devolveu HTML em vez de JSON
         console.error("Resposta HTML recebida:", textoResposta);
         throw new Error("Erro 404: Rota de upload não encontrada no servidor. Verifique o server.js!");
@@ -97,7 +97,7 @@ export function VerificacaoIdentidade({ usuarioId, statusAtual, onVerificacaoEnv
         <p className="text-sm text-gray-500 mt-1">Para garantir a segurança do LendLoop, precisamos verificar sua identidade.</p>
       </div>
 
-      {statusAtual === 'recusado' && (
+      {statusAtual === 'rejeitado' && (
         <div className="bg-red-50 text-[#A32D2D] p-4 rounded-xl border border-red-200 flex items-start gap-3">
           <LuTriangleAlert size={20} className="flex-shrink-0 mt-0.5" />
           <div className="text-sm">
