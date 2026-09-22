@@ -12,6 +12,17 @@
 body {
   font-family: var(--font-outfit);
 }
+
+/* Mantém somente o botão de visibilidade criado pela aplicação. */
+input[type='password']::-ms-reveal,
+input[type='password']::-ms-clear {
+  display: none;
+}
+
+button:not(:disabled),
+[role='button']:not([aria-disabled='true']) {
+  cursor: pointer;
+}
 @layer components {
   .btn-next {
     @apply bg-verde-agua text-white px-6 py-2.5 rounded-xl font-bold shadow-sm hover:bg-verde-escuro transition-all cursor-pointer uppercase tracking-widest text-xs active:scale-95;
