@@ -4,10 +4,17 @@ const usuarioSchema = new mongoose.Schema({
   nome: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   senha: { type: String, required: true },
-  cep: { type: String }, // Campo de CEP adicionado
+  cep: { type: String },
+  localizacao: { type: String, default: '' },
   telefone: { type: String }, // Removida a obrigatoriedade (required: true)
+  bio: { type: String, default: '', maxlength: 1000 },
   avatar: { type: String, default: "" },
+  ativo: { type: Boolean, default: true },
   objetivo: { type: String, enum: ['ambos', 'locatario', 'locador'], default: 'ambos' },
+
+  // Mantidos fora das respostas usuais para não expor credenciais temporárias.
+  tokenRecuperacaoSenha: { type: String, default: null, select: false },
+  tokenRecuperacaoExpira: { type: Date, default: null, select: false },
   
   // Campos para Admin e KYC
   papel: { type: String, enum: ['usuario', 'admin'], default: 'usuario' },

@@ -17,7 +17,7 @@ export function BotaoAvaliar({ aluguelId, autorId, nomeAvaliado, onStatusChange 
         const data = await apiRequest(`/api/avaliacoes/aluguel/${aluguelId}/autor/${autorId}`);
         setJaAvaliado(data.avaliado);
         onStatusChange?.(aluguelId, data.avaliado);
-      } catch (e) {
+      } catch {
         setJaAvaliado(false);
         onStatusChange?.(aluguelId, false);
       }
@@ -67,7 +67,7 @@ export function BotaoAvaliar({ aluguelId, autorId, nomeAvaliado, onStatusChange 
     <>
       <button
         onClick={() => setModalAberto(true)}
-        className="flex items-center gap-1.5 bg-[#1A1A1A] text-white text-[11px] font-semibold px-3.5 py-2 rounded-lg hover:bg-[#0068F3] transition-colors cursor-pointer"
+        className="flex items-center gap-1.5 bg-grafite text-white text-[11px] font-semibold px-3.5 py-2 rounded-lg hover:bg-azul-oceano transition-colors cursor-pointer"
       >
         <LuStar size={12} /> Avaliar
       </button>
@@ -75,7 +75,7 @@ export function BotaoAvaliar({ aluguelId, autorId, nomeAvaliado, onStatusChange 
       {modalAberto && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full border border-gray-200">
-            <h3 className="text-base font-semibold text-[#1A1A1A] mb-1">Avaliar {nomeAvaliado}</h3>
+            <h3 className="text-base font-semibold text-grafite mb-1">Avaliar {nomeAvaliado}</h3>
             <p className="text-xs text-gray-500 mb-4">Como foi sua experiência?</p>
 
             <div className="flex gap-1 justify-center mb-4">
@@ -102,7 +102,7 @@ export function BotaoAvaliar({ aluguelId, autorId, nomeAvaliado, onStatusChange 
               onChange={(e) => setComentario(e.target.value)}
               placeholder="Deixe um comentário (opcional)"
               rows={3}
-              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#0068F3]/20 focus:border-[#0068F3] outline-none text-[#1A1A1A] text-sm mb-4 resize-none transition-colors"
+              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-azul-oceano/20 focus:border-azul-oceano outline-none text-grafite text-sm mb-4 resize-none transition-colors"
             />
 
             {erro && (
@@ -121,7 +121,7 @@ export function BotaoAvaliar({ aluguelId, autorId, nomeAvaliado, onStatusChange 
               <button
                 onClick={handleEnviar}
                 disabled={enviando}
-                className={`flex-1 text-white font-semibold py-2.5 rounded-lg transition-colors cursor-pointer text-sm ${enviando ? 'bg-gray-400' : 'bg-[#1A1A1A] hover:bg-[#0068F3]'}`}
+                className={`flex-1 text-white font-semibold py-2.5 rounded-lg transition-colors cursor-pointer text-sm ${enviando ? 'bg-gray-400' : 'bg-grafite hover:bg-azul-oceano'}`}
               >
                 {enviando ? 'Enviando...' : 'Enviar'}
               </button>

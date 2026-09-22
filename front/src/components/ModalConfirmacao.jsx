@@ -44,7 +44,7 @@ export function ModalConfirmacao() {
             </div>
           )}
           <div className="flex-1">
-            <h2 id="modal-confirmacao-titulo" className="text-lg font-semibold text-[#032D54]">
+            <h2 id="modal-confirmacao-titulo" className="text-lg font-semibold text-verde-escuro">
               {pedido.titulo}
             </h2>
             <p id="modal-confirmacao-mensagem" className="mt-1 text-sm text-gray-600">
@@ -66,7 +66,7 @@ export function ModalConfirmacao() {
             ref={botaoConfirmarRef}
             onClick={() => responder(true)}
             className={`rounded-lg px-4 py-2 text-sm font-medium text-white cursor-pointer ${
-              ehPerigo ? 'bg-red-500 hover:bg-red-600' : 'bg-[#032D54] hover:bg-[#032D54]/90'
+              ehPerigo ? 'bg-red-500 hover:bg-red-600' : 'bg-verde-escuro hover:bg-verde-escuro/90'
             }`}
           >
             {pedido.textoConfirmar}

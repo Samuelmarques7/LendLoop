@@ -20,7 +20,7 @@ export async function apiRequest(caminho, options = {}) {
     let response;
     try {
         response = await fetch(`${API_URL}${caminho}`, config);
-    } catch (erroDeRede){
+    } catch {
         throw new Error('Erro de conexão. O servidor está rodando?');
     }
 

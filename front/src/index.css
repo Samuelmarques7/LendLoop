@@ -2,9 +2,9 @@
 
 @theme {
   --color-verde-escuro: #032D54;
-  --color-verde-agua: #29C354;
-  --color-ciano: #0297AA;
-  --color-azul-oceano: #0068F3;
+  --color-verde-agua: #2EC34D;
+  --color-ciano: #009AAD;
+  --color-azul-oceano: #0073F3;
   --color-grafite: #1A1A1A;
   --font-outfit: 'Outfit', sans-serif;
 }
@@ -22,6 +22,11 @@ input[type='password']::-ms-clear {
 button:not(:disabled),
 [role='button']:not([aria-disabled='true']) {
   cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-azul-oceano);
+  outline-offset: 3px;
 }
 @layer components {
   .btn-next {

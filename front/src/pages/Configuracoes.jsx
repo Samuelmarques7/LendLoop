@@ -24,6 +24,7 @@ const OPCOES_OBJETIVO = [
 
 export default function Configuracoes() {
   const navigate = useNavigate();
+  const confirmar = useConfirmacao();
 
   const [usuarioLogado, setUsuarioLogado] = useState(null);
   const [objetivoAtual, setObjetivoAtual] = useState('ambos');
@@ -142,20 +143,20 @@ export default function Configuracoes() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] font-sans flex flex-col text-[#1A1A1A]">
+    <div className="min-h-screen bg-white font-sans flex flex-col text-grafite">
       <Header />
 
       <main className="flex-grow w-full pb-16">
         <div className="max-w-3xl mx-auto px-6 sm:px-8 pt-8">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-[#1A1A1A] transition-colors cursor-pointer"
+            className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-grafite transition-colors cursor-pointer"
           >
             <LuArrowLeft size={15} />
             Voltar
           </button>
 
-          <h1 className="text-2xl font-black text-[#1A1A1A] mt-4">Configurações</h1>
+          <h1 className="text-2xl font-black text-grafite mt-4">Configurações</h1>
           <p className="text-gray-500 text-sm mt-1">
             Gerencie sua conta e as preferências da plataforma.
           </p>
@@ -173,11 +174,11 @@ export default function Configuracoes() {
                 {/* === SESSÃO DE VERIFICAÇÃO DE IDENTIDADE (KYC) === */}
                 <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
                   <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-                    <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#0F6E56]/10 text-[#0F6E56]">
+                    <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-verde-escuro/10 text-verde-escuro">
                       <LuIdCard size={20} />
                     </span>
                     <div>
-                      <h2 className="text-lg font-bold text-[#1A1A1A]">Verificação de Identidade (KYC)</h2>
+                      <h2 className="text-lg font-bold text-grafite">Verificação de Identidade (KYC)</h2>
                       <p className="text-xs text-gray-400 mt-1">
                         Envie seus documentos oficiais para liberar todos os recursos da plataforma.
                       </p>
@@ -187,11 +188,11 @@ export default function Configuracoes() {
                   <div className="p-6 bg-gray-50/50">
                     {/* ESTADO 1: APROVADO */}
                     {statusVerificacao === 'aprovado' && (
-                      <div className="bg-[#29C354]/10 border border-[#29C354]/30 rounded-2xl p-6 flex items-center gap-4 animate-fade-in">
-                        <LuCircleCheck size={36} className="text-[#29C354] flex-shrink-0" />
+                      <div className="bg-verde-agua/10 border border-verde-agua/30 rounded-2xl p-6 flex items-center gap-4 animate-fade-in">
+                        <LuCircleCheck size={36} className="text-verde-agua flex-shrink-0" />
                         <div>
-                          <h3 className="text-[#0F6E56] font-bold text-lg">Identidade Verificada!</h3>
-                          <p className="text-[#0F6E56]/80 text-sm mt-1">
+                          <h3 className="text-verde-escuro font-bold text-lg">Identidade Verificada!</h3>
+                          <p className="text-verde-escuro/80 text-sm mt-1">
                             Sua documentação foi aprovada com sucesso. Você já possui acesso total e seguro à plataforma.
                           </p>
                         </div>
@@ -200,11 +201,11 @@ export default function Configuracoes() {
 
                     {/* ESTADO 2: PENDENTE */}
                     {statusVerificacao === 'pendente' && (
-                      <div className="bg-[#0068F3]/10 border border-[#0068F3]/30 rounded-2xl p-6 flex items-center gap-4 animate-fade-in">
-                        <LuTimer size={36} className="text-[#0068F3] flex-shrink-0" />
+                      <div className="bg-azul-oceano/10 border border-azul-oceano/30 rounded-2xl p-6 flex items-center gap-4 animate-fade-in">
+                        <LuTimer size={36} className="text-azul-oceano flex-shrink-0" />
                         <div>
-                          <h3 className="text-[#0068F3] font-bold text-lg">Documentação em Análise</h3>
-                          <p className="text-[#0068F3]/80 text-sm mt-1">
+                          <h3 className="text-azul-oceano font-bold text-lg">Documentação em Análise</h3>
+                          <p className="text-azul-oceano/80 text-sm mt-1">
                             Recebemos seus documentos! Nossa equipe fará a validação em breve. Fique de olho nas notificações.
                           </p>
                         </div>
@@ -239,11 +240,11 @@ export default function Configuracoes() {
                 {/* === TIPO DE CONTA === */}
                 <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
                   <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-                    <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#0068F3]/10 text-[#0068F3]">
+                    <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-azul-oceano/10 text-azul-oceano">
                       <LuUserCog size={20} />
                     </span>
                     <div>
-                      <h2 className="text-lg font-bold text-[#1A1A1A]">Tipo de Conta</h2>
+                      <h2 className="text-lg font-bold text-grafite">Tipo de Conta</h2>
                       <p className="text-xs text-gray-400 mt-1">
                         Mudou de ideia? Ajuste aqui o que você quer fazer no LendLoop.
                       </p>
@@ -256,12 +257,12 @@ export default function Configuracoes() {
                         onClick={() => handleAlterarObjetivo(op.valor)}
                         className={`p-4 border rounded-2xl cursor-pointer transition-all ${
                           objetivoAtual === op.valor
-                            ? 'border-[#29C354] bg-[#29C354]/10 ring-1 ring-[#29C354]'
-                            : 'border-gray-200 hover:border-[#29C354]/50'
+                            ? 'border-verde-agua bg-verde-agua/10 ring-1 ring-verde-agua'
+                            : 'border-gray-200 hover:border-verde-agua/50'
                         } ${salvandoObjetivo ? 'opacity-60 pointer-events-none' : ''}`}
                       >
                         <span className={`block text-sm font-bold ${
-                          objetivoAtual === op.valor ? 'text-[#032D54]' : 'text-[#1A1A1A]'
+                          objetivoAtual === op.valor ? 'text-verde-escuro' : 'text-grafite'
                         }`}>
                           {op.titulo}
                         </span>
@@ -281,7 +282,7 @@ export default function Configuracoes() {
                   </div>
                   <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                      <p className="text-sm font-bold text-[#1A1A1A]">Excluir minha conta</p>
+                      <p className="text-sm font-bold text-grafite">Excluir minha conta</p>
                       <p className="text-xs text-gray-400 mt-1">
                         Essa ação é permanente e remove seus dados e anúncios.
                       </p>
@@ -298,13 +299,13 @@ export default function Configuracoes() {
               </>
             ) : (
               <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 text-center">
-                <p className="text-sm font-bold text-[#1A1A1A]">Faça login para gerenciar sua conta</p>
+                <p className="text-sm font-bold text-grafite">Faça login para gerenciar sua conta</p>
                 <p className="text-xs text-gray-400 mt-1">
                   Entre na sua conta para alterar o tipo de conta ou excluí-la.
                 </p>
                 <button
                   onClick={() => navigate('/login')}
-                  className="mt-4 bg-[#29C354] text-white text-xs font-bold px-6 py-2.5 rounded-xl hover:bg-[#032D54] transition-colors cursor-pointer uppercase tracking-widest"
+                  className="mt-4 bg-verde-agua text-white text-xs font-bold px-6 py-2.5 rounded-xl hover:bg-verde-escuro transition-colors cursor-pointer uppercase tracking-widest"
                 >
                   Entrar
                 </button>

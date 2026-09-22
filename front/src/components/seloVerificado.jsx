@@ -8,7 +8,7 @@ export default function SeloVerificado({ tamanho = 'md' }) {
   return (
     <span
       title="Identidade verificada pela equipe do LendLoop"
-      className={`inline-flex items-center ${classes} bg-[#0068F3]/10 text-[#0068F3] font-bold rounded-full`}
+      className={`inline-flex items-center ${classes} bg-azul-oceano/10 text-azul-oceano font-bold rounded-full`}
     >
       <LuBadgeCheck size={tamanho === 'sm' ? 14 : 16} />
       Verificado

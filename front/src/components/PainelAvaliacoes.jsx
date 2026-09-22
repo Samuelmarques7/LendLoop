@@ -38,7 +38,7 @@ function CardAvaliacao({ avaliacao }) {
           className="w-10 h-10 rounded-full object-cover"
         />
         <div>
-          <p className="font-bold text-sm text-[#1A1A1A]">{avaliacao.autor?.nome || 'Usuário'}</p>
+          <p className="font-bold text-sm text-grafite">{avaliacao.autor?.nome || 'Usuário'}</p>
           <p className="text-xs text-gray-400">{formatarData(avaliacao.createdAt)}</p>
         </div>
       </div>
@@ -69,7 +69,7 @@ export function PainelAvaliacoes({ usuarioId, dadosExternos, titulo = 'Avaliaç�
       try {
         const resposta = await apiRequest(`/api/avaliacoes/usuario/${usuarioId}`);
         setDados(resposta);
-      } catch (e) {
+      } catch {
         setDados(null);
       } finally {
         setCarregando(false);
@@ -94,11 +94,11 @@ export function PainelAvaliacoes({ usuarioId, dadosExternos, titulo = 'Avaliaç�
   return (
     <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-[#1A1A1A]">{titulo}</h2>
+        <h2 className="text-xl font-bold text-grafite">{titulo}</h2>
         {total > 0 && (
           <div className="flex items-center gap-2">
             <Estrelas nota={Math.round(media)} tamanho={18} />
-            <span className="font-bold text-[#1A1A1A]">{media}</span>
+            <span className="font-bold text-grafite">{media}</span>
             <span className="text-sm text-gray-400">({total})</span>
           </div>
         )}
@@ -117,7 +117,7 @@ export function PainelAvaliacoes({ usuarioId, dadosExternos, titulo = 'Avaliaç�
           {total > QUANTIDADE_RECENTES && (
             <button
               onClick={() => setModalAberto(true)}
-              className="mt-6 text-sm font-bold text-[#0068F3] hover:text-[#032D54] transition-colors cursor-pointer"
+              className="mt-6 text-sm font-bold text-azul-oceano hover:text-verde-escuro transition-colors cursor-pointer"
             >
               Ver todas as {total} avaliações
             </button>
@@ -129,10 +129,10 @@ export function PainelAvaliacoes({ usuarioId, dadosExternos, titulo = 'Avaliaç�
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 max-w-lg w-full max-h-[80vh] flex flex-col shadow-xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-[#032D54]">Todas as avaliações</h3>
+              <h3 className="text-lg font-bold text-verde-escuro">Todas as avaliações</h3>
               <button
                 onClick={() => setModalAberto(false)}
-                className="text-gray-400 hover:text-[#1A1A1A] cursor-pointer"
+                className="text-gray-400 hover:text-grafite cursor-pointer"
               >
                 <LuX size={22} />
               </button>

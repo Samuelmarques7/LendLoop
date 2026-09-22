@@ -36,6 +36,47 @@ async function criarNotificacao({ usuario, tipo, titulo, texto, linkPainel = nul
   }
 }
 
+function criarTokenDeSessao(usuarioId) {
+  return jwt.sign({ id: usuarioId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+}
+
+function normalizarData(valor) {
+  const data = new Date(valor);
+  if (Number.isNaN(data.getTime())) return null;
+  return new Date(Date.UTC(data.getUTCFullYear(), data.getUTCMonth(), data.getUTCDate()));
+}
+
+function diasDoPeriodo(inicio, fim) {
+  const dias = [];
+  for (let dia = new Date(inicio); dia < fim; dia.setUTCDate(dia.getUTCDate() + 1)) {
+    dias.push(dia.toISOString().slice(0, 10));
+  }
+  return dias;
+}
+
+function usuarioPublico(usuario) {
+  return {
+    id: usuario._id,
+    nome: usuario.nome,
+    avatar: usuario.avatar,
+    bio: usuario.bio,
+    createdAt: usuario.createdAt,
+    verificacao: { status: usuario.verificacao?.status || 'nao_enviado' }
+  };
+}
+
+function autenticacaoOpcional(req, res, next) {
+  const [, token] = (req.headers.authorization || '').split(' ');
+  if (token) {
+    try {
+      req.usuarioId = jwt.verify(token, process.env.JWT_SECRET).id;
+    } catch (_) {
+      // Perfis públicos não exigem uma sessão válida.
+    }
+  }
+  next();
+}
+
 // --- Rotas LendLoop ---
 
 app.put('/api/anuncios/:id', autenticacao, async (req, res) => {
@@ -49,10 +90,28 @@ app.put('/api/anuncios/:id', autenticacao, async (req, res) => {
       return res.status(403).json({ erro: 'Você não tem permissão para editar este anúncio.' });
     }
 
+    const { titulo, descricao, status, precos } = req.body;
+    const camposAtualizados = {};
+    if (titulo !== undefined) camposAtualizados.titulo = titulo;
+    if (descricao !== undefined) camposAtualizados.descricao = descricao;
+    if (status !== undefined) camposAtualizados.status = status;
+    if (precos !== undefined) {
+      const precoPorDia = Number(precos.precoPorDia);
+      const caucao = Number(precos.caucao || 0);
+      if (!Number.isFinite(precoPorDia) || precoPorDia < 0 || !Number.isFinite(caucao) || caucao < 0) {
+        return res.status(400).json({ erro: 'Os preços do anúncio são inválidos.' });
+      }
+      camposAtualizados.precos = {
+        ...anuncioExistente.precos.toObject(),
+        precoPorDia,
+        caucao
+      };
+    }
+
     const anuncioAtualizado = await Anuncio.findByIdAndUpdate(
       req.params.id,
-      req.body,
-      { new: true }
+      camposAtualizados,
+      { new: true, runValidators: true }
     );
 
     res.status(200).json({ mensagem: 'Anúncio atualizado com sucesso!', anuncio: anuncioAtualizado });
@@ -64,20 +123,29 @@ app.put('/api/anuncios/:id', autenticacao, async (req, res) => {
 // Cadastro
 app.post('/api/usuarios', async (req, res) => {
   try {
-    const { nome, email, senha, telefone, localizacao, objetivo } = req.body;
+    const { nome, email, senha, telefone, cep, localizacao, objetivo } = req.body;
+    if (!nome?.trim() || !email?.trim() || !senha || senha.length < 8) {
+      return res.status(400).json({ erro: 'Nome, e-mail e uma senha de pelo menos 8 caracteres são obrigatórios.' });
+    }
     const senhaCriptografada = await bcrypt.hash(senha, 10);
-    const novoUsuario = new Usuario({ nome, email, senha: senhaCriptografada, telefone, localizacao, objetivo });
+    const novoUsuario = new Usuario({
+      nome: nome.trim(), email: email.trim().toLowerCase(), senha: senhaCriptografada,
+      telefone, cep, localizacao, objetivo
+    });
 
     await novoUsuario.save();
 
     res.status(201).json({
       mensagem: 'Usuário criado com sucesso no LendLoop!',
+      token: criarTokenDeSessao(novoUsuario._id),
       usuario: {
         id: novoUsuario._id,
         nome: novoUsuario.nome,
         email: novoUsuario.email,
         localizacao: novoUsuario.localizacao,
         objetivo: novoUsuario.objetivo,
+        papel: novoUsuario.papel,
+        verificacao: novoUsuario.verificacao,
         createdAt: novoUsuario.createdAt
       }
     });
@@ -92,7 +160,7 @@ app.post('/api/usuarios', async (req, res) => {
 // Listagem
 app.get('/api/usuarios', autenticacao, async (req, res) => {
   try {
-    const usuarios = await Usuario.find().select('-senha');
+    const usuarios = await Usuario.find({ ativo: true }).select('nome avatar bio createdAt verificacao.status');
     res.status(200).json(usuarios);
   } catch (erro) {
     res.status(500).json({ erro: 'Erro ao buscar usuários' });
@@ -100,13 +168,16 @@ app.get('/api/usuarios', autenticacao, async (req, res) => {
 });
 
 // Buscar um usuário específico (usado em MeuPerfil)
-app.get('/api/usuarios/:id', async (req, res) => {
+app.get('/api/usuarios/:id', autenticacaoOpcional, async (req, res) => {
   try {
     const usuario = await Usuario.findById(req.params.id).select('-senha');
     if (!usuario) {
       return res.status(404).json({ erro: 'Usuário não encontrado' });
     }
-    res.status(200).json(usuario);
+    if (req.usuarioId === req.params.id && usuario.ativo !== false) {
+      return res.status(200).json(usuario);
+    }
+    res.status(200).json(usuarioPublico(usuario));
   } catch (erro) {
     res.status(500).json({ erro: 'Erro ao buscar usuário' });
   }
@@ -195,11 +266,11 @@ app.post('/api/login', async (req, res) => {
       return res.status(401).json({ erro: 'Senha incorreta.' });
     }
 
-    const token = jwt.sign(
-      { id: usuario._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    if (usuario.ativo === false) {
+      return res.status(403).json({ erro: 'Esta conta está desativada.' });
+    }
+
+    const token = criarTokenDeSessao(usuario._id);
 
     res.status(200).json({
       mensagem: 'Login realizado com sucesso!',
@@ -228,7 +299,7 @@ app.post('/api/login', async (req, res) => {
 app.post('/api/esqueceu-senha', async (req, res) => {
   try {
     const { email } = req.body;
-    const usuario = await Usuario.findOne({ email });
+    const usuario = await Usuario.findOne({ email: email?.trim().toLowerCase() });
 
     // Não revela se o e-mail existe ou não, por segurança
     if (!usuario) {
@@ -240,7 +311,7 @@ app.post('/api/esqueceu-senha', async (req, res) => {
     const token = crypto.randomBytes(32).toString('hex');
     const expira = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
 
-    usuario.tokenRecuperacaoSenha = token;
+    usuario.tokenRecuperacaoSenha = crypto.createHash('sha256').update(token).digest('hex');
     usuario.tokenRecuperacaoExpira = expira;
     await usuario.save();
 
@@ -264,8 +335,9 @@ app.post('/api/redefinir-senha', async (req, res) => {
       return res.status(400).json({ erro: 'Token e nova senha são obrigatórios.' });
     }
 
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
     const usuario = await Usuario.findOne({
-      tokenRecuperacaoSenha: token,
+      tokenRecuperacaoSenha: tokenHash,
       tokenRecuperacaoExpira: { $gt: new Date() }
     });
 
@@ -286,7 +358,7 @@ app.post('/api/redefinir-senha', async (req, res) => {
 });
 
 // --- Upload de Fotos ---
-app.post('/api/upload', upload.array('fotos', 6), async (req, res) => {
+app.post('/api/upload', autenticacao, upload.array('fotos', 6), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ erro: 'Nenhuma foto enviada.' });
@@ -352,7 +424,9 @@ app.get('/api/anuncios', async (req, res) => {
 
       if (dataInicio) condicaoData.$gte = new Date(dataInicio);
       if (dataFim) condicaoData.$lte = new Date(dataFim);
-      filtro.disponivel = { $elemMatch: condicaoData };
+      if (!dataInicio || !dataFim) {
+        filtro.disponivel = { $elemMatch: condicaoData };
+      }
     }
 
     if (categoria) {
@@ -368,7 +442,21 @@ app.get('/api/anuncios', async (req, res) => {
       if (precoMax) filtro['precos.precoPorDia'].$lte = Number(precoMax);
     }
 
-    const anuncios = await Anuncio.find(filtro).populate('locador', 'nome email');
+    let anuncios = await Anuncio.find(filtro).populate('locador', 'nome avatar verificacao.status');
+
+    if (dataInicio && dataFim) {
+      const inicio = normalizarData(dataInicio);
+      const fim = normalizarData(dataFim);
+      if (!inicio || !fim || fim <= inicio) {
+        return res.status(400).json({ erro: 'Informe um período de busca válido.' });
+      }
+
+      const diasSolicitados = diasDoPeriodo(inicio, fim);
+      anuncios = anuncios.filter((anuncio) => {
+        const diasDisponiveis = new Set((anuncio.disponivel || []).map((dia) => normalizarData(dia)?.toISOString().slice(0, 10)));
+        return diasSolicitados.every((dia) => diasDisponiveis.has(dia));
+      });
+    }
     res.status(200).json(anuncios);
   } catch (erro) {
     res.status(500).json({ erro: 'Erro ao buscar anúncios' });
@@ -378,7 +466,7 @@ app.get('/api/anuncios', async (req, res) => {
 // Buscar um anúncio específico (usado em DetalhesProduto)
 app.get('/api/anuncios/:id', async (req, res) => {
   try {
-    const anuncio = await Anuncio.findById(req.params.id).populate('locador', 'nome email bio avatar createdAt verificacao.status');
+    const anuncio = await Anuncio.findById(req.params.id).populate('locador', 'nome bio avatar createdAt verificacao.status');
     if (!anuncio) {
       return res.status(404).json({ erro: 'Anúncio não encontrado' });
     }
@@ -431,7 +519,7 @@ app.post('/api/alugueis', autenticacao, async (req, res) => {
       });
     }
 
-    const { anuncio, dataInicio, dataFim, horarioRetirada, horarioDevolucao, precoTotal, taxaServico, caucao } = req.body;
+    const { anuncio, dataInicio, dataFim, horarioRetirada, horarioDevolucao } = req.body;
 
     const anuncioEncontrado = await Anuncio.findById(anuncio);
 
@@ -443,11 +531,46 @@ app.post('/api/alugueis', autenticacao, async (req, res) => {
       return res.status(400).json({ erro: 'Você não pode alugar seu próprio anúncio.' });
     }
 
+    if (anuncioEncontrado.status !== 'publicado') {
+      return res.status(400).json({ erro: 'Este anúncio não está disponível para aluguel.' });
+    }
+
+    const inicio = normalizarData(dataInicio);
+    const fim = normalizarData(dataFim);
+    if (!inicio || !fim || fim <= inicio) {
+      return res.status(400).json({ erro: 'Informe um período de aluguel válido.' });
+    }
+
+    const diasReservados = diasDoPeriodo(inicio, fim);
+    const diasDisponiveis = new Set((anuncioEncontrado.disponivel || []).map((dia) => normalizarData(dia)?.toISOString().slice(0, 10)));
+    if (!diasReservados.length || !diasReservados.every((dia) => diasDisponiveis.has(dia))) {
+      return res.status(400).json({ erro: 'O item não está disponível durante todo o período solicitado.' });
+    }
+
+    const conflito = await Aluguel.exists({
+      anuncio: anuncioEncontrado._id,
+      status: { $in: ['pendente', 'aceito', 'andamento', 'aguardando_confirmacao'] },
+      dataInicio: { $lt: fim },
+      dataFim: { $gt: inicio }
+    });
+    if (conflito) {
+      return res.status(409).json({ erro: 'Já existe uma solicitação ativa para esse período.' });
+    }
+
+    const precoPorDia = Number(anuncioEncontrado.precos?.precoPorDia);
+    if (!Number.isFinite(precoPorDia) || precoPorDia < 0) {
+      return res.status(400).json({ erro: 'O anúncio possui um preço inválido.' });
+    }
+    const subtotal = precoPorDia * diasReservados.length;
+    const taxaServico = Number((subtotal * 0.03).toFixed(2));
+    const caucao = Number(anuncioEncontrado.precos?.caucao || 0);
+    const precoTotal = Number((subtotal + taxaServico + caucao).toFixed(2));
+
     const novoAluguel = new Aluguel({
       anuncio,
       locatario: req.usuarioId,
       locador: anuncioEncontrado.locador,
-      dataInicio, dataFim,
+      dataInicio: inicio, dataFim: fim,
       horarioRetirada: horarioRetirada || anuncioEncontrado.precos?.horarioRetirada,
       horarioDevolucao: horarioDevolucao || anuncioEncontrado.precos?.horarioDevolucao,
       precoTotal, taxaServico, caucao
@@ -587,8 +710,46 @@ app.patch('/api/alugueis/:id/status', autenticacao, async (req, res) => {
       //}
     }
 
+    const transicoes = {
+      pendente: { aceito: 'locador', recusado: 'locador', cancelado: 'locatario' },
+      aceito: { andamento: 'locador', aguardando_confirmacao: 'locatario', cancelado: 'locatario' },
+      andamento: { aguardando_confirmacao: 'locatario' },
+      aguardando_confirmacao: { concluido: 'locador' }
+    };
+    const papelNecessario = transicoes[aluguel.status]?.[status];
+    if (!papelNecessario) {
+      return res.status(400).json({ erro: 'Esta mudança de status não é permitida.' });
+    }
+    if (String(aluguel[papelNecessario]) !== req.usuarioId) {
+      return res.status(403).json({ erro: 'Você não tem permissão para esta mudança de status.' });
+    }
+
+    if (status === 'cancelado') {
+      const pagamento = await Pagamento.findOne({ aluguel: aluguel._id });
+      if (pagamento?.status === 'confirmado') {
+        return res.status(400).json({ erro: 'Não é possível cancelar um aluguel com pagamento confirmado.' });
+      }
+      if (pagamento) await pagamento.deleteOne();
+    }
+
     aluguel.status = status;
     await aluguel.save();
+
+    if (status === 'aceito') {
+      await Pagamento.findOneAndUpdate(
+        { aluguel: aluguel._id },
+        {
+          $setOnInsert: {
+            aluguel: aluguel._id,
+            locatario: aluguel.locatario,
+            valor: aluguel.precoTotal,
+            vencimento: aluguel.dataInicio,
+            status: 'pendente'
+          }
+        },
+        { upsert: true, new: true, runValidators: true }
+      );
+    }
 
     // Notifica quem NÃO fez a alteração (a outra parte da negociação)
     const anuncioDoAluguel = await Anuncio.findById(aluguel.anuncio);
@@ -628,7 +789,7 @@ app.patch('/api/alugueis/:id/status', autenticacao, async (req, res) => {
 // Criar pagamento (gerado a partir de um aluguel)
 app.post('/api/pagamentos', autenticacao, async (req, res) => {
   try {
-    const { aluguel, valor, vencimento, metodo } = req.body;
+    const { aluguel, metodo } = req.body;
 
     const aluguelEncontrado = await Aluguel.findById(aluguel);
 
@@ -640,7 +801,22 @@ app.post('/api/pagamentos', autenticacao, async (req, res) => {
       return res.status(403).json({ erro: 'Você não tem permissão para criar um pagamento para este aluguel.' });
     }
 
-    const novoPagamento = new Pagamento({ aluguel, locatario: req.usuarioId, valor, vencimento, metodo });
+    if (!['aceito', 'andamento'].includes(aluguelEncontrado.status)) {
+      return res.status(400).json({ erro: 'O pagamento só pode ser criado para um aluguel aceito.' });
+    }
+
+    const pagamentoExistente = await Pagamento.findOne({ aluguel: aluguelEncontrado._id });
+    if (pagamentoExistente) {
+      return res.status(409).json({ erro: 'Já existe um pagamento para este aluguel.', pagamento: pagamentoExistente });
+    }
+
+    const novoPagamento = new Pagamento({
+      aluguel: aluguelEncontrado._id,
+      locatario: req.usuarioId,
+      valor: aluguelEncontrado.precoTotal,
+      vencimento: aluguelEncontrado.dataInicio,
+      metodo
+    });
 
     await novoPagamento.save();
 
@@ -680,6 +856,10 @@ app.patch('/api/pagamentos/:id/status', autenticacao, async (req, res) => {
 
     if (pagamento.locatario.toString() !== req.usuarioId) {
       return res.status(403).json({ erro: 'Você não tem permissão para alterar este pagamento.' });
+    }
+
+    if (status !== 'confirmado' || pagamento.status !== 'pendente') {
+      return res.status(400).json({ erro: 'Esta mudança de status do pagamento não é permitida.' });
     }
 
     pagamento.status = status;
@@ -934,6 +1114,13 @@ app.post('/api/mensagens', autenticacao, async (req, res) => {
       return res.status(403).json({ erro: 'Você não faz parte desta conversa.' });
     }
 
+    const destinatarioEhOutroParticipante = conversaExistente.participantes.some(
+      (participante) => participante.toString() === destinatario && participante.toString() !== remetente
+    );
+    if (!destinatarioEhOutroParticipante) {
+      return res.status(400).json({ erro: 'O destinatário deve ser a outra pessoa da conversa.' });
+    }
+
     const novaMensagem = new Mensagem({ conversa, remetente, destinatario, texto: texto.trim() });
     await novaMensagem.save();
 
@@ -1102,6 +1289,22 @@ app.post(
         { new: true }
       ).select('-senha');
 
+      if (!usuario) {
+        return res.status(404).json({ erro: 'Usuário não encontrado.' });
+      }
+
+      // Cada envio entra na fila de todos os administradores ativos. Assim a
+      // central administrativa e o sino conseguem sinalizar a nova análise.
+      const administradores = await Usuario.find({ papel: 'admin', ativo: { $ne: false } }).select('_id');
+      await Promise.all(administradores.map((administrador) => criarNotificacao({
+        usuario: administrador._id,
+        tipo: 'verificacao',
+        titulo: 'Novo documento para análise',
+        texto: `${usuario.nome} enviou documentos de identidade para verificação.`,
+        linkPainel: '/paineladmin',
+        estadoNavegacao: { secao: 'verificacoes', aba: 'pendente', usuarioId: usuario._id.toString() }
+      })));
+
       res.status(200).json({ mensagem: 'Documentos enviados com sucesso!', verificacao: usuario.verificacao });
     } catch (erro) {
       res.status(500).json({ erro: 'Erro ao enviar documentos', detalhes: erro.message });
@@ -1128,6 +1331,37 @@ app.get('/api/usuarios/:id/verificacao', autenticacao, async (req, res) => {
 });
 
 // --- Painel administrativo de verificação (somente admin) ---
+
+// Promove uma conta ativa a administrador. Apenas outro administrador pode executar esta ação.
+app.patch('/api/admin/usuarios/promover', autenticacao, autenticacaoAdmin, async (req, res) => {
+  try {
+    const email = String(req.body.email || '').trim().toLowerCase();
+    if (!email) {
+      return res.status(400).json({ erro: 'Informe o e-mail da conta que será promovida.' });
+    }
+
+    const usuario = await Usuario.findOne({ email });
+    if (!usuario) {
+      return res.status(404).json({ erro: 'Nenhuma conta foi encontrada com este e-mail.' });
+    }
+    if (usuario.ativo === false) {
+      return res.status(400).json({ erro: 'Não é possível promover uma conta desativada.' });
+    }
+    if (usuario.papel === 'admin') {
+      return res.status(409).json({ erro: 'Esta conta já é administradora.' });
+    }
+
+    usuario.papel = 'admin';
+    await usuario.save();
+
+    res.status(200).json({
+      mensagem: `${usuario.nome} agora possui acesso administrativo.`,
+      usuario: { id: usuario._id, nome: usuario.nome, email: usuario.email, papel: usuario.papel }
+    });
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao promover administrador.' });
+  }
+});
 
 // Lista usuários por status de verificação (padrão: pendentes)
 app.get('/api/admin/verificacoes', autenticacao, autenticacaoAdmin, async (req, res) => {
