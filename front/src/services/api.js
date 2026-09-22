@@ -2,17 +2,18 @@ export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export async function apiRequest(caminho, options = {}) {
     const token = localStorage.getItem('token');
+    const enviandoFormulario = options.body instanceof FormData;
 
     const config = {
         ...options,
         headers: {
-            'Content-Type': 'application/json',
+            ...(enviandoFormulario ? {} : { 'Content-Type': 'application/json' }),
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
             ...options.headers,
         },
     };
 
-    if (config.body && typeof config.body !== 'string') {
+    if (config.body && typeof config.body !== 'string' && !enviandoFormulario) {
         config.body = JSON.stringify(config.body);
     }
 

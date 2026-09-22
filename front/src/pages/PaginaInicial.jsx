@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'; 
-import { LuWrench, LuMonitor, LuDumbbell, LuFlower2, LuPartyPopper, LuSearch, LuClock, LuTrendingUp, LuX } from 'react-icons/lu';
+import { LuWrench, LuMonitor, LuDumbbell, LuFlower2, LuPartyPopper, LuSearch, LuClock, LuTrendingUp, LuX, LuShieldCheck, LuSparkles } from 'react-icons/lu';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
+import heroEscuro from '../assets/hero/lendloop-hero-dark-v5.png';
 import { useBuscasRecentes } from '../hooks/useBuscasRecentes';
 import { SUGESTOES_POPULARES, BANCO_DE_PALAVRAS } from '../constants/buscasPopulares';
 
@@ -115,18 +116,21 @@ export function PaginaInicial() {
       <Header />
 
       <section
-        className="w-full flex items-center justify-center py-24 px-8"
-        style={{ background: 'linear-gradient(135deg, #032D54 0%, #29C354 60%, #0297AA 100%)' }}
+        className="relative isolate w-full overflow-visible flex items-center justify-center py-24 px-8 bg-[#061a30]"
       >
-        <div className="max-w-2xl w-full flex flex-col items-center text-center gap-6">
-          <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight">
-            Alugue o que precisa,<br />quando precisa
+        <img src={heroEscuro} alt="" className="absolute inset-0 -z-30 h-full w-full object-cover object-center" />
+        <div className="absolute inset-0 -z-20 bg-black/45"></div>
+        <div className="absolute inset-y-0 left-1/2 -z-10 w-[60%] -translate-x-1/2 bg-[radial-gradient(ellipse_at_center,rgba(41,195,84,.15),transparent_68%)]"></div>
+        <div className="max-w-3xl w-full flex flex-col items-center text-center gap-6">
+          <span className="inline-flex items-center gap-2 rounded-full border border-[#29C354]/35 bg-[#29C354]/10 px-4 py-2 text-xs font-bold tracking-widest text-white/90"><LuSparkles size={14} className="text-[#75e38e]" /> ALUGUEL LOCAL, DO SEU JEITO</span>
+          <h1 className="text-5xl md:text-6xl font-black text-white leading-[1.05] tracking-tight">
+            Use mais.<br /><span className="text-[#75e38e]">Compre menos.</span>
           </h1>
           <p className="text-white/90 text-lg max-w-md">
             Encontre ferramentas, eletrônicos e muito mais perto de você — sem precisar comprar.
           </p>
-          <div ref={buscaRef} className="relative w-full max-w-xl text-left">
-            <div className="flex w-full bg-white rounded-xl shadow-lg overflow-hidden">
+          <div ref={buscaRef} className="relative w-full max-w-2xl text-left">
+            <div className="flex w-full bg-white rounded-2xl shadow-2xl overflow-hidden ring-1 ring-white/10">
               <div className="flex items-center gap-2 px-4 text-[#0068F3]">
                 <LuSearch size={20} />
               </div>
@@ -228,6 +232,10 @@ export function PaginaInicial() {
                 )}
               </div>
             )}
+          </div>
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm font-medium text-slate-300">
+            <span className="inline-flex items-center gap-2"><LuShieldCheck size={16} className="text-[#72cfff]" /> Perfis verificados</span>
+            <span>Itens incríveis perto de você</span>
           </div>
         </div>
       </section>

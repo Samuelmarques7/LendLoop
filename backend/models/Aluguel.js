@@ -13,7 +13,18 @@ const aluguelSchema = new mongoose.Schema({
   precoTotal: { type: Number, required: true },
   taxaServico: { type: Number, default: 0 },
   caucao: { type: Number, default: 0 },
- 
+
+  // Fotos tiradas nas duas pontas do aluguel. Elas formam o histórico
+  // consultável em caso de divergência sobre o estado do item.
+  vistoriaRetirada: {
+    fotos: { type: [String], default: [] },
+    enviadaEm: { type: Date }
+  },
+  vistoriaDevolucao: {
+    fotos: { type: [String], default: [] },
+    enviadaEm: { type: Date }
+  },
+
   status: { 
     type: String, 
     enum: ['pendente', 'aceito', 'recusado', 'andamento', 'aguardando_confirmacao', 'concluido', 'cancelado'], 

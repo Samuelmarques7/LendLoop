@@ -501,6 +501,46 @@ app.get('/api/alugueis/locador/:locadorId', autenticacao, async (req, res) => {
   }
 });
 
+// Registra fotos do estado do item. O locador registra a retirada antes de
+// aceitar a reserva; o locatário registra a devolução antes de solicitá-la.
+app.post('/api/alugueis/:id/vistoria/:momento', autenticacao, upload.array('fotos', 8), async (req, res) => {
+  try {
+    const { momento } = req.params;
+    if (!['retirada', 'devolucao'].includes(momento)) {
+      return res.status(400).json({ erro: 'Momento de vistoria inválido.' });
+    }
+
+    if (!req.files || req.files.length < 3) {
+      return res.status(400).json({ erro: 'Envie pelo menos 3 fotos de detalhes do item.' });
+    }
+
+    const aluguel = await Aluguel.findById(req.params.id);
+    if (!aluguel) return res.status(404).json({ erro: 'Aluguel não encontrado.' });
+
+    const ehRetirada = momento === 'retirada';
+    const responsavel = ehRetirada ? aluguel.locador : aluguel.locatario;
+    if (String(responsavel) !== req.usuarioId) {
+      return res.status(403).json({ erro: 'Você não pode enviar esta vistoria.' });
+    }
+    if (ehRetirada && aluguel.status !== 'pendente') {
+      return res.status(400).json({ erro: 'A vistoria de retirada só pode ser enviada para uma solicitação pendente.' });
+    }
+    if (!ehRetirada && !['aceito', 'andamento'].includes(aluguel.status)) {
+      return res.status(400).json({ erro: 'A vistoria de devolução só pode ser enviada durante o aluguel.' });
+    }
+
+    aluguel[ehRetirada ? 'vistoriaRetirada' : 'vistoriaDevolucao'] = {
+      fotos: req.files.map((arquivo) => arquivo.path),
+      enviadaEm: new Date()
+    };
+    await aluguel.save();
+
+    res.status(200).json({ mensagem: 'Vistoria registrada com sucesso.', aluguel });
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao enviar fotos da vistoria', detalhes: erro.message });
+  }
+});
+
 // Atualizar status de um aluguel (aceitar, recusar, marcar como devolvido, etc.)
 app.patch('/api/alugueis/:id/status', autenticacao, async (req, res) => {
   try {
@@ -514,6 +554,24 @@ app.patch('/api/alugueis/:id/status', autenticacao, async (req, res) => {
 
     if (aluguel.locador.toString() !== req.usuarioId && aluguel.locatario.toString() !== req.usuarioId) {
       return res.status(403).json({ erro: 'Você não tem permissão para alterar este aluguel.' });
+    }
+
+    if (status === 'aceito') {
+      if (aluguel.locador.toString() !== req.usuarioId || aluguel.status !== 'pendente') {
+        return res.status(403).json({ erro: 'Somente o locador pode aceitar uma solicitação pendente.' });
+      }
+      if ((aluguel.vistoriaRetirada?.fotos || []).length < 3) {
+        return res.status(400).json({ erro: 'Registre ao menos 3 fotos da vistoria de retirada antes de aceitar.' });
+      }
+    }
+
+    if (status === 'aguardando_confirmacao') {
+      if (aluguel.locatario.toString() !== req.usuarioId) {
+        return res.status(403).json({ erro: 'Somente o locatário pode solicitar a devolução.' });
+      }
+      if ((aluguel.vistoriaDevolucao?.fotos || []).length < 3) {
+        return res.status(400).json({ erro: 'Registre ao menos 3 fotos da devolução antes de solicitar confirmação.' });
+      }
     }
 
     // Regra específica: só pode marcar como concluído se já estava aceito

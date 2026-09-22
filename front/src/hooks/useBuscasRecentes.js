@@ -1,12 +1,18 @@
 import { useState } from 'react';
+import { SUGESTOES_POPULARES } from '../constants/buscasPopulares';
 
 const CHAVE_BUSCAS_RECENTES = 'buscasRecentes';
 const MAX_BUSCAS_RECENTES = 5;
+const termosPopulares = new Set(SUGESTOES_POPULARES.map((termo) => termo.toLocaleLowerCase('pt-BR')));
+
+function ehBuscaPopular(termo) {
+  return termosPopulares.has(termo.trim().toLocaleLowerCase('pt-BR'));
+}
 
 function carregarBuscasRecentes() {
   try {
     const salvas = JSON.parse(localStorage.getItem(CHAVE_BUSCAS_RECENTES) || '[]');
-    return Array.isArray(salvas) ? salvas : [];
+    return Array.isArray(salvas) ? salvas.filter((termo) => !ehBuscaPopular(termo)) : [];
   } catch {
     return [];
   }
@@ -17,7 +23,7 @@ export function useBuscasRecentes() {
 
   function salvarBuscaRecente(termo) {
     const termoLimpo = termo.trim();
-    if (!termoLimpo) return;
+    if (!termoLimpo || ehBuscaPopular(termoLimpo)) return;
 
     setBuscasRecentes((atual) => {
       const semDuplicata = atual.filter((b) => b.toLowerCase() !== termoLimpo.toLowerCase());
