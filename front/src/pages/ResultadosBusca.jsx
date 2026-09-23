@@ -31,7 +31,7 @@ function destacarTexto(texto, busca) {
       {partes.map((parte, i) => 
         parte.toLowerCase() === busca.toLowerCase() 
           ? <span key={i} className="text-gray-400 font-normal">{parte}</span> 
-          : <span key={i} className="text-[#1A1A1A] font-bold">{parte}</span>
+          : <span key={i} className="text-grafite font-bold">{parte}</span>
       )}
     </span>
   );
@@ -149,7 +149,7 @@ export function ResultadosBusca() {
   const mostrarDropdown = mostrarSugestoes && (buscaLower !== '' || recentesFiltradas.length > 0 || sugestoesFiltradas.length > 0);
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] font-sans text-[#1A1A1A] flex flex-col">
+    <div className="page-shell min-h-screen font-sans text-grafite flex flex-col">
       <Header />
 
       <main className="max-w-7xl mx-auto w-full flex-grow p-6 pt-10">
@@ -157,10 +157,10 @@ export function ResultadosBusca() {
         <section className="mb-8 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
           <div className="flex justify-between items-end mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-[#1A1A1A]">Resultados da Busca</h1>
+              <h1 className="text-2xl font-bold text-grafite">Resultados da Busca</h1>
               <p className="text-gray-400 text-sm mt-1">{obterSubtitulo()}</p>
             </div>
-            <span className="text-[#0068F3] text-[10px] font-bold bg-blue-50 px-3 py-1.5 rounded-full uppercase tracking-wider">
+            <span className="text-azul-oceano text-[10px] font-bold bg-azul-oceano/10 px-3 py-1.5 rounded-full uppercase tracking-wider">
               {produtos.length} itens encontrados
             </span>
           </div>
@@ -176,14 +176,14 @@ export function ResultadosBusca() {
                   value={busca}
                   onFocus={() => setMostrarSugestoes(true)}
                   onChange={(e) => setBusca(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm focus:ring-2 focus:ring-[#29C354]/20 focus:border-[#29C354] outline-none transition-all font-medium" />
+                  className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm focus:ring-2 focus:ring-verde-agua/20 focus:border-verde-agua outline-none transition-all font-medium" />
               </div>
 
               {mostrarDropdown && (
                 <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-20">
 
                   {buscaLower && (
-                    <div className="py-2 border-b border-gray-50 bg-[#0068F3]/5">
+                    <div className="py-2 border-b border-gray-50 bg-azul-oceano/5">
                       <button
                         type="button"
                         onClick={() => {
@@ -191,7 +191,7 @@ export function ResultadosBusca() {
                           if (busca.trim()) salvarBuscaRecente(busca);
                           buscarAnuncios(busca);
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-2 hover:bg-[#0068F3]/10 text-[#0068F3] transition-colors cursor-pointer text-sm font-bold"
+                        className="w-full flex items-center gap-3 px-4 py-2 hover:bg-azul-oceano/10 text-azul-oceano transition-colors cursor-pointer text-sm font-bold"
                       >
                         <LuSearch size={16} className="shrink-0" />
                         Buscar por "{busca}"
@@ -207,7 +207,7 @@ export function ResultadosBusca() {
                           <button
                             type="button"
                             onClick={limparBuscasRecentes}
-                            className="text-[11px] text-[#0068F3] hover:text-[#032D54] font-bold cursor-pointer uppercase tracking-wider"
+                            className="text-[11px] text-azul-oceano hover:text-verde-escuro font-bold cursor-pointer uppercase tracking-wider"
                           >
                             Limpar
                           </button>
@@ -257,7 +257,7 @@ export function ResultadosBusca() {
                           {buscaLower ? (
                             <LuSearch size={16} className="text-gray-400 shrink-0" />
                           ) : (
-                            <LuTrendingUp size={16} className="text-[#29C354] shrink-0" />
+                            <LuTrendingUp size={16} className="text-verde-agua shrink-0" />
                           )}
                           <span className="flex-1 text-left">
                             {destacarTexto(termo, buscaLower)}
@@ -278,7 +278,7 @@ export function ResultadosBusca() {
                   type="date" 
                   value={dataInicio}
                   onChange={(e) => setDataInicio(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm outline-none focus:border-[#29C354] cursor-pointer" />
+                  className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm outline-none focus:border-verde-agua cursor-pointer" />
               </div>
             </div>
 
@@ -290,14 +290,14 @@ export function ResultadosBusca() {
                   type="date" 
                   value={dataFim}
                   onChange={(e) => setDataFim(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm outline-none focus:border-[#29C354] cursor-pointer" />
+                  className="w-full border border-gray-200 rounded-xl p-3 pl-10 text-sm outline-none focus:border-verde-agua cursor-pointer" />
               </div>
             </div>
 
             <div className="md:col-span-3 flex items-end">
               <button 
                 type="submit"
-                className="w-full bg-[#29C354] text-white font-bold py-3.5 rounded-xl hover:bg-[#032D54] transition-all shadow-sm active:scale-[0.98] cursor-pointer">
+                className="w-full bg-verde-agua text-white font-bold py-3.5 rounded-xl hover:bg-verde-escuro transition-all shadow-sm active:scale-[0.98] cursor-pointer">
                 Atualizar Busca
               </button>
             </div>
@@ -309,11 +309,11 @@ export function ResultadosBusca() {
           <aside className="w-full lg:w-64 shrink-0">
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
-                <h3 className="font-bold text-lg text-[#1A1A1A]">Filtros</h3>
+                <h3 className="font-bold text-lg text-grafite">Filtros</h3>
                 <button
                   type="button"
                   onClick={limparFiltros}
-                  className="text-xs text-gray-400 hover:text-[#29C354] transition-colors cursor-pointer"
+                  className="text-xs text-gray-400 hover:text-verde-agua transition-colors cursor-pointer"
                 >
                     Limpar tudo
                 </button>
@@ -321,7 +321,7 @@ export function ResultadosBusca() {
 
                 <div className="space-y-6">
                 <div className="border-b border-gray-50 pb-4">
-                    <h4 className="text-sm font-bold text-[#1A1A1A] mb-3">Faixa de Preço</h4>
+                    <h4 className="text-sm font-bold text-grafite mb-3">Faixa de Preço</h4>
                     <div className="flex items-center gap-2">
                     <input
                       type="number"
@@ -329,20 +329,20 @@ export function ResultadosBusca() {
                       placeholder="Mín"
                       value={precoMin}
                       onChange={(e) => setPrecoMin(e.target.value)}
-                      className="w-full border border-gray-100 bg-gray-50 rounded-lg p-2 text-xs outline-none focus:bg-white focus:border-[#29C354]" />
+                      className="w-full border border-gray-100 bg-gray-50 rounded-lg p-2 text-xs outline-none focus:bg-white focus:border-verde-agua" />
                     <input
                       type="number"
                       min="0"
                       placeholder="Máx"
                       value={precoMax}
                       onChange={(e) => setPrecoMax(e.target.value)}
-                      className="w-full border border-gray-100 bg-gray-50 rounded-lg p-2 text-xs outline-none focus:bg-white focus:border-[#29C354]" />
+                      className="w-full border border-gray-100 bg-gray-50 rounded-lg p-2 text-xs outline-none focus:bg-white focus:border-verde-agua" />
                     </div>
                     <p className="text-[10px] text-gray-300 mt-2 uppercase tracking-widest">Por dia</p>
                 </div>
 
                 <div>
-                    <h4 className="text-sm font-bold text-[#1A1A1A] mb-3">Categoria</h4>
+                    <h4 className="text-sm font-bold text-grafite mb-3">Categoria</h4>
                     <div className="space-y-2">
                     {CATEGORIAS.map((cat) => (
                         <label key={cat.value} className="flex items-center gap-3 text-sm text-gray-500 cursor-pointer group">
@@ -350,8 +350,8 @@ export function ResultadosBusca() {
                           type="checkbox"
                           checked={categoriasSelecionadas.includes(cat.value)}
                           onChange={() => toggleCategoria(cat.value)}
-                          className="w-4 h-4 rounded border-gray-300 accent-[#29C354] cursor-pointer" />
-                        <span className="group-hover:text-[#1A1A1A] transition-colors">{cat.label}</span>
+                          className="w-4 h-4 rounded border-gray-300 accent-verde-agua cursor-pointer" />
+                        <span className="group-hover:text-grafite transition-colors">{cat.label}</span>
                         </label>
                     ))}
                     </div>
@@ -361,7 +361,7 @@ export function ResultadosBusca() {
                 <button
                   type="button"
                   onClick={buscarAnuncios}
-                  className="w-full mt-6 bg-[#1A1A1A] text-white text-xs font-bold py-3 rounded-xl hover:bg-black transition-all uppercase tracking-widest cursor-pointer"
+                  className="w-full mt-6 bg-grafite text-white text-xs font-bold py-3 rounded-xl hover:bg-black transition-all uppercase tracking-widest cursor-pointer"
                 >
                   Aplicar Filtros
                 </button>
@@ -375,13 +375,13 @@ export function ResultadosBusca() {
                 <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6 border border-gray-100">
                   <LuSearch size={40} className="text-gray-300" />
                 </div>
-                <h2 className="text-2xl font-bold text-[#1A1A1A] mb-2">Nenhum item encontrado</h2>
+                <h2 className="text-2xl font-bold text-grafite mb-2">Nenhum item encontrado</h2>
                 <p className="text-gray-400 max-w-md">
                   Ainda não temos itens disponíveis com esses filtros em Santa Rita do Sapucaí. Tente buscar por outra categoria ou limpar os filtros atuais.
                 </p>
                 <button
                   onClick={limparFiltros}
-                  className="mt-6 border-2 border-[#29C354] text-[#29C354] px-6 py-2.5 rounded-xl font-bold hover:bg-[#29C354]/10 transition-colors cursor-pointer">
+                  className="mt-6 border-2 border-verde-agua text-verde-agua px-6 py-2.5 rounded-xl font-bold hover:bg-verde-agua/10 transition-colors cursor-pointer">
                   Limpar Filtros
                 </button>
               </div>
@@ -411,7 +411,7 @@ export function ResultadosBusca() {
                     <div className="p-6 flex-grow flex flex-col justify-between">
                       <div>
                         <div className="flex justify-between items-start gap-4">
-                          <h2 className="text-xl font-bold text-[#1A1A1A] group-hover:text-[#29C354] transition-colors leading-tight">
+                          <h2 className="text-xl font-bold text-grafite group-hover:text-verde-agua transition-colors leading-tight">
                             {produto.titulo}
                           </h2>
                           {produto.avaliacao && (
@@ -425,30 +425,30 @@ export function ResultadosBusca() {
                         </p>
                       </div>
                       
-                      <div className="mt-4 flex flex-wrap gap-5 text-[10px] font-bold text-[#0068F3] uppercase tracking-wider">
+                      <div className="mt-4 flex flex-wrap gap-5 text-[10px] font-bold text-azul-oceano uppercase tracking-wider">
                         <span className="flex items-center gap-1.5">
-                          <LuMapPin size={15} className="text-[#29C354]"/>
+                          <LuMapPin size={15} className="text-verde-agua"/>
                           {produto.endereco?.bairro ? `${produto.endereco.bairro}, ${produto.endereco.cidade}` : 'Santa Rita do Sapucaí'}
                         </span>
-                        <span className="flex items-center gap-1.5"><LuUser size={15} className="text-[#29C354]"/> {produto.locador?.nome || 'Anunciante removido'}</span>
-                        <span className="text-[#0297AA] flex items-center gap-1.5"><LuZap size={15}/> {produto.status}</span>
+                        <span className="flex items-center gap-1.5"><LuUser size={15} className="text-verde-agua"/> {produto.locador?.nome || 'Anunciante removido'}</span>
+                        <span className="text-ciano flex items-center gap-1.5"><LuZap size={15}/> {produto.status}</span>
                       </div>
                     </div>
                     
                     <div className="p-6 bg-gray-50/50 md:border-l border-gray-100 flex flex-col justify-center items-center min-w-[180px]">
-                      <div className="text-3xl font-black text-[#1A1A1A]">
+                      <div className="text-3xl font-black text-grafite">
                         R$ {produto.precos.precoPorDia} <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">/dia</span>
                       </div>
                       <div className="w-full space-y-2 mt-4">
                         <button 
                           onClick={() => navigate(`/produto/${produto._id}`)}
-                          className="w-full bg-[#1A1A1A] text-white text-[11px] font-black py-3 rounded-xl hover:bg-black transition-all uppercase tracking-widest cursor-pointer active:scale-95 shadow-sm"
+                          className="w-full bg-grafite text-white text-[11px] font-black py-3 rounded-xl hover:bg-black transition-all uppercase tracking-widest cursor-pointer active:scale-95 shadow-sm"
                         >
                           Reservar
                         </button>
                         <button 
                           onClick={() => navigate(`/produto/${produto._id}`)}
-                          className="w-full bg-white border border-gray-200 text-[#1A1A1A] text-[10px] font-bold py-2 rounded-lg hover:border-[#29C354] hover:text-[#29C354] transition-all uppercase tracking-wider cursor-pointer"
+                          className="w-full bg-white border border-gray-200 text-grafite text-[10px] font-bold py-2 rounded-lg hover:border-verde-agua hover:text-verde-agua transition-all uppercase tracking-wider cursor-pointer"
                         >
                           Ver detalhes
                         </button>
@@ -458,11 +458,11 @@ export function ResultadosBusca() {
                 ))}
 
                 <div className="flex justify-center items-center gap-2 mt-6 py-4">
-                  <button className="p-2 border border-gray-200 rounded-xl hover:bg-white hover:border-[#29C354] text-gray-400 hover:text-[#29C354] transition-all cursor-pointer">
+                  <button className="p-2 border border-gray-200 rounded-xl hover:bg-white hover:border-verde-agua text-gray-400 hover:text-verde-agua transition-all cursor-pointer">
                     <LuChevronLeft size={18} />
                   </button>
-                  <button className="w-10 h-10 bg-[#1A1A1A] text-white rounded-xl font-bold shadow-lg active:scale-95 cursor-pointer">1</button>
-                  <button className="p-2 border border-gray-200 rounded-xl hover:bg-white hover:border-[#29C354] text-gray-400 hover:text-[#29C354] transition-all cursor-pointer">
+                  <button className="w-10 h-10 bg-grafite text-white rounded-xl font-bold shadow-lg active:scale-95 cursor-pointer">1</button>
+                  <button className="p-2 border border-gray-200 rounded-xl hover:bg-white hover:border-verde-agua text-gray-400 hover:text-verde-agua transition-all cursor-pointer">
                     <LuChevronRight size={18} />
                   </button>
                 </div>

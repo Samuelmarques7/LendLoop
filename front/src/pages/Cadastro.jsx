@@ -84,6 +84,7 @@ export default function Cadastro() {
       localStorage.setItem('usuarioLogado', 'true');
       localStorage.setItem('token', data.token);
       localStorage.setItem('dadosUsuario', JSON.stringify(data.usuario));
+      localStorage.setItem('token', data.token);
 
       setMensagem({ tipo: 'sucesso', texto: 'Conta criada com sucesso! Redirecionando...' });
       setFormData({ nome: '', email: '', senha: '', telefone: '',cep: '', localizacao: '', objetivo: 'ambos' });
@@ -97,36 +98,36 @@ export default function Cadastro() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="max-w-md w-full bg-[#FFFFFF] rounded-xl shadow-lg p-8 border border-gray-100">
+    <div className="page-shell min-h-screen flex items-center justify-center p-4">
+      <div className="max-w-md w-full rounded-3xl border border-gray-100 bg-white p-7 shadow-xl shadow-verde-escuro/5 sm:p-8">
         
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-[#032D54]">Criar Conta</h2>
-          <p className="text-[#0068F3] mt-2">Junte-se à comunidade LendLoop</p>
+          <h2 className="text-3xl font-bold text-verde-escuro">Criar Conta</h2>
+          <p className="text-azul-oceano mt-2">Junte-se à comunidade LendLoop</p>
         </div>
 
         {mensagem && (
-          <div className={`p-4 mb-6 rounded-lg font-medium ${mensagem.tipo === 'sucesso' ? 'bg-[#29C354]/10 text-[#032D54] border border-[#29C354]/30' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+          <div className={`p-4 mb-6 rounded-lg font-medium ${mensagem.tipo === 'sucesso' ? 'bg-verde-agua/10 text-verde-escuro border border-verde-agua/30' : 'bg-red-50 text-red-700 border border-red-200'}`}>
             {mensagem.texto}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-[#1A1A1A] mb-1">Nome Completo</label>
+            <label className="block text-sm font-medium text-grafite mb-1">Nome Completo</label>
             <input type="text" name="nome" value={formData.nome} onChange={handleChange} required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0297AA] outline-none text-[#1A1A1A]" placeholder="Ex: João da Silva"/>
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ciano outline-none text-grafite" placeholder="Ex: João da Silva"/>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#1A1A1A] mb-1">E-mail</label>
+            <label className="block text-sm font-medium text-grafite mb-1">E-mail</label>
             <input type="email" name="email" value={formData.email} onChange={handleChange} onBlur={handleBlurEmail} required
-              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none text-[#1A1A1A] ${erroEmail ? 'border-red-400 focus:ring-red-200' : 'border-gray-300 focus:ring-[#0297AA]'}`} placeholder="joao@email.com"/>
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none text-grafite ${erroEmail ? 'border-red-400 focus:ring-red-200' : 'border-gray-300 focus:ring-ciano'}`} placeholder="joao@email.com"/>
             {erroEmail && <p className="text-xs text-red-500 mt-1">{erroEmail}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#1A1A1A] mb-1">Senha</label>
+            <label className="block text-sm font-medium text-grafite mb-1">Senha</label>
             <div className="relative">
               <input
                 type={mostrarSenha ? 'text' : 'password'}
@@ -135,7 +136,7 @@ export default function Cadastro() {
                 onChange={handleChange}
                 required
                 minLength={8}
-                className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0297AA] outline-none text-[#1A1A1A]"
+                className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ciano outline-none text-grafite"
                 placeholder="••••••••"
               />
               <button
@@ -143,7 +144,7 @@ export default function Cadastro() {
                 onClick={() => setMostrarSenha((v) => !v)}
                 tabIndex={-1}
                 title={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#0068F3] transition-colors cursor-pointer"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-azul-oceano transition-colors cursor-pointer"
               >
                 {mostrarSenha ? <LuEyeOff size={18} /> : <LuEye size={18} />}
               </button>
@@ -153,12 +154,12 @@ export default function Cadastro() {
 
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="block text-sm font-medium text-[#1A1A1A]">CEP</label>
+              <label className="block text-sm font-medium text-grafite">CEP</label>
               <a
                 href="https://buscacepinter.correios.com.br/app/endereco/index.php"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-[#00639E] hover:text-[#006861] hover:underline"
+                className="text-xs text-azul-oceano hover:text-verde-escuro hover:underline"
               >
                 Não sei meu CEP
               </a>
@@ -170,53 +171,53 @@ export default function Cadastro() {
               onChange={handleCepChange}
               maxLength={9}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#05BFBE] outline-none text-[#1A1A1A]"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ciano outline-none text-grafite"
               placeholder="00000-000"
             />
             {formData.localizacao && (
-              <p className="text-xs text-[#006861] mt-1">📍 {formData.localizacao}</p>
+              <p className="text-xs text-verde-escuro mt-1">📍 {formData.localizacao}</p>
             )}
           </div>
 
 
           <div>
-            <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Qual seu principal objetivo?</label>
+            <label className="block text-sm font-medium text-grafite mb-2">Qual seu principal objetivo?</label>
             <div className="space-y-3">
               
               <div 
                 onClick={() => handleObjetivoChange('ambos')}
-                className={`p-3 border rounded-lg cursor-pointer transition-all ${formData.objetivo === 'ambos' ? 'border-[#29C354] bg-[#29C354]/10 ring-1 ring-[#29C354]' : 'border-gray-300 hover:border-[#0297AA]'}`}
+                className={`p-3 border rounded-lg cursor-pointer transition-all ${formData.objetivo === 'ambos' ? 'border-verde-agua bg-verde-agua/10 ring-1 ring-verde-agua' : 'border-gray-300 hover:border-ciano'}`}
               >
-                <span className={`block text-sm font-semibold ${formData.objetivo === 'ambos' ? 'text-[#032D54]' : 'text-[#1A1A1A]'}`}>Ambos</span>
+                <span className={`block text-sm font-semibold ${formData.objetivo === 'ambos' ? 'text-verde-escuro' : 'text-grafite'}`}>Ambos</span>
                 <span className="block text-xs text-gray-500 mt-0.5">Quero alugar e também disponibilizar meus itens</span>
               </div>
 
               <div 
                 onClick={() => handleObjetivoChange('locatario')}
-                className={`p-3 border rounded-lg cursor-pointer transition-all ${formData.objetivo === 'locatario' ? 'border-[#29C354] bg-[#29C354]/10 ring-1 ring-[#29C354]' : 'border-gray-300 hover:border-[#0297AA]'}`}
+                className={`p-3 border rounded-lg cursor-pointer transition-all ${formData.objetivo === 'locatario' ? 'border-verde-agua bg-verde-agua/10 ring-1 ring-verde-agua' : 'border-gray-300 hover:border-ciano'}`}
               >
-                <span className={`block text-sm font-semibold ${formData.objetivo === 'locatario' ? 'text-[#032D54]' : 'text-[#1A1A1A]'}`}>Apenas Alugar</span>
+                <span className={`block text-sm font-semibold ${formData.objetivo === 'locatario' ? 'text-verde-escuro' : 'text-grafite'}`}>Apenas Alugar</span>
                 <span className="block text-xs text-gray-500 mt-0.5">Quero procurar itens para pegar emprestado</span>
               </div>
 
               <div 
                 onClick={() => handleObjetivoChange('locador')}
-                className={`p-3 border rounded-lg cursor-pointer transition-all ${formData.objetivo === 'locador' ? 'border-[#29C354] bg-[#29C354]/10 ring-1 ring-[#29C354]' : 'border-gray-300 hover:border-[#0297AA]'}`}
+                className={`p-3 border rounded-lg cursor-pointer transition-all ${formData.objetivo === 'locador' ? 'border-verde-agua bg-verde-agua/10 ring-1 ring-verde-agua' : 'border-gray-300 hover:border-ciano'}`}
               >
-                <span className={`block text-sm font-semibold ${formData.objetivo === 'locador' ? 'text-[#032D54]' : 'text-[#1A1A1A]'}`}>Apenas Disponibilizar</span>
+                <span className={`block text-sm font-semibold ${formData.objetivo === 'locador' ? 'text-verde-escuro' : 'text-grafite'}`}>Apenas Disponibilizar</span>
                 <span className="block text-xs text-gray-500 mt-0.5">Quero colocar meus itens na plataforma para render uma grana</span>
               </div>
 
             </div>
           </div>
 
-          <button type="submit" className="w-full bg-[#29C354] hover:bg-[#032D54] text-[#FFFFFF] font-bold py-3 rounded-lg transition-colors mt-6 shadow-md cursor-pointer">
+          <button type="submit" className="w-full bg-verde-agua hover:bg-verde-escuro text-white font-bold py-3 rounded-lg transition-colors mt-6 shadow-md cursor-pointer">
             Finalizar Cadastro
           </button>
 
-          <p className="text-center text-sm text-[#1A1A1A] mt-6">
+          <p className="text-center text-sm text-grafite mt-6">
             Já tem uma conta?{' '}
-            <Link to="/login" className="text-[#29C354] hover:text-[#032D54] font-semibold hover:underline transition-colors">
+            <Link to="/login" className="text-verde-agua hover:text-verde-escuro font-semibold hover:underline transition-colors">
               Faça Login
             </Link>
           </p>

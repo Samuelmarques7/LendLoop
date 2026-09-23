@@ -58,11 +58,11 @@ export default function RedefinirSenha() {
 
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className="max-w-md w-full bg-[#FFFFFF] rounded-xl shadow-lg p-8 border border-gray-100 text-center">
-          <h2 className="text-2xl font-bold text-[#032D54] mb-4">Link inválido</h2>
-          <p className="text-[#1A1A1A] mb-6">Este link de recuperação é inválido ou está incompleto.</p>
-          <Link to="/esqueceu-senha" className="text-[#29C354] hover:text-[#032D54] font-semibold hover:underline transition-colors cursor-pointer">
+      <div className="page-shell min-h-screen flex items-center justify-center p-4">
+        <div className="max-w-md w-full rounded-3xl border border-gray-100 bg-white p-7 text-center shadow-xl shadow-verde-escuro/5 sm:p-8">
+          <h2 className="text-2xl font-bold text-verde-escuro mb-4">Link inválido</h2>
+          <p className="text-grafite mb-6">Este link de recuperação é inválido ou está incompleto.</p>
+          <Link to="/esqueceu-senha" className="text-verde-agua hover:text-verde-escuro font-semibold hover:underline transition-colors cursor-pointer">
             Solicitar novo link
           </Link>
         </div>
@@ -71,44 +71,44 @@ export default function RedefinirSenha() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="max-w-md w-full bg-[#FFFFFF] rounded-xl shadow-lg p-8 border border-gray-100">
+    <div className="page-shell min-h-screen flex items-center justify-center p-4">
+      <div className="max-w-md w-full rounded-3xl border border-gray-100 bg-white p-7 shadow-xl shadow-verde-escuro/5 sm:p-8">
 
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-[#032D54]">Nova Senha</h2>
-          <p className="text-[#0068F3] mt-2">Escolha uma nova senha para sua conta.</p>
+          <h2 className="text-3xl font-bold text-verde-escuro">Nova Senha</h2>
+          <p className="text-azul-oceano mt-2">Escolha uma nova senha para sua conta.</p>
         </div>
 
         {mensagem && (
-          <div className={`p-4 mb-6 rounded-lg font-medium ${mensagem.tipo === 'sucesso' ? 'bg-[#29C354]/10 text-[#032D54] border border-[#29C354]/30' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+          <div className={`p-4 mb-6 rounded-lg font-medium ${mensagem.tipo === 'sucesso' ? 'bg-verde-agua/10 text-verde-escuro border border-verde-agua/30' : 'bg-red-50 text-red-700 border border-red-200'}`}>
             {mensagem.texto}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-[#1A1A1A] mb-1">Nova senha</label>
+            <label className="block text-sm font-medium text-grafite mb-1">Nova senha</label>
             <input
               type="password"
               value={novaSenha}
               onChange={(e) => setNovaSenha(e.target.value)}
               required
               minLength={8}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0297AA] outline-none text-[#1A1A1A]"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ciano outline-none text-grafite"
               placeholder="••••••••"
             />
             <MedidorForcaSenha senha={novaSenha} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#1A1A1A] mb-1">Confirmar nova senha</label>
+            <label className="block text-sm font-medium text-grafite mb-1">Confirmar nova senha</label>
             <input
               type="password"
               value={confirmarSenha}
               onChange={(e) => setConfirmarSenha(e.target.value)}
               required
               minLength={8}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0297AA] outline-none text-[#1A1A1A]"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ciano outline-none text-grafite"
               placeholder="••••••••"
             />
           </div>
@@ -116,14 +116,14 @@ export default function RedefinirSenha() {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full text-[#FFFFFF] font-bold py-3 rounded-lg transition-colors mt-6 shadow-md cursor-pointer ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#29C354] hover:bg-[#032D54]'}`}
+            className={`w-full text-white font-bold py-3 rounded-lg transition-colors mt-6 shadow-md cursor-pointer ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-verde-agua hover:bg-verde-escuro'}`}
           >
             {loading ? 'Salvando...' : 'Redefinir Senha'}
           </button>
 
-          <p className="text-center text-sm text-[#1A1A1A] mt-6">
+          <p className="text-center text-sm text-grafite mt-6">
             Lembrou da senha?{' '}
-            <Link to="/login" className="text-[#29C354] hover:text-[#032D54] font-semibold hover:underline transition-colors cursor-pointer">
+            <Link to="/login" className="text-verde-agua hover:text-verde-escuro font-semibold hover:underline transition-colors cursor-pointer">
               Voltar para o Login
             </Link>
           </p>

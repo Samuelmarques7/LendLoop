@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
+const Usuario = require('../models/Usuario');
 
-function autenticacao(req, res, next) {
+async function autenticacao(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
@@ -15,6 +16,10 @@ function autenticacao(req, res, next) {
 
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const usuario = await Usuario.findById(payload.id).select('ativo');
+    if (!usuario || usuario.ativo === false) {
+      return res.status(401).json({ erro: 'Sessão inválida ou conta desativada.' });
+    }
     req.usuarioId = payload.id;
     next();
   } catch (erro) {

@@ -4,11 +4,11 @@ import { useNotificacao } from '../context/NotificacaoContext';
 
 const ESTILOS = {
   sucesso: {
-    bg: 'bg-[#29C354]/10',
-    borda: 'border-[#29C354]/30',
-    texto: 'text-[#032D54]',
+    bg: 'bg-verde-agua/10',
+    borda: 'border-verde-agua/30',
+    texto: 'text-verde-escuro',
     icone: LuCircleCheck,
-    corIcone: 'text-[#29C354]',
+    corIcone: 'text-verde-agua',
   },
   erro: {
     bg: 'bg-red-50',

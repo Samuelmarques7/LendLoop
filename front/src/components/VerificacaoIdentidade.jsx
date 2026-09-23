@@ -10,20 +10,20 @@ export function VerificacaoIdentidade({ usuarioId, statusAtual, onVerificacaoEnv
 
   if (statusAtual === 'aprovado') {
     return (
-      <div className="bg-[#0F6E56]/10 border border-[#0F6E56]/30 p-6 rounded-2xl flex flex-col items-center text-center">
-        <LuCircleCheck size={40} className="text-[#0F6E56] mb-3" />
-        <h3 className="text-[#0F6E56] font-bold text-lg">Identidade Verificada</h3>
-        <p className="text-[#0F6E56]/80 text-sm mt-1">Sua conta está aprovada com segurança máxima na plataforma.</p>
+      <div className="bg-verde-escuro/10 border border-verde-escuro/30 p-6 rounded-2xl flex flex-col items-center text-center">
+        <LuCircleCheck size={40} className="text-verde-escuro mb-3" />
+        <h3 className="text-verde-escuro font-bold text-lg">Identidade Verificada</h3>
+        <p className="text-verde-escuro/80 text-sm mt-1">Sua conta está aprovada com segurança máxima na plataforma.</p>
       </div>
     );
   }
 
   if (statusAtual === 'pendente') {
     return (
-      <div className="bg-[#0068F3]/10 border border-[#0068F3]/30 p-6 rounded-2xl flex flex-col items-center text-center">
-        <LuShieldCheck size={40} className="text-[#0068F3] mb-3 animate-pulse" />
-        <h3 className="text-[#0068F3] font-bold text-lg">Documentos em Análise</h3>
-        <p className="text-[#0068F3]/80 text-sm mt-1">Nossa equipe está avaliando seus documentos. Isso pode levar até 24 horas.</p>
+      <div className="bg-azul-oceano/10 border border-azul-oceano/30 p-6 rounded-2xl flex flex-col items-center text-center">
+        <LuShieldCheck size={40} className="text-azul-oceano mb-3 animate-pulse" />
+        <h3 className="text-azul-oceano font-bold text-lg">Documentos em Análise</h3>
+        <p className="text-azul-oceano/80 text-sm mt-1">Nossa equipe está avaliando seus documentos. Isso pode levar até 24 horas.</p>
       </div>
     );
   }
@@ -93,7 +93,7 @@ export function VerificacaoIdentidade({ usuarioId, statusAtual, onVerificacaoEnv
   return (
     <form onSubmit={handleSubmit} className="bg-white border border-gray-200 p-6 rounded-2xl space-y-5 shadow-sm">
       <div>
-        <h3 className="text-lg font-bold text-[#1A1A1A]">Verificação de Identidade (KYC)</h3>
+        <h3 className="text-lg font-bold text-grafite">Verificação de Identidade (KYC)</h3>
         <p className="text-sm text-gray-500 mt-1">Para garantir a segurança do LendLoop, precisamos verificar sua identidade.</p>
       </div>
 
@@ -125,7 +125,7 @@ export function VerificacaoIdentidade({ usuarioId, statusAtual, onVerificacaoEnv
             setMensagemErro(''); // Limpa o erro ao digitar
           }}
           placeholder="000.000.000-00"
-          className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#0068F3]"
+          className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-azul-oceano"
         />
       </div>
 
@@ -138,7 +138,7 @@ export function VerificacaoIdentidade({ usuarioId, statusAtual, onVerificacaoEnv
       <button
         type="submit"
         disabled={enviando}
-        className="w-full bg-[#0068F3] text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+        className="w-full bg-azul-oceano text-white font-bold py-3.5 rounded-xl hover:bg-azul-oceano transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
       >
         {enviando ? 'Enviando arquivos...' : 'Enviar para análise'}
       </button>
@@ -149,15 +149,15 @@ export function VerificacaoIdentidade({ usuarioId, statusAtual, onVerificacaoEnv
 function UploadBox({ label, onChange, arquivo }) {
   return (
     <label className="border-2 border-dashed border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-gray-50 transition-colors text-center relative overflow-hidden group">
-      <LuCloudUpload size={24} className={arquivo ? "text-[#0F6E56]" : "text-gray-400 group-hover:text-[#0068F3] transition-colors"} />
+      <LuCloudUpload size={24} className={arquivo ? "text-verde-escuro" : "text-gray-400 group-hover:text-azul-oceano transition-colors"} />
       <span className="text-xs font-bold text-gray-700 z-10 relative">{label}</span>
-      <span className={`text-[10px] truncate max-w-full px-2 z-10 relative ${arquivo ? "text-[#0F6E56] font-semibold" : "text-gray-400"}`}>
+      <span className={`text-[10px] truncate max-w-full px-2 z-10 relative ${arquivo ? "text-verde-escuro font-semibold" : "text-gray-400"}`}>
         {arquivo ? arquivo.name : 'Clique para selecionar'}
       </span>
       <input type="file" accept="image/*" className="hidden" onChange={onChange} />
       
       {/* Fundo verde suave se o arquivo foi selecionado */}
-      {arquivo && <div className="absolute inset-0 bg-[#0F6E56]/5 pointer-events-none"></div>}
+      {arquivo && <div className="absolute inset-0 bg-verde-escuro/5 pointer-events-none"></div>}
     </label>
   );
 }

@@ -76,7 +76,7 @@ export function DetalhesProduto() {
 
   if (carregando) {
     return (
-      <div className='min-h-screen bg-[#F8F9FA] flex flex-col'>
+      <div className='page-shell min-h-screen flex flex-col'>
         <Header />
         <main className='flex-grow flex items-center justify-center'>
           <p className='text-gray-400 font-medium'> Carregando anúncio...</p>
@@ -88,7 +88,7 @@ export function DetalhesProduto() {
 
   if (erro || !anuncio) {
     return (
-      <div className='min-h-screen bg-[#F8F9FA] flex flex-col'>
+      <div className='page-shell min-h-screen flex flex-col'>
         <Header />
         <main className='flex-grow flex items-center justify-center'>
           <p className='text-red-500 font-medium'>{erro || 'Anúncio não encontrado'}</p>
@@ -188,38 +188,38 @@ export function DetalhesProduto() {
   // -----------------------------------
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] font-sans text-[#1A1A1A] flex flex-col">
+    <div className="page-shell min-h-screen font-sans text-grafite flex flex-col">
       
       <Header />
 
       <main className="max-w-7xl mx-auto w-full flex-grow p-6 pt-8">
         
         <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-6">
-          <span className="cursor-pointer hover:text-[#29C354]" onClick={() => navigate('/')}>Início</span>
+          <span className="cursor-pointer hover:text-verde-agua" onClick={() => navigate('/')}>Início</span>
           <LuChevronRight size={14} />
-          <span className="text-[#1A1A1A] truncate max-w-[200px]">{anuncio?.titulo}</span>
+          <span className="text-grafite truncate max-w-[200px]">{anuncio?.titulo}</span>
         </div>
 
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-[#1A1A1A] mb-3">{anuncio?.titulo}</h1>
+          <h1 className="text-3xl font-bold text-grafite mb-3">{anuncio?.titulo}</h1>
           <div className="flex items-center gap-6 text-sm text-gray-500 font-medium">
               <MediaAvaliacao dadosExternos={avaliacoesLocador} tamanho="lg" />
             <span className="flex items-center gap-1.5">
-              <LuMapPin className="text-[#29C354]" size={18}/> {anuncio.endereco.cidade}, {anuncio.endereco.estado}
+              <LuMapPin className="text-verde-agua" size={18}/> {anuncio.endereco.cidade}, {anuncio.endereco.estado}
             </span>
           </div>
 
           {(anuncio.categoria || anuncio.subcategorias?.length > 0) && (
             <div className="flex flex-wrap items-center gap-2 mt-4">
               {anuncio.categoria && (
-                <span className="bg-green-50 text-[#29C354] text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider border border-[#29C354]/20">
+                <span className="bg-verde-agua/10 text-verde-agua text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider border border-verde-agua/20">
                   {buscarCategoriaPorValor(anuncio.categoria)?.label || anuncio.categoria}
                 </span>
               )}
               {anuncio.subcategorias?.map((sub, index) => (
                 <span
                   key={index}
-                  className="bg-green-50 text-[#29C354] text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider border border-[#29C354]/20"
+                  className="bg-verde-agua/10 text-verde-agua text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider border border-verde-agua/20"
                 >
                   {sub}
                 </span>
@@ -259,7 +259,7 @@ export function DetalhesProduto() {
           <div className="lg:col-span-2 space-y-12">
             
             <section>
-              <h2 className="text-xl font-bold text-[#1A1A1A] mb-4">Descrição</h2>
+              <h2 className="text-xl font-bold text-grafite mb-4">Descrição</h2>
               <p className="text-gray-500 leading-relaxed text-sm whitespace-pre-line">
                 {anuncio.descricao}
               </p>
@@ -267,15 +267,15 @@ export function DetalhesProduto() {
 
             {anuncio.especificacoes?.length > 0 && (
               <section>
-                <h2 className="text-xl font-bold text-[#1A1A1A] mb-4">Especificações</h2>
+                <h2 className="text-xl font-bold text-grafite mb-4">Especificações</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 text-sm text-gray-600 font-medium">
                   {anuncio.especificacoes
                     .filter((esp) => esp.chave?.trim())
                     .map((esp, index) => (
                       <div key={index} className="flex items-center gap-3">
-                        <LuCheck className="text-[#29C354] shrink-0" size={20}/>
+                        <LuCheck className="text-verde-agua shrink-0" size={20}/>
                         <span>
-                          <span className="text-[#1A1A1A] font-bold">{esp.chave}:</span>{' '}
+                          <span className="text-grafite font-bold">{esp.chave}:</span>{' '}
                           {esp.valor?.trim() || '—'}
                         </span>
                       </div>
@@ -285,7 +285,7 @@ export function DetalhesProduto() {
             )}
 
             <section className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
-              <h2 className="text-lg font-bold text-[#1A1A1A] mb-4">Diretrizes de Aluguel</h2>
+              <h2 className="text-lg font-bold text-grafite mb-4">Diretrizes de Aluguel</h2>
               <ul className="space-y-3 text-sm text-gray-600 font-medium">
                 <li className="flex items-start gap-2">
                   <span>📍</span> Retirada e devolução em {anuncio.endereco.bairro}, {anuncio.endereco.cidade} - {anuncio.endereco.estado}
@@ -311,13 +311,13 @@ export function DetalhesProduto() {
                   {anuncio.locador.avatar ? (
                     <img src={anuncio.locador.avatar} alt={anuncio.locador.nome} className="w-16 h-16 rounded-full object-cover" />
                   ) : (
-                    <div className="w-16 h-16 bg-[#29C354] rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                    <div className="w-16 h-16 bg-verde-agua rounded-full flex items-center justify-center text-white text-2xl font-bold">
                       {anuncio.locador.nome?.[0]?.toUpperCase()}
                     </div>
                   )}
                  <div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h2 className="text-xl font-bold text-[#1A1A1A] group-hover:text-[#29C354] transition-colors">{anuncio.locador.nome}</h2>
+                      <h2 className="text-xl font-bold text-grafite group-hover:text-verde-agua transition-colors">{anuncio.locador.nome}</h2>
                       {anuncio.locador.verificacao?.status === 'aprovado' && <SeloVerificado tamanho="sm" />}
                     </div>
                     {formatarMembroDesde(anuncio.locador.createdAt) && (
@@ -332,7 +332,7 @@ export function DetalhesProduto() {
                 {/* BOTÃO ATUALIZADO AQUI */}
                 <button 
                   onClick={handleMensagemAnfitriao}
-                  className="flex items-center gap-2 border border-[#1A1A1A] text-[#1A1A1A] px-6 py-2.5 rounded-xl hover:bg-gray-50 transition-colors font-bold text-sm cursor-pointer"
+                  className="flex items-center gap-2 border border-grafite text-grafite px-6 py-2.5 rounded-xl hover:bg-gray-50 transition-colors font-bold text-sm cursor-pointer"
                 >
                   <LuMessageCircle size={18}/> Mensagem ao Anfitrião
                 </button>
@@ -360,7 +360,7 @@ export function DetalhesProduto() {
               
               <div className="flex items-end justify-between mb-6 border-b border-gray-100 pb-6">
                 <div>
-                  <span className="text-3xl font-black text-[#1A1A1A]">R$ {anuncio.precos.precoPorDia}</span>
+                  <span className="text-3xl font-black text-grafite">R$ {anuncio.precos.precoPorDia}</span>
                   <span className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">/ dia</span>
                 </div>
                 <div className="flex items-center gap-1 text-xs font-bold text-gray-500">
@@ -411,25 +411,25 @@ export function DetalhesProduto() {
               <div className="space-y-4 text-sm font-medium text-gray-600 mb-6">
                 <div className="flex justify-between">
                   <span>R$ {anuncio.precos.precoPorDia} x {diasValidos} dias</span>
-                  <span className="text-[#1A1A1A] font-bold">R$ {subtotal.toFixed(2)}</span>
+                  <span className="text-grafite font-bold">R$ {subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Taxa de Serviço</span>
-                  <span className="text-[#1A1A1A] font-bold">R$ {taxaServico.toFixed(2)}</span>
+                  <span className="text-grafite font-bold">R$ {taxaServico.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="underline cursor-pointer">Depósito de Segurança</span>
-                  <span className="text-[#1A1A1A] font-bold">R$ {anuncio.precos.caucao}</span>
+                  <span className="text-grafite font-bold">R$ {anuncio.precos.caucao}</span>
                 </div>
               </div>
 
               <div className="border-t border-gray-100 pt-4 flex justify-between items-center mb-6">
-                <span className="font-bold text-[#1A1A1A]">Total</span>
-                <span className="text-xl font-black text-[#1A1A1A]">R$ {total.toFixed(2)}</span>
+                <span className="font-bold text-grafite">Total</span>
+                <span className="text-xl font-black text-grafite">R$ {total.toFixed(2)}</span>
               </div>
 
               {mensagem && (
-                <div className={`p-3 mb-3 rounded-lg text-sm font-medium ${mensagem.tipo === 'sucesso' ? 'bg-[#29C354]/10 text-[#032D54] border border-[#29C354]/30' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                <div className={`p-3 mb-3 rounded-lg text-sm font-medium ${mensagem.tipo === 'sucesso' ? 'bg-verde-agua/10 text-verde-escuro border border-verde-agua/30' : 'bg-red-50 text-red-700 border border-red-200'}`}>
                   {mensagem.texto}
                   {mensagem.acao && (
                     <button
@@ -445,13 +445,13 @@ export function DetalhesProduto() {
               <button 
                 onClick={handleSolicitarAluguel}
                 disabled={enviando}
-                className="w-full bg-[#1A1A1A] text-white font-black py-4 rounded-xl hover:bg-black transition-all uppercase tracking-widest cursor-pointer shadow-lg active:scale-95 mb-3">
+                className="w-full bg-grafite text-white font-black py-4 rounded-xl hover:bg-black transition-all uppercase tracking-widest cursor-pointer shadow-lg active:scale-95 mb-3">
                 {enviando ? "Enviando..." : "Solicitar Aluguel"}
               </button>
 
               <div className="text-center space-y-2">
                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Você ainda não será cobrado</p>
-                <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-[#29C354]">
+                <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-verde-agua">
                   <LuShieldCheck size={16}/> Protegido por PROJETO Pagamentos Seguros
                 </div>
               </div>

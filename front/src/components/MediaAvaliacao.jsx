@@ -38,7 +38,7 @@ export function MediaAvaliacao({ usuarioId, dadosExternos, tamanho = 'md', class
   }
 
   return (
-    <span className={`flex items-center gap-1.5 ${texto} font-bold text-[#1A1A1A] ${className}`}>
+    <span className={`flex items-center gap-1.5 ${texto} font-bold text-grafite ${className}`}>
       <LuStar size={icone} className="text-yellow-400" fill="currentColor" />
       {dados.media}
       <span className="text-gray-400 font-medium">
