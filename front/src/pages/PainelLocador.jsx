@@ -36,8 +36,22 @@ import {
   LuCamera
 } from "react-icons/lu";
 
+const DESCRICOES_SECOES = {
+  painel: 'Veja o que precisa da sua atenção hoje.',
+  anuncios: 'Organize seus itens, disponibilidade e informações de cada anúncio.',
+  solicitacoes: 'Revise os novos pedidos e acompanhe devoluções pendentes.',
+  calendario: 'Consulte as reservas confirmadas e os próximos períodos ocupados.',
+  ganhos: 'Acompanhe valores recebidos, em andamento e seu histórico de aluguéis.',
+  mensagens: 'Converse com interessados e mantenha cada aluguel alinhado.',
+  config: 'Ajuste como sua conta de locador funciona na plataforma.',
+};
+
+const TITULOS_SECOES = {
+  painel: 'Resumo da sua atividade',
+};
+
 const PAINEIS_DISPONIVEIS = [
-  { id: 'painel', label: 'Painel Locador' },
+  { id: 'painel', label: 'Visão geral' },
   { id: 'anuncios', label: 'Meus anúncios' },
   { id: 'solicitacoes', label: 'Solicitações recebidas' },
   { id: 'calendario', label: 'Calendário' },
@@ -182,15 +196,15 @@ export default function PainelLocador() {
   ];
 
   const toneClasses = {
-    accent: { bg: 'bg-[#0068F3]/[0.08]', text: 'text-[#0068F3]', border: 'border-l-[#0068F3]' },
+    accent: { bg: 'bg-azul-oceano/[0.08]', text: 'text-azul-oceano', border: 'border-l-azul-oceano' },
     warning: { bg: 'bg-amber-500/[0.1]', text: 'text-amber-600', border: 'border-l-amber-500' },
-    success: { bg: 'bg-[#0F6E56]/[0.08]', text: 'text-[#0F6E56]', border: 'border-l-[#0F6E56]' },
+    success: { bg: 'bg-verde-escuro/[0.08]', text: 'text-verde-escuro', border: 'border-l-verde-escuro' },
     danger: { bg: 'bg-[#A32D2D]/[0.08]', text: 'text-[#A32D2D]', border: 'border-l-[#A32D2D]' },
     neutral: { bg: 'bg-gray-900/[0.05]', text: 'text-gray-700', border: 'border-l-gray-300' },
   };
 
   const menuItems = [
-    { id: 'painel', label: 'Painel', icon: LuLayoutDashboard },
+    { id: 'painel', label: 'Visão geral', icon: LuLayoutDashboard },
     { id: 'anuncios', label: 'Meus anúncios', icon: LuPackage },
     { id: 'solicitacoes', label: 'Solicitações recebidas', icon: LuInbox },
     { id: 'calendario', label: 'Calendário', icon: LuCalendar },
@@ -332,8 +346,8 @@ export default function PainelLocador() {
         body: { objetivo: novoObjetivo }
       });
 
-      localStorage.setItem('dadosUsuario', JSON.stringify({ ...usuarioLogado, objetivo: data.usuario.objetivo }));
       setDadosLocador(data.usuario);
+      localStorage.setItem('dadosUsuario', JSON.stringify({ ...usuarioLogado, objetivo: data.usuario.objetivo }));
 
       if (novoObjetivo === 'locatario') {
         navigate('/painellocatario', { replace: true });
@@ -399,7 +413,7 @@ export default function PainelLocador() {
       case 'mensagens':
         return <PainelMensagens
           usuarioLogadoId={usuarioLogado?.id}
-          corPrimaria="#29C354"
+          corPrimaria="#2EC34D"
           conversaParaAbrir={conversaParaAbrir}
           onConversasAtualizadas={setMensagensNaoLidas}
         />;
@@ -421,16 +435,18 @@ export default function PainelLocador() {
   }
 
   const secaoAtual = menuItems.find(i => i.id === activeTab) || (activeTab === 'config' ? { label: 'Configurações' } : null);
+  const tituloAtual = TITULOS_SECOES[activeTab] || secaoAtual?.label || 'Painel';
+  const descricaoAtual = DESCRICOES_SECOES[activeTab] || 'Acompanhe os detalhes da sua atividade como locador.';
 
   return (
-    <div className="min-h-screen bg-[#FAFAF9] font-sans text-[#1A1A1A]">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="w-full h-19 flex items-center px-8 gap-8">
+    <div className="page-shell min-h-screen font-sans text-grafite">
+      <header className="sticky top-0 z-10 border-b border-gray-200 bg-white">
+        <div className="flex min-h-18 w-full items-center gap-3 px-4 sm:h-19 sm:gap-6 sm:px-6 lg:px-8">
           <button onClick={() => navigate('/')} className="flex-shrink-0 cursor-pointer">
-            <img src={logo} alt="LendLoop" className="h-16 w-auto" />
+            <img src={logo} alt="LendLoop" className="h-[3.875rem] w-auto sm:h-[4.125rem]" />
           </button>
 
-          <nav className="flex-1 flex items-center gap-1 h-full overflow-x-auto">
+          <nav className="flex h-full flex-1 items-center gap-1 overflow-x-auto">
             {menuItems.map((item) => {
               const isActive = activeTab === item.id;
               const Icon = item.icon;
@@ -438,55 +454,55 @@ export default function PainelLocador() {
                 <button
                   key={item.id}
                   onClick={() => handleMenuClick(item)}
-                  className={`h-full flex items-center gap-2 px-4 text-[15px] font-medium whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
+                  className={`flex h-full items-center gap-2 whitespace-nowrap border-b-2 px-4 text-[15px] font-medium transition-colors cursor-pointer ${
                     isActive
-                      ? 'border-[#1A1A1A] text-[#1A1A1A]'
-                      : 'border-transparent text-gray-500 hover:text-[#1A1A1A]'
+                      ? 'border-grafite text-grafite'
+                      : 'border-transparent text-gray-500 hover:text-grafite'
                   }`}
                 >
-                  <Icon size={20} className={isActive ? 'text-[#29C354]' : 'text-gray-400'} />
+                  <Icon size={20} className={isActive ? 'text-verde-agua' : 'text-gray-400'} />
                   {item.label}
                 </button>
               );
             })}
           </nav>
 
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex flex-shrink-0 items-center gap-2">
             <NotificacaoSino />
             <button
               onClick={() => navigate('/configuracoes')}
               title="Configurações"
-              className="p-2 rounded-lg text-gray-500 hover:bg-gray-50 hover:text-[#1A1A1A] transition-colors cursor-pointer"
+              className="cursor-pointer rounded-full bg-gray-50 p-2.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-verde-agua"
             >
-              <LuSettings size={22} />
+              <LuSettings size={18} />
             </button>
 
             <button
               onClick={() => navigate('/meu-perfil')}
-              className="flex items-center gap-2.5 pl-3 ml-1 border-l border-gray-200 cursor-pointer group"
+              className="group ml-1 flex cursor-pointer items-center gap-2.5 border-l border-gray-200 pl-3"
             >
-              <div className="w-10 h-10 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center font-semibold text-sm overflow-hidden flex-shrink-0">
+              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-verde-escuro text-sm font-semibold text-white">
                 {dadosLocador?.avatar ? (
-                  <img src={dadosLocador.avatar} alt={dadosLocador.nome} className="w-full h-full object-cover" />
+                  <img src={dadosLocador.avatar} alt={dadosLocador.nome} className="h-full w-full object-cover" />
                 ) : (
                   dadosLocador?.nome?.charAt(0).toUpperCase() || 'U'
                 )}
               </div>
-              <div className="hidden lg:block text-left min-w-0">
-                <p className="text-[14px] font-semibold text-[#1A1A1A] whitespace-nowrap leading-tight group-hover:text-[#0068F3] transition-colors">
+              <div className="hidden min-w-0 text-left lg:block">
+                <p className="whitespace-nowrap text-[14px] font-semibold leading-tight text-verde-escuro transition-colors group-hover:text-verde-agua">
                   {dadosLocador?.nome ? dadosLocador.nome.split(' ').slice(0, 2).join(' ') : 'Carregando...'}
                 </p>
-                <p className="text-[12px] text-gray-400 leading-tight">Locador</p>
+                <p className="text-[12px] leading-tight text-gray-400">Ver perfil</p>
               </div>
             </button>
           </div>
         </div>
       </header>
 
-      <main className="px-10 py-8 max-w-[1600px] mx-auto w-full space-y-6">
+      <main className="mx-auto w-full max-w-[1600px] space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
         <div>
-          <h1 className="text-xl font-semibold text-[#1A1A1A]">{secaoAtual?.label || 'Painel'}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Gerencie seus anúncios, solicitações, reservas e ganhos em um só lugar.</p>
+          <h1 className="text-xl font-semibold text-grafite">{tituloAtual}</h1>
+          <p className="mt-1 text-sm text-gray-500">{descricaoAtual}</p>
         </div>
         {renderConteudo()}
       </main>
@@ -528,7 +544,7 @@ function ModalVistoriaRetirada({ aluguel, onClose, onEnviar, enviando }) {
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-lg font-bold text-[#1A1A1A]">Vistoria antes da retirada</h2>
+            <h2 className="text-lg font-bold text-grafite">Vistoria antes da retirada</h2>
             <p className="mt-1 text-sm text-gray-500">{aluguel.anuncio?.titulo || 'Item do aluguel'}</p>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-800" aria-label="Fechar"><LuX size={20} /></button>
@@ -559,15 +575,15 @@ function CardAnuncio({ anuncio, onAbrirAnuncio, onEditarAnuncio, onPedirExcluirA
           </div>
         )}
         <div className="min-w-0">
-          <h3 className="font-semibold text-[#1A1A1A] text-sm truncate group-hover:text-[#0068F3] transition-colors">{anuncio.titulo}</h3>
+          <h3 className="font-semibold text-grafite text-sm truncate group-hover:text-azul-oceano transition-colors">{anuncio.titulo}</h3>
           <p className="text-xs text-gray-400 mt-0.5">R$ {anuncio.precos?.precoPorDia}/dia</p>
         </div>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
         <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full ${
-          anuncio.status === 'publicado' ? 'bg-[#0F6E56]/[0.08] text-[#0F6E56]' : 'bg-gray-100 text-gray-600'
+          anuncio.status === 'publicado' ? 'bg-verde-escuro/[0.08] text-verde-escuro' : 'bg-gray-100 text-gray-600'
         }`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${anuncio.status === 'publicado' ? 'bg-[#0F6E56]' : 'bg-gray-400'}`}></span>
+          <span className={`w-1.5 h-1.5 rounded-full ${anuncio.status === 'publicado' ? 'bg-verde-escuro' : 'bg-gray-400'}`}></span>
           {anuncio.status}
         </span>
         <button
@@ -576,7 +592,7 @@ function CardAnuncio({ anuncio, onAbrirAnuncio, onEditarAnuncio, onPedirExcluirA
             onEditarAnuncio(anuncio);
           }}
           title="Editar anúncio"
-          className="p-2 rounded-lg text-gray-400 hover:text-[#0068F3] hover:bg-blue-50 transition-colors cursor-pointer"
+          className="p-2 rounded-lg text-gray-400 hover:text-azul-oceano hover:bg-azul-oceano/10 transition-colors cursor-pointer"
         >
           <LuPencil size={16} />
         </button>
@@ -609,7 +625,7 @@ function SecaoPainel({ stats, toneClasses, meusAnuncios, solicitacoes, devolucoe
               </div>
               <div className="min-w-0">
                 <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5 truncate">{stat.titulo}</p>
-                <p className="text-xl font-semibold text-[#1A1A1A] tabular-nums">{stat.valor}</p>
+                <p className="text-xl font-semibold text-grafite tabular-nums">{stat.valor}</p>
               </div>
             </div>
           );
@@ -619,10 +635,10 @@ function SecaoPainel({ stats, toneClasses, meusAnuncios, solicitacoes, devolucoe
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <section className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col">
           <div className="px-6 py-4.5 border-b border-gray-100 flex justify-between items-center">
-            <h2 className="text-[15px] font-semibold text-[#1A1A1A]">Meus anúncios</h2>
+            <h2 className="text-[15px] font-semibold text-grafite">Anúncios recentes</h2>
             <button
               onClick={onNovoAnuncio}
-              className="flex items-center gap-1.5 text-[12px] font-semibold text-white bg-[#1A1A1A] px-3.5 py-2 rounded-lg hover:bg-[#0068F3] transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 text-[12px] font-semibold text-white bg-grafite px-3.5 py-2 rounded-lg hover:bg-azul-oceano transition-colors cursor-pointer"
             >
               <LuPlus size={14} /> Novo anúncio
             </button>
@@ -651,6 +667,7 @@ function SecaoPainel({ stats, toneClasses, meusAnuncios, solicitacoes, devolucoe
         <SecaoSolicitacoes 
           solicitacoes={solicitacoes} 
           devolucoes={devolucoes} 
+          titulo="Pendências para revisar"
           onAceitar={onAceitar} 
           onAbrirVistoria={onAbrirVistoria}
           onRecusar={onRecusar} 
@@ -665,10 +682,10 @@ function SecaoAnuncios({ meusAnuncios, onNovoAnuncio, onAbrirAnuncio, onEditarAn
   return (
     <section className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col">
       <div className="px-6 py-4.5 border-b border-gray-100 flex justify-between items-center">
-        <h2 className="text-[15px] font-semibold text-[#1A1A1A]">Meus anúncios</h2>
+        <h2 className="text-[15px] font-semibold text-grafite">Meus anúncios</h2>
         <button
           onClick={onNovoAnuncio}
-          className="flex items-center gap-1.5 text-[12px] font-semibold text-white bg-[#1A1A1A] px-3.5 py-2 rounded-lg hover:bg-[#0068F3] transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 text-[12px] font-semibold text-white bg-grafite px-3.5 py-2 rounded-lg hover:bg-azul-oceano transition-colors cursor-pointer"
         >
           <LuPlus size={14} /> Novo anúncio
         </button>
@@ -696,15 +713,15 @@ function SecaoAnuncios({ meusAnuncios, onNovoAnuncio, onAbrirAnuncio, onEditarAn
   );
 }
 
-function SecaoSolicitacoes({ solicitacoes, devolucoes, onAbrirVistoria, onRecusar, onConfirmarDevolucao }) {
+function SecaoSolicitacoes({ solicitacoes, devolucoes, titulo = 'Solicitações recebidas', onAbrirVistoria, onRecusar, onConfirmarDevolucao }) {
   const total = solicitacoes.length + (devolucoes?.length || 0);
 
   return (
     <section className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col">
       <div className="px-6 py-4.5 border-b border-gray-100 flex justify-between items-center">
-        <h2 className="text-[15px] font-semibold text-[#1A1A1A]">Solicitações recebidas</h2>
+        <h2 className="text-[15px] font-semibold text-grafite">{titulo}</h2>
         {total > 0 && (
-          <span className="bg-[#1A1A1A] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{total}</span>
+          <span className="bg-grafite text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{total}</span>
         )}
       </div>
       <div className="p-2 flex-grow overflow-y-auto max-h-[600px]">
@@ -717,26 +734,26 @@ function SecaoSolicitacoes({ solicitacoes, devolucoes, onAbrirVistoria, onRecusa
           <>
             {/* 1. DEVOLUÇÕES (Têm prioridade alta de visualização) */}
             {devolucoes?.map((req) => (
-              <div key={req._id} className="p-4 bg-[#0068F3]/[0.03] border border-[#0068F3]/20 rounded-xl mb-2 last:mb-0">
+              <div key={req._id} className="p-4 bg-azul-oceano/[0.03] border border-azul-oceano/20 rounded-xl mb-2 last:mb-0">
                 <div className="flex justify-between items-start mb-3 gap-3">
                   <div className="min-w-0">
-                    <h3 className="font-semibold text-[#1A1A1A] text-sm truncate">{req.anuncio?.titulo || 'Anúncio'}</h3>
+                    <h3 className="font-semibold text-grafite text-sm truncate">{req.anuncio?.titulo || 'Anúncio'}</h3>
                     <p className="text-xs text-gray-500 mt-1">
-                      Devolução de <span className="font-semibold text-[#1A1A1A]">{req.locatario?.nome || 'Locatário'}</span>
+                      Devolução de <span className="font-semibold text-grafite">{req.locatario?.nome || 'Locatário'}</span>
                     </p>
                     <p className="text-xs text-gray-400 mt-0.5">
                       Fim do aluguel: {new Date(req.dataFim).toLocaleDateString('pt-BR')}
                     </p>
                   </div>
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[#0068F3]/10 text-[#0068F3] flex-shrink-0">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#0068F3] animate-pulse"></span>
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-azul-oceano/10 text-azul-oceano flex-shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-azul-oceano animate-pulse"></span>
                     Aguardando confirmação
                   </span>
                 </div>
                 {req.vistoriaDevolucao?.fotos?.length > 0 && (
                   <div className="mb-3 grid grid-cols-4 gap-2">
                     {req.vistoriaDevolucao.fotos.slice(0, 4).map((foto, indice) => (
-                      <a key={foto} href={foto} target="_blank" rel="noreferrer" className="aspect-square overflow-hidden rounded-lg border border-[#0068F3]/20">
+                      <a key={foto} href={foto} target="_blank" rel="noreferrer" className="aspect-square overflow-hidden rounded-lg border border-azul-oceano/20">
                         <img src={foto} alt={`Foto da devolução ${indice + 1}`} className="h-full w-full object-cover transition hover:scale-105" />
                       </a>
                     ))}
@@ -745,7 +762,7 @@ function SecaoSolicitacoes({ solicitacoes, devolucoes, onAbrirVistoria, onRecusa
                 <div className="mt-3">
                   <button
                     onClick={() => onConfirmarDevolucao(req._id)}
-                    className="w-full flex items-center justify-center gap-2 bg-[#0068F3] text-white text-xs font-semibold py-2.5 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer shadow-sm shadow-blue-500/20"
+                    className="w-full flex items-center justify-center gap-2 bg-azul-oceano text-white text-xs font-semibold py-2.5 rounded-lg hover:bg-azul-oceano transition-colors cursor-pointer shadow-sm shadow-azul-oceano/20"
                   >
                     <LuCheck size={14} /> Confirmar recebimento do item
                   </button>
@@ -758,9 +775,9 @@ function SecaoSolicitacoes({ solicitacoes, devolucoes, onAbrirVistoria, onRecusa
               <div key={req._id} className="p-4 hover:bg-gray-50 rounded-xl transition-colors border border-gray-100 mb-2 last:mb-0">
                 <div className="flex justify-between items-start mb-3 gap-3">
                   <div className="min-w-0">
-                    <h3 className="font-semibold text-[#1A1A1A] text-sm truncate">{req.anuncio?.titulo || 'Anúncio'}</h3>
+                    <h3 className="font-semibold text-grafite text-sm truncate">{req.anuncio?.titulo || 'Anúncio'}</h3>
                     <p className="text-xs text-gray-500 mt-1">
-                      Solicitado por <span className="font-semibold text-[#1A1A1A]">{req.locatario?.nome || 'Locatário'}</span>
+                      Solicitado por <span className="font-semibold text-grafite">{req.locatario?.nome || 'Locatário'}</span>
                     </p>
                     <p className="text-xs text-gray-400 mt-0.5">
                       {new Date(req.dataInicio).toLocaleDateString('pt-BR')} até {new Date(req.dataFim).toLocaleDateString('pt-BR')}
@@ -774,7 +791,7 @@ function SecaoSolicitacoes({ solicitacoes, devolucoes, onAbrirVistoria, onRecusa
                 <div className="flex gap-2 mt-3">
                   <button
                     onClick={() => onAbrirVistoria(req)}
-                    className="flex-1 flex items-center justify-center gap-2 bg-[#1A1A1A] text-white text-xs font-semibold py-2.5 rounded-lg hover:bg-[#0F6E56] transition-colors cursor-pointer"
+                    className="flex-1 flex items-center justify-center gap-2 bg-grafite text-white text-xs font-semibold py-2.5 rounded-lg hover:bg-verde-escuro transition-colors cursor-pointer"
                   >
                     <LuCamera size={14} /> Fotografar e aceitar
                   </button>
@@ -840,7 +857,7 @@ function SecaoCalendario({ alugueis, meusAnuncios, onAbrirDetalhes }) {
       <div className="xl:col-span-2 bg-white rounded-2xl border border-gray-200 overflow-hidden p-6 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg font-semibold text-[#1A1A1A]">
+            <h2 className="text-lg font-semibold text-grafite">
               {meses[mes]} de {ano}
             </h2>
             <div className="flex items-center gap-1">
@@ -858,7 +875,7 @@ function SecaoCalendario({ alugueis, meusAnuncios, onAbrirDetalhes }) {
             <select
               value={anuncioFiltro}
               onChange={(e) => setAnuncioFiltro(e.target.value)}
-              className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-[#1A1A1A] outline-none cursor-pointer"
+              className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-grafite outline-none cursor-pointer"
             >
               <option value="todos">Todos os anúncios</option>
               {meusAnuncios.map(an => (
@@ -895,17 +912,17 @@ function SecaoCalendario({ alugueis, meusAnuncios, onAbrirDetalhes }) {
                 title={estaOcupado ? 'Ver detalhes do aluguel' : undefined}
                 className={`h-20 p-2 rounded-xl border flex flex-col justify-between transition-all ${
                   estaOcupado
-                    ? 'border-[#0068F3]/30 bg-[#0068F3]/[0.04] cursor-pointer hover:border-[#0068F3] hover:bg-[#0068F3]/[0.08]'
+                    ? 'border-azul-oceano/30 bg-azul-oceano/[0.04] cursor-pointer hover:border-azul-oceano hover:bg-azul-oceano/[0.08]'
                     : 'border-gray-100 hover:border-gray-200 bg-white'
                 }`}
               >
-                <span className={`text-xs font-bold ${estaOcupado ? 'text-[#0068F3]' : 'text-gray-700'}`}>
+                <span className={`text-xs font-bold ${estaOcupado ? 'text-azul-oceano' : 'text-gray-700'}`}>
                   {dia}
                 </span>
 
                 {estaOcupado && (
                   <div className="mt-1">
-                    <span className="inline-block w-full truncate text-[10px] font-semibold text-[#0068F3] bg-[#0068F3]/10 px-1.5 py-0.5 rounded">
+                    <span className="inline-block w-full truncate text-[10px] font-semibold text-azul-oceano bg-azul-oceano/10 px-1.5 py-0.5 rounded">
                       {reservasDia[0].anuncio?.titulo || 'Alugado'}
                     </span>
                   </div>
@@ -917,7 +934,7 @@ function SecaoCalendario({ alugueis, meusAnuncios, onAbrirDetalhes }) {
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col space-y-4">
-        <h2 className="text-[15px] font-semibold text-[#1A1A1A] border-b border-gray-100 pb-3">
+        <h2 className="text-[15px] font-semibold text-grafite border-b border-gray-100 pb-3">
           Reservas confirmadas
         </h2>
 
@@ -933,18 +950,18 @@ function SecaoCalendario({ alugueis, meusAnuncios, onAbrirDetalhes }) {
                 key={r._id}
                 onClick={() => onAbrirDetalhes?.(r)}
                 title="Ver detalhes e conversar"
-                className="p-3.5 rounded-xl border border-gray-100 bg-[#FAFAF9] space-y-2 cursor-pointer hover:border-[#0068F3]/40 hover:bg-[#0068F3]/[0.04] transition-colors group"
+                className="p-3.5 rounded-xl border border-gray-100 bg-white space-y-2 cursor-pointer hover:border-azul-oceano/40 hover:bg-azul-oceano/[0.04] transition-colors group"
               >
                 <div className="flex justify-between items-start gap-2">
-                  <h4 className="font-semibold text-sm text-[#1A1A1A] truncate">{r.anuncio?.titulo}</h4>
-                  <span className="text-[10px] font-semibold text-[#0F6E56] bg-[#0F6E56]/10 px-2 py-0.5 rounded-full flex-shrink-0">
+                  <h4 className="font-semibold text-sm text-grafite truncate">{r.anuncio?.titulo}</h4>
+                  <span className="text-[10px] font-semibold text-verde-escuro bg-verde-escuro/10 px-2 py-0.5 rounded-full flex-shrink-0">
                     Confirmado
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 text-xs text-gray-600 min-w-0">
                     <LuUser size={14} className="text-gray-400 flex-shrink-0" />
-                    <span className="truncate">Locatário: <strong className="text-[#1A1A1A]">{r.locatario?.nome || 'Cliente'}</strong></span>
+                    <span className="truncate">Locatário: <strong className="text-grafite">{r.locatario?.nome || 'Cliente'}</strong></span>
                   </div>
                   <button
                     onClick={(e) => {
@@ -952,7 +969,7 @@ function SecaoCalendario({ alugueis, meusAnuncios, onAbrirDetalhes }) {
                       onAbrirDetalhes?.(r);
                     }}
                     title="Ver detalhes e abrir chat"
-                    className="p-1.5 rounded-lg text-gray-400 group-hover:text-[#0068F3] hover:bg-white transition-colors cursor-pointer flex-shrink-0"
+                    className="p-1.5 rounded-lg text-gray-400 group-hover:text-azul-oceano hover:bg-white transition-colors cursor-pointer flex-shrink-0"
                   >
                     <LuMessageSquare size={15} />
                   </button>
@@ -988,25 +1005,25 @@ function ModalDetalhesReserva({ reserva, onClose, onAbrirChat }) {
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-5" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold text-[#1A1A1A]">Detalhes do aluguel</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-[#1A1A1A] cursor-pointer">
+          <h3 className="text-base font-semibold text-grafite">Detalhes do aluguel</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-grafite cursor-pointer">
             <LuX size={20} />
           </button>
         </div>
 
         <div
           onClick={() => locatario?._id && navigate(`/usuario/${locatario._id}`)}
-          className="flex items-center gap-3 p-3.5 rounded-xl bg-[#FAFAF9] border border-gray-100 cursor-pointer hover:border-[#0068F3]/30 transition-colors"
+          className="flex items-center gap-3 p-3.5 rounded-xl bg-white border border-gray-100 cursor-pointer hover:border-azul-oceano/30 transition-colors"
         >
           {locatario?.avatar ? (
             <img src={locatario.avatar} alt={locatario.nome} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-[#0068F3] text-white flex items-center justify-center font-semibold flex-shrink-0">
+            <div className="w-12 h-12 rounded-full bg-azul-oceano text-white flex items-center justify-center font-semibold flex-shrink-0">
               {locatario?.nome?.charAt(0).toUpperCase() || '?'}
             </div>
           )}
           <div className="min-w-0">
-            <p className="font-semibold text-sm text-[#1A1A1A] truncate">{locatario?.nome || 'Locatário'}</p>
+            <p className="font-semibold text-sm text-grafite truncate">{locatario?.nome || 'Locatário'}</p>
             {locatario?.email && <p className="text-xs text-gray-500 truncate">{locatario.email}</p>}
             {locatario?.telefone && <p className="text-xs text-gray-500 truncate">{locatario.telefone}</p>}
           </div>
@@ -1015,33 +1032,33 @@ function ModalDetalhesReserva({ reserva, onClose, onAbrirChat }) {
         <div className="space-y-2.5 text-sm">
           <div className="flex justify-between gap-3">
             <span className="text-gray-500 flex-shrink-0">Item</span>
-            <span className="font-semibold text-[#1A1A1A] text-right truncate">{reserva.anuncio?.titulo || '—'}</span>
+            <span className="font-semibold text-grafite text-right truncate">{reserva.anuncio?.titulo || '—'}</span>
           </div>
           <div className="flex justify-between gap-3">
             <span className="text-gray-500 flex-shrink-0">Período</span>
-            <span className="font-semibold text-[#1A1A1A] text-right">
+            <span className="font-semibold text-grafite text-right">
               {new Date(reserva.dataInicio).toLocaleDateString('pt-BR')} até {new Date(reserva.dataFim).toLocaleDateString('pt-BR')}
             </span>
           </div>
           {reserva.horarioRetirada && (
             <div className="flex justify-between gap-3">
               <span className="text-gray-500 flex-shrink-0">Horário de retirada</span>
-              <span className="font-semibold text-[#1A1A1A]">{reserva.horarioRetirada}</span>
+              <span className="font-semibold text-grafite">{reserva.horarioRetirada}</span>
             </div>
           )}
           {reserva.horarioDevolucao && (
             <div className="flex justify-between gap-3">
               <span className="text-gray-500 flex-shrink-0">Horário de devolução</span>
-              <span className="font-semibold text-[#1A1A1A]">{reserva.horarioDevolucao}</span>
+              <span className="font-semibold text-grafite">{reserva.horarioDevolucao}</span>
             </div>
           )}
           <div className="flex justify-between gap-3">
             <span className="text-gray-500 flex-shrink-0">Valor total</span>
-            <span className="font-semibold text-[#1A1A1A]">R$ {Number(reserva.precoTotal || 0).toFixed(2)}</span>
+            <span className="font-semibold text-grafite">R$ {Number(reserva.precoTotal || 0).toFixed(2)}</span>
           </div>
           <div className="flex justify-between items-center gap-3">
             <span className="text-gray-500 flex-shrink-0">Status</span>
-            <span className="text-[11px] font-semibold text-[#0F6E56] bg-[#0F6E56]/10 px-2 py-0.5 rounded-full">
+            <span className="text-[11px] font-semibold text-verde-escuro bg-verde-escuro/10 px-2 py-0.5 rounded-full">
               {statusLabel}
             </span>
           </div>
@@ -1050,7 +1067,7 @@ function ModalDetalhesReserva({ reserva, onClose, onAbrirChat }) {
         <button
           onClick={() => onAbrirChat(locatario?._id)}
           disabled={!locatario?._id}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-[#1A1A1A] text-white text-xs font-semibold hover:bg-[#0068F3] transition-colors cursor-pointer disabled:opacity-40"
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-grafite text-white text-xs font-semibold hover:bg-azul-oceano transition-colors cursor-pointer disabled:opacity-40"
         >
           <LuMessageSquare size={15} /> Conversar com {primeiroNome}
         </button>
@@ -1076,13 +1093,13 @@ function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, 
   return (
     <div className="space-y-6">
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-gray-200 border-l-4 border-l-[#0F6E56] flex items-center gap-4">
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-[#0F6E56]/[0.08] text-[#0F6E56] flex-shrink-0">
+        <div className="bg-white p-5 rounded-2xl border border-gray-200 border-l-4 border-l-verde-escuro flex items-center gap-4">
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-verde-escuro/[0.08] text-verde-escuro flex-shrink-0">
             <LuWallet size={20} />
           </div>
           <div className="min-w-0">
             <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">Ganhos este mês</p>
-            <p className="text-xl font-semibold text-[#1A1A1A] tabular-nums">R$ {ganhosDoMes.toFixed(2)}</p>
+            <p className="text-xl font-semibold text-grafite tabular-nums">R$ {ganhosDoMes.toFixed(2)}</p>
           </div>
         </div>
         <div className="bg-white p-5 rounded-2xl border border-gray-200 border-l-4 border-l-gray-300 flex items-center gap-4">
@@ -1091,7 +1108,7 @@ function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, 
           </div>
           <div className="min-w-0">
             <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">Ganhos totais</p>
-            <p className="text-xl font-semibold text-[#1A1A1A] tabular-nums">R$ {ganhosTotais.toFixed(2)}</p>
+            <p className="text-xl font-semibold text-grafite tabular-nums">R$ {ganhosTotais.toFixed(2)}</p>
           </div>
         </div>
         <div className="bg-white p-5 rounded-2xl border border-gray-200 border-l-4 border-l-amber-500 flex items-center gap-4">
@@ -1100,7 +1117,7 @@ function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, 
           </div>
           <div className="min-w-0">
             <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">A receber</p>
-            <p className="text-xl font-semibold text-[#1A1A1A] tabular-nums">R$ {aReceber.toFixed(2)}</p>
+            <p className="text-xl font-semibold text-grafite tabular-nums">R$ {aReceber.toFixed(2)}</p>
           </div>
         </div>
       </section>
@@ -1108,7 +1125,7 @@ function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, 
       {/* 2. ALUGUÉIS EM ANDAMENTO (NO TOPO) */}
       <section className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col">
         <div className="px-6 py-4.5 border-b border-gray-100">
-          <h2 className="text-[15px] font-semibold text-[#1A1A1A]">Aluguéis em andamento</h2>
+          <h2 className="text-[15px] font-semibold text-grafite">Aluguéis em andamento</h2>
         </div>
         <div className="p-2 flex-grow">
           {alugueisAndamento.length === 0 ? (
@@ -1123,7 +1140,7 @@ function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, 
               return (
                 <div key={a._id} className="flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-100 last:border-0">
                   <div className="min-w-0">
-                    <h3 className="font-semibold text-[#1A1A1A] text-sm truncate">{a.anuncio?.titulo}</h3>
+                    <h3 className="font-semibold text-grafite text-sm truncate">{a.anuncio?.titulo}</h3>
                     <p className="text-xs text-gray-400 mt-0.5">
                       Alugado por {a.locatario?.nome} • devolução em {new Date(a.dataFim).toLocaleDateString('pt-BR')}
                     </p>
@@ -1137,7 +1154,7 @@ function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, 
                     {aguardandoConfirmacao ? (
                       <button
                         onClick={() => onMarcarDevolvido(a._id)}
-                        className="bg-[#0068F3] text-white text-[11px] font-semibold px-3.5 py-2 rounded-lg hover:bg-blue-700 transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm shadow-blue-500/20 animate-pulse"
+                        className="bg-azul-oceano text-white text-[11px] font-semibold px-3.5 py-2 rounded-lg hover:bg-azul-oceano transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm shadow-azul-oceano/20 animate-pulse"
                       >
                         <LuCheck size={14} /> Confirmar devolução
                       </button>
@@ -1158,18 +1175,18 @@ function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, 
       <section className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col">
         <div className="px-6 py-4.5 border-b border-gray-100 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <h2 className="text-[15px] font-semibold text-[#1A1A1A]">
+            <h2 className="text-[15px] font-semibold text-grafite">
               {verHistoricoCompleto ? 'Histórico de aluguéis concluídos' : 'Pendentes de avaliação'}
             </h2>
             {pendentesDeAvaliar.length > 0 && (
-              <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-[#0068F3] text-white text-[11px] font-semibold">
+              <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-azul-oceano text-white text-[11px] font-semibold">
                 {pendentesDeAvaliar.length}
               </span>
             )}
           </div>
           <button
             onClick={() => setVerHistoricoCompleto(prev => !prev)}
-            className="flex items-center gap-1.5 text-[12px] font-semibold text-gray-500 hover:text-[#0068F3] transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-[12px] font-semibold text-gray-500 hover:text-azul-oceano transition-colors cursor-pointer"
           >
             <LuHistory size={14} />
             {verHistoricoCompleto ? 'Ver só pendentes' : 'Ver histórico completo'}
@@ -1194,13 +1211,13 @@ function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, 
             listaExibida.map((a) => (
               <div key={a._id} className="flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-100 last:border-0">
                 <div className="min-w-0">
-                  <h3 className="font-semibold text-[#1A1A1A] text-sm truncate">{a.anuncio?.titulo}</h3>
+                  <h3 className="font-semibold text-grafite text-sm truncate">{a.anuncio?.titulo}</h3>
                   <p className="text-xs text-gray-400 mt-0.5">
                     Alugado por {a.locatario?.nome} • {new Date(a.dataFim).toLocaleDateString('pt-BR')}
                   </p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className="font-semibold text-[#0F6E56] text-sm tabular-nums">
+                  <span className="font-semibold text-verde-escuro text-sm tabular-nums">
                     + R$ {(a.precoTotal - (a.taxaServico || 0)).toFixed(2)}
                   </span>
                   {a.locatario && (
@@ -1222,12 +1239,21 @@ function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, 
 }
 
 function ModalEditarAnuncio({ anuncio, onClose, onSalvar }) {
-  const [titulo, setTitulo] = useState(anuncio?.titulo || '');
-  const [descricao, setDescricao] = useState(anuncio?.descricao || '');
-  const [precoPorDia, setPrecoPorDia] = useState(anuncio?.precos?.precoPorDia || 0);
-  const [caucao, setCaucao] = useState(anuncio?.precos?.caucao || 0);
-  const [status, setStatus] = useState(anuncio?.status || 'publicado');
+const [titulo, setTitulo] = useState('');
+const [descricao, setDescricao] = useState('');
+const [precoPorDia, setPrecoPorDia] = useState(0);
+const [caucao, setCaucao] = useState(0);
+const [status, setStatus] = useState('publicado');
 
+useEffect(() => {
+  if (!anuncio) return;
+
+  setTitulo(anuncio.titulo || '');
+  setDescricao(anuncio.descricao || '');
+  setPrecoPorDia(anuncio.precos?.precoPorDia || 0);
+  setCaucao(anuncio.precos?.caucao || 0);
+  setStatus(anuncio.status || 'publicado');
+}, [anuncio]);
   if (!anuncio) return null;
 
   function handleSubmit(e) {
@@ -1249,8 +1275,8 @@ function ModalEditarAnuncio({ anuncio, onClose, onSalvar }) {
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center border-b border-gray-100 pb-3">
-          <h2 className="text-base font-semibold text-[#1A1A1A]">Editar anúncio</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-[#1A1A1A] cursor-pointer">
+          <h2 className="text-base font-semibold text-grafite">Editar anúncio</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-grafite cursor-pointer">
             <LuX size={20} />
           </button>
         </div>
@@ -1263,7 +1289,7 @@ function ModalEditarAnuncio({ anuncio, onClose, onSalvar }) {
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
               required
-              className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#1A1A1A] outline-none focus:border-[#0068F3]"
+              className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm font-medium text-grafite outline-none focus:border-azul-oceano"
             />
           </div>
 
@@ -1274,7 +1300,7 @@ function ModalEditarAnuncio({ anuncio, onClose, onSalvar }) {
               onChange={(e) => setDescricao(e.target.value)}
               rows={3}
               required
-              className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#1A1A1A] outline-none focus:border-[#0068F3]"
+              className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm font-medium text-grafite outline-none focus:border-azul-oceano"
             />
           </div>
 
@@ -1286,7 +1312,7 @@ function ModalEditarAnuncio({ anuncio, onClose, onSalvar }) {
                 value={precoPorDia}
                 onChange={(e) => setPrecoPorDia(e.target.value)}
                 required
-                className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#1A1A1A] outline-none focus:border-[#0068F3]"
+                className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm font-medium text-grafite outline-none focus:border-azul-oceano"
               />
             </div>
             <div>
@@ -1295,7 +1321,7 @@ function ModalEditarAnuncio({ anuncio, onClose, onSalvar }) {
                 type="number"
                 value={caucao}
                 onChange={(e) => setCaucao(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#1A1A1A] outline-none focus:border-[#0068F3]"
+                className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm font-medium text-grafite outline-none focus:border-azul-oceano"
               />
             </div>
           </div>
@@ -1305,7 +1331,7 @@ function ModalEditarAnuncio({ anuncio, onClose, onSalvar }) {
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm font-medium text-[#1A1A1A] outline-none cursor-pointer"
+              className="w-full px-3.5 py-2 rounded-lg border border-gray-200 text-sm font-medium text-grafite outline-none cursor-pointer"
             >
               <option value="publicado">Publicado</option>
               <option value="rascunho">Rascunho</option>
@@ -1322,7 +1348,7 @@ function ModalEditarAnuncio({ anuncio, onClose, onSalvar }) {
             </button>
             <button
               type="submit"
-              className="flex-1 py-2.5 rounded-lg bg-[#1A1A1A] text-white text-xs font-semibold hover:bg-[#0068F3] transition-colors cursor-pointer"
+              className="flex-1 py-2.5 rounded-lg bg-grafite text-white text-xs font-semibold hover:bg-azul-oceano transition-colors cursor-pointer"
             >
               Salvar alterações
             </button>
@@ -1343,7 +1369,7 @@ function ModalConfirmarExclusao({ anuncio, onClose, onConfirmar }) {
           <LuTrash2 size={24} />
         </div>
         <div>
-          <h3 className="text-base font-semibold text-[#1A1A1A]">Excluir anúncio?</h3>
+          <h3 className="text-base font-semibold text-grafite">Excluir anúncio?</h3>
           <p className="text-xs text-gray-500 mt-1">
             Você tem certeza que deseja remover <strong>"{anuncio.titulo}"</strong>? Esta ação é irreversível e desativará novas solicitações para este item.
           </p>
@@ -1394,7 +1420,7 @@ function SecaoConfiguracoes({ onSalvarPainelPadrao, onExcluirConta, objetivoAtua
     <div className="space-y-6">
       <section className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         <div className="px-6 py-4.5 border-b border-gray-100">
-          <h2 className="text-[15px] font-semibold text-[#1A1A1A]">Tipo de conta</h2>
+          <h2 className="text-[15px] font-semibold text-grafite">Tipo de conta</h2>
           <p className="text-xs text-gray-500 mt-1">Mudou de ideia? Ajuste aqui o que você quer fazer no LendLoop.</p>
         </div>
         <div className="p-6 space-y-3">
@@ -1404,11 +1430,11 @@ function SecaoConfiguracoes({ onSalvarPainelPadrao, onExcluirConta, objetivoAtua
               onClick={() => handleAlterarObjetivo(op.valor)}
               className={`p-4 border rounded-xl cursor-pointer transition-all ${
                 objetivoAtual === op.valor
-                  ? 'border-[#0F6E56] bg-[#0F6E56]/[0.04] ring-1 ring-[#0F6E56]'
+                  ? 'border-verde-escuro bg-verde-escuro/[0.04] ring-1 ring-verde-escuro'
                   : 'border-gray-200 hover:border-gray-300'
               } ${salvandoObjetivo ? 'opacity-60 pointer-events-none' : ''}`}
             >
-              <span className={`block text-sm font-semibold ${objetivoAtual === op.valor ? 'text-[#0F6E56]' : 'text-[#1A1A1A]'}`}>
+              <span className={`block text-sm font-semibold ${objetivoAtual === op.valor ? 'text-verde-escuro' : 'text-grafite'}`}>
                 {op.titulo}
               </span>
               <span className="block text-xs text-gray-500 mt-0.5">{op.descricao}</span>
@@ -1419,15 +1445,15 @@ function SecaoConfiguracoes({ onSalvarPainelPadrao, onExcluirConta, objetivoAtua
 
       <section className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         <div className="px-6 py-4.5 border-b border-gray-100">
-          <h2 className="text-[15px] font-semibold text-[#1A1A1A]">Preferências</h2>
+          <h2 className="text-[15px] font-semibold text-grafite">Preferências</h2>
         </div>
         <div className="p-6 space-y-2">
-          <label className="text-sm font-semibold text-[#1A1A1A]">Painel exibido ao entrar</label>
+          <label className="text-sm font-semibold text-grafite">Painel exibido ao entrar</label>
           <p className="text-xs text-gray-500">Escolha qual seção abrir automaticamente quando você acessa o Painel Locador.</p>
           <select
             value={painelPadrao}
             onChange={handleChangePainelPadrao}
-            className="w-full max-w-sm mt-2 px-3.5 py-2.5 rounded-lg border border-gray-200 text-sm font-medium text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#0068F3]/20 focus:border-[#0068F3] transition-colors cursor-pointer"
+            className="w-full max-w-sm mt-2 px-3.5 py-2.5 rounded-lg border border-gray-200 text-sm font-medium text-grafite focus:outline-none focus:ring-2 focus:ring-azul-oceano/20 focus:border-azul-oceano transition-colors cursor-pointer"
           >
             {PAINEIS_DISPONIVEIS.map((p) => (
               <option key={p.id} value={p.id}>{p.label}</option>
@@ -1442,7 +1468,7 @@ function SecaoConfiguracoes({ onSalvarPainelPadrao, onExcluirConta, objetivoAtua
         </div>
         <div className="p-6 flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold text-[#1A1A1A]">Excluir minha conta</p>
+            <p className="text-sm font-semibold text-grafite">Excluir minha conta</p>
             <p className="text-xs text-gray-500 mt-1">Essa ação é permanente e remove seus anúncios.</p>
           </div>
           <button

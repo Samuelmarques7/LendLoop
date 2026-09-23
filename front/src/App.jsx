@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { PaginaInicial } from './pages/PaginaInicial';
 import CriarAnuncio from './pages/criarAnuncio';
 import { ResultadosBusca } from './pages/ResultadosBusca';
@@ -18,8 +19,19 @@ import { NotificacaoProvider } from './context/NotificacaoContext';
 import { Toast } from './components/Toast';
 import { ConfirmacaoProvider} from './context/ConfirmacaoContext';
 import { ModalConfirmacao} from './components/ModalConfirmacao';
+import { Contato, FAQ, PoliticaPrivacidade, SobreNos, TermosDeUso } from './pages/Institucional';
 
 import './index.css';
+
+function RolarParaOTopo() {
+  const { pathname, search } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [pathname, search]);
+
+  return null;
+}
 
 function App() {
   return (
@@ -28,6 +40,7 @@ function App() {
       <ConfirmacaoProvider>
         <ModalConfirmacao />
         <BrowserRouter>
+        <RolarParaOTopo />
         <Routes>
           <Route path="/" element={<PaginaInicial />} />
           <Route path="/busca" element={<ResultadosBusca />} />
@@ -42,6 +55,11 @@ function App() {
           <Route path="/meu-perfil" element={<RotaPrivada><MeuPerfil /></RotaPrivada>} />
           <Route path="/configuracoes" element={<RotaPrivada><Configuracoes /></RotaPrivada>} />
           <Route path="/usuario/:id" element={<MeuPerfil />} />
+          <Route path="/sobre" element={<SobreNos />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/termos" element={<TermosDeUso />} />
+          <Route path="/privacidade" element={<PoliticaPrivacidade />} />
+          <Route path="/contato" element={<Contato />} />
 
           {/* Rotas Protegidas do Administrador (Padrão Outlet) */}
           <Route element={<RotaAdmin />}>

@@ -25,19 +25,19 @@ export function VistoriaFotos({ titulo, descricao, onEnviar, enviando = false })
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-[#0068F3]/20 bg-[#0068F3]/[0.05] p-4">
+      <div className="rounded-xl border border-azul-oceano/20 bg-azul-oceano/[0.05] p-4">
         <div className="flex gap-3">
-          <div className="mt-0.5 text-[#0068F3]"><LuCamera size={19} /></div>
+          <div className="mt-0.5 text-azul-oceano"><LuCamera size={19} /></div>
           <div>
-            <h3 className="text-sm font-bold text-[#032D54]">{titulo}</h3>
+            <h3 className="text-sm font-bold text-verde-escuro">{titulo}</h3>
             <p className="mt-1 text-xs leading-relaxed text-gray-600">{descricao}</p>
           </div>
         </div>
       </div>
 
-      <label className="flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 p-4 text-center transition hover:border-[#0068F3] hover:bg-blue-50">
-        <LuImagePlus size={22} className="mb-2 text-[#0068F3]" />
-        <span className="text-sm font-semibold text-[#1A1A1A]">Adicionar fotos de detalhes</span>
+      <label className="flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 p-4 text-center transition hover:border-azul-oceano hover:bg-azul-oceano/10">
+        <LuImagePlus size={22} className="mb-2 text-azul-oceano" />
+        <span className="text-sm font-semibold text-grafite">Adicionar fotos de detalhes</span>
         <span className="mt-1 text-xs text-gray-500">Mínimo de 3, máximo de 8 · JPG ou PNG</span>
         <input type="file" accept="image/jpeg,image/png" multiple capture="environment" className="sr-only" onChange={selecionar} />
       </label>
@@ -55,7 +55,7 @@ export function VistoriaFotos({ titulo, descricao, onEnviar, enviando = false })
         </div>
       )}
 
-      <button type="button" disabled={arquivos.length < 3 || enviando} onClick={enviar} className="w-full rounded-lg bg-[#1A1A1A] py-3 text-sm font-semibold text-white transition hover:bg-[#0068F3] disabled:cursor-not-allowed disabled:bg-gray-300">
+      <button type="button" disabled={arquivos.length < 3 || enviando} onClick={enviar} className="w-full rounded-lg bg-grafite py-3 text-sm font-semibold text-white transition hover:bg-azul-oceano disabled:cursor-not-allowed disabled:bg-gray-300">
         {enviando ? 'Enviando fotos...' : `Registrar vistoria (${arquivos.length}/3 mín.)`}
       </button>
     </div>

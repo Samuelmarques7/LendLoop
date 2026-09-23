@@ -30,7 +30,7 @@ function formatarDataConversa(data) {
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
 }
 
-export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#0068F3', conversaParaAbrir, onConversasAtualizadas }) {
+export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#0073F3', conversaParaAbrir, onConversasAtualizadas }) {
 
   const navigate = useNavigate();
   const { notificar } = useNotificacao();
@@ -167,7 +167,7 @@ export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#0068F3', conv
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Buscar conversas..."
-              className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#0068F3]/20 focus:border-[#0068F3] transition-colors"
+              className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-azul-oceano/20 focus:border-azul-oceano transition-colors"
             />
           </div>
         </div>
@@ -203,13 +203,13 @@ export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#0068F3', conv
                   )}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="font-semibold text-sm text-[#1A1A1A] truncate">{outro?.nome || 'Usuário removido'}</p>
+                      <p className="font-semibold text-sm text-grafite truncate">{outro?.nome || 'Usuário removido'}</p>
                       <span className="text-[11px] text-gray-400 flex-shrink-0">{formatarDataConversa(c.ultimaMensagemEm)}</span>
                     </div>
                     {c.anuncio?.titulo && (
                       <p className="text-[11px] text-gray-400 truncate">sobre {c.anuncio.titulo}</p>
                     )}
-                    <p className={`text-xs truncate mt-0.5 ${c.naoLidas > 0 ? 'font-semibold text-[#1A1A1A]' : 'text-gray-400'}`}>
+                    <p className={`text-xs truncate mt-0.5 ${c.naoLidas > 0 ? 'font-semibold text-grafite' : 'text-gray-400'}`}>
                       {c.ultimaMensagem || 'Conversa iniciada'}
                     </p>
                   </div>
@@ -240,7 +240,7 @@ export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#0068F3', conv
             <div className="h-16 border-b border-gray-200 flex items-center gap-3 px-5 flex-shrink-0">
               <button
                 onClick={() => setConversaAtivaId(null)}
-                className="sm:hidden text-gray-400 hover:text-[#1A1A1A] cursor-pointer"
+                className="sm:hidden text-gray-400 hover:text-grafite cursor-pointer"
               >
                 <LuArrowLeft size={18} />
               </button>
@@ -264,14 +264,14 @@ export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#0068F3', conv
                 className="min-w-0 cursor-pointer"
                 onClick={() => outroParticipante?._id && navigate(`/usuario/${outroParticipante._id}`)}
               >
-                <p className="font-semibold text-sm text-[#1A1A1A] truncate hover:text-[#29C354] transition-colors">{outroParticipante?.nome || 'Usuário removido'}</p>
+                <p className="font-semibold text-sm text-grafite truncate hover:text-verde-agua transition-colors">{outroParticipante?.nome || 'Usuário removido'}</p>
                 {conversaAtiva?.anuncio?.titulo && (
                   <p className="text-[11px] text-gray-400 truncate">sobre {conversaAtiva.anuncio.titulo}</p>
                 )}
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-5 space-y-3 bg-[#FAFAF9]">
+            <div className="flex-1 overflow-y-auto p-5 space-y-3 bg-white">
               {mensagens.length === 0 ? (
                 <p className="text-center text-xs text-gray-400 mt-4">Nenhuma mensagem ainda. Diga olá.</p>
               ) : (
@@ -293,7 +293,7 @@ export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#0068F3', conv
                       <div className={`flex ${minha ? 'justify-end' : 'justify-start'}`}>
                         <div
                           className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                            minha ? 'text-white rounded-br-sm' : 'bg-white border border-gray-200 text-[#1A1A1A] rounded-bl-sm'
+                            minha ? 'text-white rounded-br-sm' : 'bg-white border border-gray-200 text-grafite rounded-bl-sm'
                           }`}
                           style={minha ? { backgroundColor: corPrimaria } : {}}
                         >
@@ -313,7 +313,7 @@ export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#0068F3', conv
                 value={textoNovaMensagem}
                 onChange={(e) => setTextoNovaMensagem(e.target.value)}
                 placeholder="Escreva uma mensagem..."
-                className="flex-1 px-4 py-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#0068F3]/20 focus:border-[#0068F3] transition-colors"
+                className="flex-1 px-4 py-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-azul-oceano/20 focus:border-azul-oceano transition-colors"
               />
               <button
                 type="submit"

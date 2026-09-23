@@ -27,6 +27,19 @@ import {
   LuClock
 } from "react-icons/lu";
 
+const DESCRICOES_SECOES = {
+  painel: 'Veja o que está próximo, pendente ou precisa da sua atenção.',
+  alugueis: 'Acompanhe datas, status e devoluções dos itens que você alugou.',
+  solicitacoes: 'Consulte os pedidos enviados e cancele os que não fazem mais sentido.',
+  pagamentos: 'Veja seus pagamentos pendentes, confirmados e vencimentos.',
+  mensagens: 'Converse com locadores e alinhe os detalhes do aluguel.',
+  config: 'Ajuste as preferências da sua conta de locatário.',
+};
+
+const TITULOS_SECOES = {
+  painel: 'Resumo dos seus aluguéis',
+};
+
 export default function PainelLocatario() {
   const [activeTab, setActiveTab] = useState('painel');
   const navigate = useNavigate();
@@ -175,15 +188,15 @@ export default function PainelLocatario() {
 ];
 
 const toneClasses = {
-  accent: { bg: 'bg-[#0068F3]/[0.08]', text: 'text-[#0068F3]', border: 'border-l-[#0068F3]' },
+  accent: { bg: 'bg-azul-oceano/[0.08]', text: 'text-azul-oceano', border: 'border-l-azul-oceano' },
   warning: { bg: 'bg-amber-500/[0.1]', text: 'text-amber-600', border: 'border-l-amber-500' },
-  success: { bg: 'bg-[#0F6E56]/[0.08]', text: 'text-[#0F6E56]', border: 'border-l-[#0F6E56]' },
+  success: { bg: 'bg-verde-escuro/[0.08]', text: 'text-verde-escuro', border: 'border-l-verde-escuro' },
   danger: { bg: 'bg-[#A32D2D]/[0.08]', text: 'text-[#A32D2D]', border: 'border-l-[#A32D2D]' },
   neutral: { bg: 'bg-gray-900/[0.05]', text: 'text-gray-700', border: 'border-l-gray-300' },
 };
 
   const menuItems = [
-    { id: 'painel', label: 'Painel', icon: LuLayoutDashboard },
+    { id: 'painel', label: 'Visão geral', icon: LuLayoutDashboard },
     { id: 'alugueis', label: 'Meus aluguéis', icon: LuPackage },
     { id: 'solicitacoes', label: 'Solicitações enviadas', icon: LuSend },
     { id: 'pagamentos', label: 'Pagamentos', icon: LuWallet },
@@ -302,8 +315,8 @@ const toneClasses = {
         body: { objetivo: novoObjetivo }
       });
 
-      localStorage.setItem('dadosUsuario', JSON.stringify({ ...usuarioLogado, objetivo: data.usuario.objetivo }));
       setDadosLocatario(data.usuario);
+      localStorage.setItem('dadosUsuario', JSON.stringify({ ...usuarioLogado, objetivo: data.usuario.objetivo }));
 
       if (novoObjetivo === 'locador') {
         navigate('/painelLocador', { replace: true });
@@ -363,7 +376,7 @@ const toneClasses = {
       case 'mensagens':
         return <PainelMensagens
           usuarioLogadoId={usuarioLogado?.id}
-          corPrimaria="#0068F3"
+          corPrimaria="#0073F3"
           conversaParaAbrir={conversaParaAbrir}
           onConversasAtualizadas={setMensagensNaoLidas}
         />;
@@ -384,16 +397,18 @@ const toneClasses = {
   }
 
   const secaoAtual = menuItems.find(i => i.id === activeTab) || (activeTab === 'config' ? { label: 'Configurações' } : null);
+  const tituloAtual = TITULOS_SECOES[activeTab] || secaoAtual?.label || 'Painel';
+  const descricaoAtual = DESCRICOES_SECOES[activeTab] || 'Acompanhe os detalhes da sua atividade como locatário.';
 
   return (
-    <div className="min-h-screen bg-[#FAFAF9] font-sans text-[#1A1A1A]">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="w-full h-19 flex items-center px-8 gap-8">
+    <div className="page-shell min-h-screen font-sans text-grafite">
+      <header className="sticky top-0 z-10 border-b border-gray-200 bg-white">
+        <div className="flex min-h-18 w-full items-center gap-3 px-4 sm:h-19 sm:gap-6 sm:px-6 lg:px-8">
           <button onClick={() => navigate('/')} className="flex-shrink-0 cursor-pointer">
-            <img src={logo} alt="LendLoop" className="h-16 w-auto" />
+            <img src={logo} alt="LendLoop" className="h-[3.875rem] w-auto sm:h-[4.125rem]" />
           </button>
 
-          <nav className="flex-1 flex items-center gap-1 h-full overflow-x-auto">
+          <nav className="flex h-full flex-1 items-center gap-1 overflow-x-auto">
             {menuItems.map((item) => {
               const isActive = activeTab === item.id;
               const Icon = item.icon;
@@ -401,55 +416,55 @@ const toneClasses = {
                 <button
                   key={item.id}
                   onClick={() => handleMenuClick(item)}
-                  className={`h-full flex items-center gap-2 px-4 text-[15px] font-medium whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
+                  className={`flex h-full items-center gap-2 whitespace-nowrap border-b-2 px-4 text-[15px] font-medium transition-colors cursor-pointer ${
                     isActive
-                      ? 'border-[#1A1A1A] text-[#1A1A1A]'
-                      : 'border-transparent text-gray-500 hover:text-[#1A1A1A]'
+                      ? 'border-grafite text-grafite'
+                      : 'border-transparent text-gray-500 hover:text-grafite'
                   }`}
                 >
-                  <Icon size={20} className={isActive ? 'text-[#0068F3]' : 'text-gray-400'} />
+                  <Icon size={20} className={isActive ? 'text-azul-oceano' : 'text-gray-400'} />
                   {item.label}
                 </button>
               );
             })}
           </nav>
 
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex flex-shrink-0 items-center gap-2">
             <NotificacaoSino />
             <button
               onClick={() => navigate('/configuracoes')}
               title="Configurações"
-              className="p-2 rounded-lg text-gray-500 hover:bg-gray-50 hover:text-[#1A1A1A] transition-colors cursor-pointer"
+              className="cursor-pointer rounded-full bg-gray-50 p-2.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-verde-agua"
             >
-              <LuSettings size={22} />
+              <LuSettings size={18} />
             </button>
 
             <button
               onClick={() => navigate('/meu-perfil')}
-              className="flex items-center gap-2.5 pl-3 ml-1 border-l border-gray-200 cursor-pointer group"
+              className="group ml-1 flex cursor-pointer items-center gap-2.5 border-l border-gray-200 pl-3"
             >
-              <div className="w-10 h-10 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center font-semibold text-sm overflow-hidden flex-shrink-0">
+              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-verde-escuro text-sm font-semibold text-white">
                 {dadosLocatario?.avatar ? (
-                  <img src={dadosLocatario.avatar} alt={dadosLocatario.nome} className="w-full h-full object-cover" />
+                  <img src={dadosLocatario.avatar} alt={dadosLocatario.nome} className="h-full w-full object-cover" />
                 ) : (
                   dadosLocatario?.nome?.charAt(0).toUpperCase() || 'U'
                 )}
               </div>
-              <div className="hidden lg:block text-left min-w-0">
-                <p className="text-[14px] font-semibold text-[#1A1A1A] whitespace-nowrap leading-tight group-hover:text-[#0068F3] transition-colors">
+              <div className="hidden min-w-0 text-left lg:block">
+                <p className="whitespace-nowrap text-[14px] font-semibold leading-tight text-verde-escuro transition-colors group-hover:text-verde-agua">
                   {dadosLocatario?.nome ? dadosLocatario.nome.split(' ').slice(0, 2).join(' ') : 'Carregando...'}
                 </p>
-                <p className="text-[12px] text-gray-400 leading-tight">Locatário</p>
+                <p className="text-[12px] leading-tight text-gray-400">Ver perfil</p>
               </div>
             </button>
           </div>
         </div>
       </header>
 
-      <main className="px-10 py-8 max-w-[1600px] mx-auto w-full space-y-6">
+      <main className="mx-auto w-full max-w-[1600px] space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
         <div>
-          <h1 className="text-xl font-semibold text-[#1A1A1A]">{secaoAtual?.label || 'Painel'}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Acompanhe seus aluguéis, solicitações e pagamentos em um só lugar.</p>
+          <h1 className="text-xl font-semibold text-grafite">{tituloAtual}</h1>
+          <p className="mt-1 text-sm text-gray-500">{descricaoAtual}</p>
         </div>
         {renderConteudo()}
       </main>
@@ -513,9 +528,9 @@ const toneClasses = {
 
 function StatusPill({ status }) {
   const map = {
-    andamento: { label: 'Em andamento', dot: 'bg-[#0F6E56]', text: 'text-[#0F6E56]', bg: 'bg-[#0F6E56]/[0.08]' },
-    aceito: { label: 'Em andamento', dot: 'bg-[#0F6E56]', text: 'text-[#0F6E56]', bg: 'bg-[#0F6E56]/[0.08]' },
-    aguardando_confirmacao: { label: 'Aguardando confirmação', dot: 'bg-[#0068F3]', text: 'text-[#0068F3]', bg: 'bg-[#0068F3]/[0.08]' },
+    andamento: { label: 'Em andamento', dot: 'bg-verde-escuro', text: 'text-verde-escuro', bg: 'bg-verde-escuro/[0.08]' },
+    aceito: { label: 'Em andamento', dot: 'bg-verde-escuro', text: 'text-verde-escuro', bg: 'bg-verde-escuro/[0.08]' },
+    aguardando_confirmacao: { label: 'Aguardando confirmação', dot: 'bg-azul-oceano', text: 'text-azul-oceano', bg: 'bg-azul-oceano/[0.08]' },
     concluido: { label: 'Concluído', dot: 'bg-gray-400', text: 'text-gray-600', bg: 'bg-gray-100' },
     pendente: { label: 'Pendente', dot: 'bg-amber-500', text: 'text-amber-700', bg: 'bg-amber-500/[0.1]' },
   };
@@ -537,13 +552,13 @@ function AbaFiltro({ abas, atual, onChange }) {
           onClick={() => onChange(aba.key)}
           className={`relative px-3 py-1.5 rounded-md text-[12px] font-semibold transition-all cursor-pointer ${
             atual === aba.key
-              ? 'bg-white text-[#1A1A1A] shadow-sm'
-              : 'text-gray-500 hover:text-[#1A1A1A]'
+              ? 'bg-white text-grafite shadow-sm'
+              : 'text-gray-500 hover:text-grafite'
           }`}
         >
           {aba.label}
           {aba.badge > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-[#0068F3] text-white text-[10px] font-bold flex items-center justify-center">
+            <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-azul-oceano text-white text-[10px] font-bold flex items-center justify-center">
               {aba.badge}
             </span>
           )}
@@ -580,7 +595,7 @@ function ListaAlugueis({ alugueis, aba, usuarioLogadoId, onAbrirDetalhes, onStat
           <div className="w-11 h-11 bg-gray-100 rounded-lg flex-shrink-0 border border-gray-200"></div>
         )}
         <div className="min-w-0">
-          <h3 className="font-semibold text-[#1A1A1A] text-sm truncate">{aluguel.anuncio?.titulo}</h3>
+          <h3 className="font-semibold text-grafite text-sm truncate">{aluguel.anuncio?.titulo}</h3>
           <p className="text-xs text-gray-400 mt-0.5">
             {new Date(aluguel.dataInicio).toLocaleDateString('pt-BR')} – {new Date(aluguel.dataFim).toLocaleDateString('pt-BR')}
           </p>
@@ -589,7 +604,7 @@ function ListaAlugueis({ alugueis, aba, usuarioLogadoId, onAbrirDetalhes, onStat
 
       <div className="flex items-center gap-3 shrink-0">
         <StatusPill status={aba === 'avaliar' ? 'concluido' : aluguel.status} />
-        <span className="font-semibold text-[#1A1A1A] text-sm w-16 text-right tabular-nums">R$ {aluguel.precoTotal}</span>
+        <span className="font-semibold text-grafite text-sm w-16 text-right tabular-nums">R$ {aluguel.precoTotal}</span>
         {aba === 'avaliar' && aluguel.locador && (
           <div onClick={(e) => e.stopPropagation()}>
             <BotaoAvaliar
@@ -609,7 +624,7 @@ function CardSecao({ titulo, acao, children }) {
   return (
     <section className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col">
       <div className="px-6 py-4.5 border-b border-gray-100 flex justify-between items-center">
-        <h2 className="text-[15px] font-semibold text-[#1A1A1A]">{titulo}</h2>
+        <h2 className="text-[15px] font-semibold text-grafite">{titulo}</h2>
         {acao}
       </div>
       <div className="p-2">
@@ -619,10 +634,10 @@ function CardSecao({ titulo, acao, children }) {
   );
 }
 
-function SecaoAlugueis({ alugueis, abaAlugueis, setAbaAlugueis, onAbrirDetalhes, usuarioLogadoId, onStatusAvaliacao }) {
+function SecaoAlugueis({ alugueis, abaAlugueis, setAbaAlugueis, onAbrirDetalhes, usuarioLogadoId, onStatusAvaliacao, titulo = 'Meus aluguéis' }) {
   return (
     <CardSecao
-      titulo="Meus aluguéis"
+      titulo={titulo}
       acao={
         <AbaFiltro
           abas={[
@@ -646,7 +661,7 @@ function CardSolicitacao({ solicitacao, onCancelarSolicitacao }) {
     <div className="p-4 hover:bg-gray-50 rounded-xl transition-colors border border-gray-100 mb-2 last:mb-0">
       <div className="flex justify-between items-start mb-3 gap-3">
         <div className="min-w-0">
-          <h3 className="font-semibold text-[#1A1A1A] text-sm truncate">{solicitacao.anuncio?.titulo || 'Anúncio indisponível'}</h3>
+          <h3 className="font-semibold text-grafite text-sm truncate">{solicitacao.anuncio?.titulo || 'Anúncio indisponível'}</h3>
           <p className="text-xs text-gray-400 mt-1">
             Início em {new Date(solicitacao.dataInicio).toLocaleDateString('pt-BR')}
           </p>
@@ -663,9 +678,9 @@ function CardSolicitacao({ solicitacao, onCancelarSolicitacao }) {
   );
 }
 
-function SecaoSolicitacoesEnviadas({ solicitacoesEnviadas, onCancelarSolicitacao }) {
+function SecaoSolicitacoesEnviadas({ solicitacoesEnviadas, onCancelarSolicitacao, titulo = 'Solicitações enviadas' }) {
   return (
-    <CardSecao titulo="Solicitações enviadas">
+    <CardSecao titulo={titulo}>
       {solicitacoesEnviadas.length === 0 ? (
         <EstadoVazio texto="Nenhuma solicitação enviada" />
       ) : (
@@ -681,7 +696,7 @@ function LinhaPagamento({ pagamento, abaPagamentos, onPagarAgora }) {
   return (
     <div className="flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-100 last:border-0">
       <div className="min-w-0">
-        <h3 className="font-semibold text-[#1A1A1A] text-sm truncate">{pagamento.aluguel?.anuncio?.titulo || 'Aluguel'}</h3>
+        <h3 className="font-semibold text-grafite text-sm truncate">{pagamento.aluguel?.anuncio?.titulo || 'Aluguel'}</h3>
         <p className="text-xs text-gray-400 mt-0.5">Vencimento em {new Date(pagamento.vencimento).toLocaleDateString('pt-BR')}</p>
       </div>
 
@@ -704,12 +719,12 @@ function LinhaPagamento({ pagamento, abaPagamentos, onPagarAgora }) {
           </span>
         )}
 
-        <span className="font-semibold text-[#1A1A1A] text-sm tabular-nums">R$ {pagamento.valor}</span>
+        <span className="font-semibold text-grafite text-sm tabular-nums">R$ {pagamento.valor}</span>
 
         {abaPagamentos === 'pendentes' && pagamento.status !== 'processando' && (
           <button
             onClick={() => onPagarAgora(pagamento)}
-            className="bg-[#1A1A1A] text-white text-[11px] font-semibold px-3.5 py-2 rounded-lg hover:bg-[#0068F3] transition-colors cursor-pointer"
+            className="bg-grafite text-white text-[11px] font-semibold px-3.5 py-2 rounded-lg hover:bg-azul-oceano transition-colors cursor-pointer"
           >
             Pagar agora
           </button>
@@ -719,10 +734,10 @@ function LinhaPagamento({ pagamento, abaPagamentos, onPagarAgora }) {
   );
 }
 
-function SecaoPagamentos({ pagamentos, abaPagamentos, setAbaPagamentos, onPagarAgora }) {
+function SecaoPagamentos({ pagamentos, abaPagamentos, setAbaPagamentos, onPagarAgora, titulo = 'Pagamentos' }) {
   return (
     <CardSecao
-      titulo="Pagamentos"
+      titulo={titulo}
       acao={
         <AbaFiltro
           abas={[
@@ -759,18 +774,18 @@ function SecaoPainel({ stats, toneClasses, alugueis, pagamentos, solicitacoesEnv
               </div>
               <div className="min-w-0">
                 <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5 truncate">{stat.titulo}</p>
-                <p className="text-xl font-semibold text-[#1A1A1A] tabular-nums">{stat.valor}</p>
+                <p className="text-xl font-semibold text-grafite tabular-nums">{stat.valor}</p>
               </div>
             </div>
           );
         })}
       </section>
 
-      <SecaoAlugueis alugueis={alugueis} abaAlugueis={abaAlugueis} setAbaAlugueis={setAbaAlugueis} onAbrirDetalhes={onAbrirDetalhes} usuarioLogadoId={usuarioLogadoId} onStatusAvaliacao={onStatusAvaliacao} />
+      <SecaoAlugueis titulo="Atividade dos seus aluguéis" alugueis={alugueis} abaAlugueis={abaAlugueis} setAbaAlugueis={setAbaAlugueis} onAbrirDetalhes={onAbrirDetalhes} usuarioLogadoId={usuarioLogadoId} onStatusAvaliacao={onStatusAvaliacao} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <SecaoSolicitacoesEnviadas solicitacoesEnviadas={solicitacoesEnviadas} onCancelarSolicitacao={onCancelarSolicitacao} />
-        <SecaoPagamentos pagamentos={pagamentos} abaPagamentos={abaPagamentos} setAbaPagamentos={setAbaPagamentos} onPagarAgora={onPagarAgora} />
+        <SecaoSolicitacoesEnviadas titulo="Pedidos em andamento" solicitacoesEnviadas={solicitacoesEnviadas} onCancelarSolicitacao={onCancelarSolicitacao} />
+        <SecaoPagamentos titulo="Resumo de pagamentos" pagamentos={pagamentos} abaPagamentos={abaPagamentos} setAbaPagamentos={setAbaPagamentos} onPagarAgora={onPagarAgora} />
       </div>
     </div>
   );
@@ -797,10 +812,10 @@ function ModalDetalhesAluguel({ aluguel, onClose, onSolicitarDevolucao, enviando
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-start mb-4 gap-3">
-          <h2 className="text-lg font-semibold text-[#1A1A1A] leading-tight">{aluguel.anuncio?.titulo || 'Aluguel'}</h2>
+          <h2 className="text-lg font-semibold text-grafite leading-tight">{aluguel.anuncio?.titulo || 'Aluguel'}</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-[#1A1A1A] transition-colors cursor-pointer flex-shrink-0"
+            className="text-gray-400 hover:text-grafite transition-colors cursor-pointer flex-shrink-0"
           >
             <LuX size={20} />
           </button>
@@ -817,17 +832,17 @@ function ModalDetalhesAluguel({ aluguel, onClose, onSolicitarDevolucao, enviando
         {locador && (
           <div
             onClick={() => locador?._id && navigate(`/usuario/${locador._id}`)}
-            className="flex items-center gap-3 p-3.5 rounded-xl bg-[#FAFAF9] border border-gray-100 mb-5 cursor-pointer hover:border-[#0068F3]/30 transition-colors"
+            className="flex items-center gap-3 p-3.5 rounded-xl bg-white border border-gray-100 mb-5 cursor-pointer hover:border-azul-oceano/30 transition-colors"
           >
             {locador?.avatar ? (
               <img src={locador.avatar} alt={locador.nome} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
             ) : (
-              <div className="w-12 h-12 rounded-full bg-[#0068F3] text-white flex items-center justify-center font-semibold flex-shrink-0">
+              <div className="w-12 h-12 rounded-full bg-azul-oceano text-white flex items-center justify-center font-semibold flex-shrink-0">
                 {locador?.nome?.charAt(0).toUpperCase() || '?'}
               </div>
             )}
             <div className="min-w-0">
-              <p className="font-semibold text-sm text-[#1A1A1A] truncate">{locador?.nome || 'Locador'}</p>
+              <p className="font-semibold text-sm text-grafite truncate">{locador?.nome || 'Locador'}</p>
               {locador?.email && <p className="text-xs text-gray-500 truncate">{locador.email}</p>}
             </div>
           </div>
@@ -836,27 +851,27 @@ function ModalDetalhesAluguel({ aluguel, onClose, onSolicitarDevolucao, enviando
         <div className="space-y-3 mb-6">
           <div className="flex justify-between items-center text-sm">
             <span className="text-gray-500">Alugado em</span>
-            <span className="font-semibold text-[#1A1A1A]">{new Date(aluguel.dataInicio).toLocaleDateString('pt-BR')}</span>
+            <span className="font-semibold text-grafite">{new Date(aluguel.dataInicio).toLocaleDateString('pt-BR')}</span>
           </div>
           <div className="flex justify-between items-center text-sm">
             <span className="text-gray-500">Devolução prevista</span>
-            <span className="font-semibold text-[#1A1A1A]">{new Date(aluguel.dataFim).toLocaleDateString('pt-BR')}</span>
+            <span className="font-semibold text-grafite">{new Date(aluguel.dataFim).toLocaleDateString('pt-BR')}</span>
           </div>
           {aluguel.horarioRetirada && (
             <div className="flex justify-between items-center text-sm">
               <span className="text-gray-500">Horário de retirada</span>
-              <span className="font-semibold text-[#1A1A1A]">{aluguel.horarioRetirada}</span>
+              <span className="font-semibold text-grafite">{aluguel.horarioRetirada}</span>
             </div>
           )}
           {aluguel.horarioDevolucao && (
             <div className="flex justify-between items-center text-sm">
               <span className="text-gray-500">Horário de devolução</span>
-              <span className="font-semibold text-[#1A1A1A]">{aluguel.horarioDevolucao}</span>
+              <span className="font-semibold text-grafite">{aluguel.horarioDevolucao}</span>
             </div>
           )}
           <div className="flex justify-between items-center text-sm">
             <span className="text-gray-500">Valor total</span>
-            <span className="font-semibold text-[#1A1A1A] tabular-nums">R$ {aluguel.precoTotal}</span>
+            <span className="font-semibold text-grafite tabular-nums">R$ {aluguel.precoTotal}</span>
           </div>
           <div className="flex justify-between items-center text-sm">
             <span className="text-gray-500">Status</span>
@@ -868,7 +883,7 @@ function ModalDetalhesAluguel({ aluguel, onClose, onSolicitarDevolucao, enviando
           <button
             onClick={() => onAbrirChat?.(locador?._id)}
             disabled={!locador?._id}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-gray-200 text-[#1A1A1A] text-xs font-semibold hover:border-[#0068F3] hover:text-[#0068F3] transition-colors cursor-pointer disabled:opacity-40 mb-3"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-gray-200 text-grafite text-xs font-semibold hover:border-azul-oceano hover:text-azul-oceano transition-colors cursor-pointer disabled:opacity-40 mb-3"
           >
             <LuMessageSquare size={15} /> Conversar com {primeiroNome}
           </button>
@@ -877,7 +892,7 @@ function ModalDetalhesAluguel({ aluguel, onClose, onSolicitarDevolucao, enviando
         {podeSolicitarDevolucao && (
           <button
             onClick={() => setMostrarVistoria(true)}
-            className="w-full bg-[#1A1A1A] text-white text-sm font-semibold py-3 rounded-lg hover:bg-[#0068F3] transition-colors cursor-pointer"
+            className="w-full bg-grafite text-white text-sm font-semibold py-3 rounded-lg hover:bg-azul-oceano transition-colors cursor-pointer"
           >
             Registrar devolução com fotos
           </button>
@@ -887,7 +902,7 @@ function ModalDetalhesAluguel({ aluguel, onClose, onSolicitarDevolucao, enviando
           <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" onClick={() => !enviandoVistoria && setMostrarVistoria(false)}>
             <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
               <div className="mb-5 flex items-start justify-between gap-3">
-                <div><h3 className="text-lg font-bold text-[#1A1A1A]">Vistoria de devolução</h3><p className="mt-1 text-sm text-gray-500">{aluguel.anuncio?.titulo}</p></div>
+                <div><h3 className="text-lg font-bold text-grafite">Vistoria de devolução</h3><p className="mt-1 text-sm text-gray-500">{aluguel.anuncio?.titulo}</p></div>
                 <button onClick={() => setMostrarVistoria(false)} className="text-gray-400 hover:text-gray-800" aria-label="Fechar"><LuX size={20} /></button>
               </div>
               <VistoriaFotos
@@ -901,7 +916,7 @@ function ModalDetalhesAluguel({ aluguel, onClose, onSolicitarDevolucao, enviando
         )}
 
         {aguardandoConfirmacao && (
-          <div className="flex items-center gap-2 justify-center text-[#0068F3] bg-[#0068F3]/[0.08] text-sm font-semibold py-3 rounded-lg">
+          <div className="flex items-center gap-2 justify-center text-azul-oceano bg-azul-oceano/[0.08] text-sm font-semibold py-3 rounded-lg">
             <LuClock size={16} /> Aguardando confirmação do locador
           </div>
         )}
@@ -942,7 +957,7 @@ function SecaoConfiguracoes({ objetivoAtual, onAlterarObjetivo, onExcluirConta }
     <div className="space-y-6">
       <section className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         <div className="px-6 py-4.5 border-b border-gray-100">
-          <h2 className="text-[15px] font-semibold text-[#1A1A1A]">Tipo de conta</h2>
+          <h2 className="text-[15px] font-semibold text-grafite">Tipo de conta</h2>
           <p className="text-xs text-gray-500 mt-1">Mudou de ideia? Ajuste aqui o que você quer fazer no LendLoop.</p>
         </div>
         <div className="p-6 space-y-3">
@@ -952,11 +967,11 @@ function SecaoConfiguracoes({ objetivoAtual, onAlterarObjetivo, onExcluirConta }
               onClick={() => handleAlterarObjetivo(op.valor)}
               className={`p-4 border rounded-xl cursor-pointer transition-all ${
                 objetivoAtual === op.valor
-                  ? 'border-[#0068F3] bg-[#0068F3]/[0.04] ring-1 ring-[#0068F3]'
+                  ? 'border-azul-oceano bg-azul-oceano/[0.04] ring-1 ring-azul-oceano'
                   : 'border-gray-200 hover:border-gray-300'
               } ${salvandoObjetivo ? 'opacity-60 pointer-events-none' : ''}`}
             >
-              <span className={`block text-sm font-semibold ${objetivoAtual === op.valor ? 'text-[#0068F3]' : 'text-[#1A1A1A]'}`}>
+              <span className={`block text-sm font-semibold ${objetivoAtual === op.valor ? 'text-azul-oceano' : 'text-grafite'}`}>
                 {op.titulo}
               </span>
               <span className="block text-xs text-gray-500 mt-0.5">{op.descricao}</span>
@@ -971,7 +986,7 @@ function SecaoConfiguracoes({ objetivoAtual, onAlterarObjetivo, onExcluirConta }
         </div>
         <div className="p-6 flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold text-[#1A1A1A]">Excluir minha conta</p>
+            <p className="text-sm font-semibold text-grafite">Excluir minha conta</p>
             <p className="text-xs text-gray-500 mt-1">Essa ação é permanente e não pode ser desfeita.</p>
           </div>
           <button

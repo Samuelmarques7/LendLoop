@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { DayPicker } from 'react-day-picker'
 import { useNavigate } from 'react-router-dom'
 import 'react-day-picker/dist/style.css'
-import { apiRequest, API_URL } from '../services/api'
+import { apiRequest } from '../services/api'
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
 import { SeletorLocalizacao } from '../components/SeletorLocalizao'
@@ -339,7 +339,7 @@ function CriarAnuncio ()
 
     if (carregandoVerificacao) {
         return (
-            <div className="min-h-screen bg-[#F8F9FA] flex flex-col">
+            <div className="page-shell min-h-screen flex flex-col">
                 <Header />
                 <div className="flex-1 flex items-center justify-center text-gray-400">Carregando...</div>
                 <Footer />
@@ -355,18 +355,18 @@ function CriarAnuncio ()
         }
 
         return (
-            <div className="min-h-screen bg-[#F8F9FA] flex flex-col">
+            <div className="page-shell min-h-screen flex flex-col">
                 <Header />
                 <div className="flex-1 flex items-center justify-center px-6">
                     <div className="max-w-md w-full bg-white border border-gray-100 rounded-3xl shadow-sm p-8 text-center">
-                        <h1 className="text-xl font-black text-[#1A1A1A] mb-2">Identidade verificada é necessária</h1>
+                        <h1 className="text-xl font-black text-grafite mb-2">Identidade verificada é necessária</h1>
                         <p className="text-gray-500 text-sm mb-6">
                             Para publicar um anúncio no LendLoop, sua identidade precisa ser verificada primeiro.
                             {' '}{mensagens[statusVerificacao] || mensagens.nao_enviado}
                         </p>
                         <button
                             onClick={() => navigate('/configuracoes')}
-                            className="w-full bg-[#032D54] text-white font-bold py-3 rounded-xl hover:bg-[#021f3a] transition-colors cursor-pointer"
+                            className="w-full bg-verde-escuro text-white font-bold py-3 rounded-xl hover:bg-verde-escuro transition-colors cursor-pointer"
                         >
                             Ir para verificação de identidade
                         </button>
@@ -378,7 +378,7 @@ function CriarAnuncio ()
     }
 
     return (
-        <div className="min-h-screen bg-[#F8F9FA] flex flex-col">
+        <div className="page-shell min-h-screen flex flex-col">
             <Header />
             <div className={`mx-auto px-6 w-full flex-1 pt-10 pb-16 transition-all ${step === 7 ? 'max-w-6xl' : 'max-w-4xl'}`}>
 
@@ -391,23 +391,23 @@ function CriarAnuncio ()
                             <div key={index} className='flex items-start'>
                                 <div className='flex flex-col items-center min-w-16'>
                                 
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold transition-all ${active ? 'bg-[#29C354]' : complete ? 'bg-[#1A1A1A]' : 'bg-gray-200'}`}>
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold transition-all ${active ? 'bg-verde-agua' : complete ? 'bg-grafite' : 'bg-gray-200'}`}>
                                         {index + 1}
                                     </div>
 
-                                    <span className={`text-[10px] font-bold uppercase tracking-wider mt-1.5 ${active ? 'text-[#29C354]' : complete ? 'text-[#1A1A1A]' : 'text-gray-300'}`}>
+                                    <span className={`text-[10px] font-bold uppercase tracking-wider mt-1.5 ${active ? 'text-verde-agua' : complete ? 'text-grafite' : 'text-gray-300'}`}>
                                         {nome}
                                     </span>
                                 </div>
 
-                                {index < steps.length - 1 && <div className={`w-12 h-0.5 mt-4 transition-all ${complete ? 'bg-[#1A1A1A]' : 'bg-gray-200'}`}></div>}
+                                {index < steps.length - 1 && <div className={`w-12 h-0.5 mt-4 transition-all ${complete ? 'bg-grafite' : 'bg-gray-200'}`}></div>}
                             </div>
                         )
                     })}
                 </div>
 
                 <div className='mb-2'>
-                    <h1 className='text-2xl font-bold text-[#1A1A1A]'>Criar Novo Anúncio</h1> 
+                    <h1 className='text-2xl font-bold text-grafite'>Criar Novo Anúncio</h1> 
                     <p className='text-gray-400 text-sm mt-1'>Preencha as informações para anunciar seu item</p>
                 </div>
 
@@ -420,7 +420,7 @@ function CriarAnuncio ()
                 {step === 1 && 
                     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6"> 
                         <div className='mb-6'>
-                            <h2 className = 'text-xl font-bold text-[#1A1A1A]'>Detalhes do Anúncio</h2> 
+                            <h2 className = 'text-xl font-bold text-grafite'>Detalhes do Anúncio</h2> 
                             <p className='text-gray-400 text-sm mt-1'>Conte para os locatários o que você está oferecendo</p>
                         </div>
 
@@ -477,7 +477,7 @@ function CriarAnuncio ()
                                         <button
                                             type='button'
                                             onClick={adicionarSubcategoria}
-                                            className='px-4 rounded-xl bg-[#29C354]/10 text-[#29C354] font-bold hover:bg-[#29C354]/20 transition-colors cursor-pointer'
+                                            className='px-4 rounded-xl bg-verde-agua/10 text-verde-agua font-bold hover:bg-verde-agua/20 transition-colors cursor-pointer'
                                         >
                                             +
                                         </button>
@@ -486,7 +486,7 @@ function CriarAnuncio ()
                                     {subcategorias.length > 0 && (
                                         <div className='flex flex-wrap gap-2 mt-3'>
                                             {subcategorias.map((sub) => (
-                                                <span key={sub} className='flex items-center gap-1.5 bg-gray-100 text-[#1A1A1A] text-xs font-bold px-3 py-1.5 rounded-full'>
+                                                <span key={sub} className='flex items-center gap-1.5 bg-gray-100 text-grafite text-xs font-bold px-3 py-1.5 rounded-full'>
                                                     {sub}
                                                     <button
                                                         type='button'
@@ -513,7 +513,7 @@ function CriarAnuncio ()
                 {step === 2 &&
                     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
                         <div className='mb-6'>
-                            <h2 className='text-xl font-bold text-[#1A1A1A]'>Especificações do Item</h2>
+                            <h2 className='text-xl font-bold text-grafite'>Especificações do Item</h2>
                             <p className='text-gray-400 text-sm mt-1'>Adicione detalhes técnicos que ajudam o locatário a entender o item (voltagem, marca, tamanho, etc.)</p>
                         </div>
 
@@ -554,7 +554,7 @@ function CriarAnuncio ()
                             <button
                                 type='button'
                                 onClick={adicionarEspecificacao}
-                                className='text-sm font-bold text-[#29C354] hover:text-[#032D54] transition-colors cursor-pointer'
+                                className='text-sm font-bold text-verde-agua hover:text-verde-escuro transition-colors cursor-pointer'
                             >
                                 + Adicionar especificação
                             </button>
@@ -569,7 +569,7 @@ function CriarAnuncio ()
                 {step === 3 && 
                     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
                         <div className='mb-6'>
-                            <h2 className = 'text-xl font-bold text-[#1A1A1A]'>Fotos do Anúncio</h2>
+                            <h2 className = 'text-xl font-bold text-grafite'>Fotos do Anúncio</h2>
                             <p className='text-gray-400 text-sm mt-1'>Fotos claras aumentam suas chances de locação</p>
                         </div>
 
@@ -585,7 +585,7 @@ function CriarAnuncio ()
                                 }}
                             />
 
-                            <div className="border-2 border-dashed border-gray-200 hover:border-[#29C354] rounded-2xl p-4 transition-all">
+                            <div className="border-2 border-dashed border-gray-200 hover:border-verde-agua rounded-2xl p-4 transition-all">
     
                                 {fotos.length > 0 ? (
                                     <div className="grid grid-cols-3 gap-3 mb-4">
@@ -611,7 +611,7 @@ function CriarAnuncio ()
                                             <div
                                                 key={`vazio-${i}`}
                                                 onClick={() => inputFotoRef.current.click()}
-                                                className="h-32 rounded-xl border border-dashed border-gray-200 flex items-center justify-center text-gray-300 text-xl cursor-pointer hover:border-[#29C354] hover:text-[#29C354] transition-all"
+                                                className="h-32 rounded-xl border border-dashed border-gray-200 flex items-center justify-center text-gray-300 text-xl cursor-pointer hover:border-verde-agua hover:text-verde-agua transition-all"
                                             >
                                                 +
                                             </div>
@@ -623,7 +623,7 @@ function CriarAnuncio ()
                                             <div
                                                 key={`vazio-${i}`}
                                                 onClick={() => inputFotoRef.current.click()}
-                                                className="h-32 rounded-xl border border-dashed border-gray-200 flex items-center justify-center text-gray-300 text-xl cursor-pointer hover:border-[#29C354] hover:text-[#29C354] transition-all"
+                                                className="h-32 rounded-xl border border-dashed border-gray-200 flex items-center justify-center text-gray-300 text-xl cursor-pointer hover:border-verde-agua hover:text-verde-agua transition-all"
                                             >
                                                 +
                                             </div>
@@ -633,9 +633,9 @@ function CriarAnuncio ()
 
                                 <div 
                                     onClick={() => inputFotoRef.current.click()}
-                                    className="flex flex-col items-center justify-center py-4 cursor-pointer hover:bg-[#29C354]/5 rounded-xl transition-all"
+                                    className="flex flex-col items-center justify-center py-4 cursor-pointer hover:bg-verde-agua/5 rounded-xl transition-all"
                                 >
-                                    <p className="text-[#032D54] font-semibold text-sm">
+                                    <p className="text-verde-escuro font-semibold text-sm">
                                         {fotos.length > 0 ? '+ Adicionar mais fotos' : 'Clique em qualquer quadro para adicionar fotos'}
                                     </p>
                                     <p className="text-gray-400 text-xs mt-1">PNG, JPG até 5MB</p>
@@ -652,7 +652,7 @@ function CriarAnuncio ()
                 {step === 4 &&
                     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
                         <div className='mb-6'>
-                            <h2 className = 'text-xl font-bold text-[#1A1A1A]'>Localização</h2>
+                            <h2 className = 'text-xl font-bold text-grafite'>Localização</h2>
                             <p className='text-gray-400 text-sm mt-1'>Onde o locatário poderá retirar o item</p>
                         </div>
 
@@ -721,7 +721,7 @@ function CriarAnuncio ()
                                     <div className = 'flex items-center gap-2 mt-2'>    
                                         <input 
                                             type='checkbox'
-                                            className="w-5 h-5 accent-[#29C354] cursor-pointer"
+                                            className="w-5 h-5 accent-verde-agua cursor-pointer"
                                             checked={endereco.semComplemento}
                                             onChange={(e) => setEndereco({
                                                 ...endereco, semComplemento: e.target.checked,
@@ -789,7 +789,7 @@ function CriarAnuncio ()
                 {step === 5 &&
                     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
                         <div className='mb-6'>
-                            <h2 className = 'text-xl font-bold text-[#1A1A1A]'>Disponibilidade</h2>
+                            <h2 className = 'text-xl font-bold text-grafite'>Disponibilidade</h2>
                             <p className='text-gray-400 text-sm mt-1'>Selecione os dias em que o item estará disponível</p>
                         </div>
 
@@ -799,15 +799,15 @@ function CriarAnuncio ()
                                 selected={disponivel}
                                 onSelect={setDisponivel}
                                 classNames={{
-                                    day_selected: 'bg-[#29C354] text-white rounded-lg',
-                                    day_today: 'font-bold text-[#0068F3]'
+                                    day_selected: 'bg-verde-agua text-white rounded-lg',
+                                    day_today: 'font-bold text-azul-oceano'
                                 }}
                             />
                         </div>
 
                         {console.log(disponivel)}
 
-                        <p className="text-center text-[#29C354] font-semibold mb-4">
+                        <p className="text-center text-verde-agua font-semibold mb-4">
                             {disponivel.length} {disponivel.length === 1 ? 'dia selecionado' : 'dias selecionados'}
                         </p>
 
@@ -821,7 +821,7 @@ function CriarAnuncio ()
                     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
                         <form onSubmit={handlePrecosSubmit}>
                             <div className='mb-6'>
-                                <h2 className='text-xl font-bold text-[#1A1A1A]'>Preços e Condições</h2>
+                                <h2 className='text-xl font-bold text-grafite'>Preços e Condições</h2>
                                 <p className='text-gray-400 text-sm mt-1'>Defina quanto vai cobrar pela locação</p>
                             </div>
 
@@ -852,7 +852,7 @@ function CriarAnuncio ()
                             <div className='flex items-center gap-2 mb-6'>
                                 <input
                                     type='checkbox'
-                                    className="w-5 h-5 accent-[#29C354] cursor-pointer"
+                                    className="w-5 h-5 accent-verde-agua cursor-pointer"
                                     checked={precos.exigirCaucao}
                                     onChange={(e) => setPrecos({...precos, exigirCaucao: e.target.checked})}
                                 />
@@ -860,7 +860,7 @@ function CriarAnuncio ()
                             </div>
 
                             <div className='border-t border-gray-100 pt-6 mb-2'>
-                                <h3 className='text-sm font-bold text-[#1A1A1A] uppercase tracking-wide mb-4'>Regras de Reserva</h3>
+                                <h3 className='text-sm font-bold text-grafite uppercase tracking-wide mb-4'>Regras de Reserva</h3>
                                 <div className="flex gap-4">
                                     <div className="flex-1">
                                         <label className="label-field">Horário de retirada</label>
@@ -894,7 +894,7 @@ function CriarAnuncio ()
                 {step === 7 &&
                     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
                         <div className='mb-6'>
-                            <h2 className='text-xl font-bold text-[#1A1A1A]'>Resumo do Anúncio</h2>
+                            <h2 className='text-xl font-bold text-grafite'>Resumo do Anúncio</h2>
                             <p className='text-gray-400 text-sm mt-1'>Confira tudo antes de publicar</p>
                         </div>
 
@@ -920,17 +920,17 @@ function CriarAnuncio ()
 
                                 <div className="p-5 flex-1">
                                     <div className="flex items-start justify-between gap-3 mb-1.5">
-                                        <h3 className="text-lg font-bold text-[#1A1A1A] truncate">
+                                        <h3 className="text-lg font-bold text-grafite truncate">
                                             {titulo || <span className="text-gray-300 italic font-normal">Sem título</span>}
                                         </h3>
                                     </div>
 
-                                    <span className="text-xl font-black text-[#1A1A1A]">R$ {precos.precoPorDia || '0,00'}</span>
+                                    <span className="text-xl font-black text-grafite">R$ {precos.precoPorDia || '0,00'}</span>
                                     <span className="text-[10px] font-bold text-gray-400 uppercase"> /dia</span>
 
                                     {categoria && (
                                         <div>
-                                            <span className="inline-block bg-[#29C354]/10 text-[#29C354] text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full mt-2 mb-2">
+                                            <span className="inline-block bg-verde-agua/10 text-verde-agua text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full mt-2 mb-2">
                                                 {categoriasDisponiveis.find(c => c.value === categoria)?.label || categoria}
                                             </span>
                                         </div>
@@ -950,7 +950,7 @@ function CriarAnuncio ()
                                     {especificacoes.filter(e => e.chave.trim()).length > 0 ? (
                                         <div className="flex flex-wrap gap-1">
                                             {especificacoes.filter(e => e.chave.trim()).map((e, i) => (
-                                                <span key={i} className="bg-white border border-gray-200 text-[#1A1A1A] text-[10px] font-semibold px-2 py-1 rounded-md">
+                                                <span key={i} className="bg-white border border-gray-200 text-grafite text-[10px] font-semibold px-2 py-1 rounded-md">
                                                     {e.chave}{e.valor ? `: ${e.valor}` : ''}
                                                 </span>
                                             ))}
@@ -967,9 +967,9 @@ function CriarAnuncio ()
                                     <h4 className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2">Localização</h4>
                                     {endereco.rua ? (
                                         <>
-                                            <p className="text-xs font-semibold text-[#1A1A1A] truncate">{endereco.rua}, {endereco.numero}</p>
+                                            <p className="text-xs font-semibold text-grafite truncate">{endereco.rua}, {endereco.numero}</p>
                                             <p className="text-[10px] text-gray-400 mt-0.5 truncate">{endereco.bairro}, {endereco.cidade} - {endereco.estado}</p>
-                                            <span className={`inline-block mt-1.5 text-[9px] font-bold px-2 py-0.5 rounded-full ${endereco.latitude ? 'bg-[#29C354]/10 text-[#29C354]' : 'bg-orange-50 text-orange-500'}`}>
+                                            <span className={`inline-block mt-1.5 text-[9px] font-bold px-2 py-0.5 rounded-full ${endereco.latitude ? 'bg-verde-agua/10 text-verde-agua' : 'bg-orange-50 text-orange-500'}`}>
                                                 {endereco.latitude ? '📍 Localização marcada no mapa' : '⚠ Posição no mapa não definida'}
                                             </span>
                                         </>
@@ -981,7 +981,7 @@ function CriarAnuncio ()
                                 <div className="bg-gray-50/70 rounded-xl p-4 border border-gray-100">
                                     <h4 className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2">Disponibilidade</h4>
                                     {disponivel.length > 0 ? (
-                                        <p className="text-xs font-semibold text-[#1A1A1A]">
+                                        <p className="text-xs font-semibold text-grafite">
                                             {disponivel.length} {disponivel.length === 1 ? 'dia selecionado' : 'dias selecionados'}
                                         </p>
                                     ) : (
@@ -991,7 +991,7 @@ function CriarAnuncio ()
 
                                 <div className="bg-gray-50/70 rounded-xl p-4 border border-gray-100">
                                     <h4 className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2">Preço e Condições</h4>
-                                    <p className="text-xs font-semibold text-[#1A1A1A]">
+                                    <p className="text-xs font-semibold text-grafite">
                                         R$ {precos.precoPorDia || '0,00'} / dia
                                     </p>
                                     {precos.exigirCaucao && precos.caucao && (
@@ -1007,7 +1007,7 @@ function CriarAnuncio ()
                         <div className="flex justify-between items-center">
                             <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
                             <div className="flex gap-4">
-                                <button onClick={handleRascunho} className='bg-transparent border-2 border-[#29C354] text-[#29C354] hover:text-[#032D54] hover:border-[#032D54] px-6 py-2 rounded-lg font-bold transition-all cursor-pointer uppercase tracking-widest'>Salvar como rascunho</button>
+                                <button onClick={handleRascunho} className='bg-transparent border-2 border-verde-agua text-verde-agua hover:text-verde-escuro hover:border-verde-escuro px-6 py-2 rounded-lg font-bold transition-all cursor-pointer uppercase tracking-widest'>Salvar como rascunho</button>
                                 <button onClick={handlePublicar} className='btn-next'>Publicar Anúncio</button>
                             </div>
                         </div>

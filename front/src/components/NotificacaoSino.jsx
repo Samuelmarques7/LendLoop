@@ -127,7 +127,7 @@ export function NotificacaoSino() {
       <button
         onClick={() => setAberto((v) => !v)}
         title="Notificações"
-        className="relative p-2.5 rounded-full bg-gray-50 text-gray-500 hover:text-[#29C354] hover:bg-gray-100 transition-colors cursor-pointer"
+        className="relative p-2.5 rounded-full bg-gray-50 text-gray-500 hover:text-verde-agua hover:bg-gray-100 transition-colors cursor-pointer"
       >
         <LuBell size={18} />
         {naoLidas > 0 && (
@@ -140,11 +140,11 @@ export function NotificacaoSino() {
       {aberto && (
         <div className="absolute right-0 mt-2 w-80 max-h-[28rem] overflow-hidden flex flex-col bg-white rounded-2xl border border-gray-100 shadow-lg z-50">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <span className="font-semibold text-[#032D54]">Notificações</span>
+            <span className="font-semibold text-verde-escuro">Notificações</span>
             {naoLidas > 0 && (
               <button
                 onClick={marcarTodasComoLidas}
-                className="flex items-center gap-1 text-xs font-semibold text-[#0068F3] hover:text-[#29C354] transition-colors cursor-pointer"
+                className="flex items-center gap-1 text-xs font-semibold text-azul-oceano hover:text-verde-agua transition-colors cursor-pointer"
               >
                 <LuCheckCheck size={14} /> Marcar todas como lidas
               </button>
@@ -162,7 +162,7 @@ export function NotificacaoSino() {
                   key={n._id}
                   onClick={() => abrirNotificacao(n)}
                   className={`group flex gap-3 px-4 py-3 border-b border-gray-50 cursor-pointer transition-colors hover:bg-gray-50 ${
-                    !n.lida ? 'bg-[#0068F3]/5' : ''
+                    !n.lida ? 'bg-azul-oceano/5' : ''
                   }`}
                 >
                   <div className="text-lg leading-none mt-0.5">
@@ -171,8 +171,8 @@ export function NotificacaoSino() {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      {!n.lida && <span className="w-2 h-2 rounded-full bg-[#0068F3] shrink-0" />}
-                      <p className={`text-sm truncate ${!n.lida ? 'font-semibold text-[#032D54]' : 'font-medium text-gray-600'}`}>
+                      {!n.lida && <span className="w-2 h-2 rounded-full bg-azul-oceano shrink-0" />}
+                      <p className={`text-sm truncate ${!n.lida ? 'font-semibold text-verde-escuro' : 'font-medium text-gray-600'}`}>
                         {n.titulo}
                       </p>
                     </div>
@@ -188,7 +188,7 @@ export function NotificacaoSino() {
                           marcarComoLida(n._id);
                         }}
                         title="Marcar como lida"
-                        className="p-1 rounded-full text-gray-400 hover:text-[#29C354] hover:bg-gray-100 cursor-pointer"
+                        className="p-1 rounded-full text-gray-400 hover:text-verde-agua hover:bg-gray-100 cursor-pointer"
                       >
                         <LuCheck size={14} />
                       </button>
