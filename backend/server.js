@@ -138,7 +138,7 @@ if (!nome?.trim() || !email?.trim() || !senha || senha.length < 8) {
   return res.status(400).json({
     erro: 'Nome, e-mail e senha com pelo menos 8 caracteres são obrigatórios.'
   });
-}
+
     }
     const senhaCriptografada = await bcrypt.hash(senha, 10);
     const novoUsuario = new Usuario({
@@ -577,8 +577,6 @@ if (
     erro: 'O anúncio não está disponível durante todo o período escolhido.'
   });
 }
-    }
-
     const conflito = await Aluguel.exists({
       anuncio: anuncioEncontrado._id,
       status: { $in: ['pendente', 'aceito', 'andamento', 'aguardando_confirmacao'] },

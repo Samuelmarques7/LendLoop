@@ -131,7 +131,7 @@ export default function PainelAdmin() {
     });
 
     setCarregandoDocumentos(false);
-
+  }
   async function decidir(acao) {
     if (!selecionado) return;
     if (acao === 'rejeitar' && !motivoRejeicao.trim()) {
