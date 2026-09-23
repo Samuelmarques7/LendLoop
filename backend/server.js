@@ -809,6 +809,11 @@ app.patch('/api/alugueis/:id/status', autenticacao, async (req, res) => {
       if (pagamento?.status === 'confirmado') {
         return res.status(400).json({ erro: 'Não é possível cancelar um aluguel com pagamento confirmado.' });
       }
+      // A cobrança pode estar em andamento no Mercado Pago: apagar o pagamento
+      // agora deixaria uma aprovação posterior sem registro.
+      if (pagamento?.status === 'processando') {
+        return res.status(400).json({ erro: 'O pagamento deste aluguel está em processamento. Aguarde a confirmação.' });
+      }
       if (pagamento) await pagamento.deleteOne();
     }
 
