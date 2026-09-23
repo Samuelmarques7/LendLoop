@@ -131,7 +131,7 @@ function CriarAnuncio ()
         horarioDevolucao: '17:00'
     })
 
-    const [, setMensagem] = useState(null)
+    const [mensagem, setMensagem] = useState(null)
 
     function adicionarSubcategoria()
     {
@@ -170,6 +170,10 @@ function CriarAnuncio ()
     function handleDetalhesSubmit (e)
     {
         e.preventDefault()
+        if (titulo.trim().length < 3 || descricao.trim().length < 20 || !categoria) {
+            setMensagem({ tipo: 'erro', texto: 'Preencha um título, uma descrição com pelo menos 20 caracteres e uma categoria.' })
+            return
+        }
         setStep(2)
 
         console.log('Dados do formulário:')
@@ -182,6 +186,10 @@ function CriarAnuncio ()
     function handleEspecificacoesSubmit (e)
     {
         e.preventDefault()
+        if (especificacoes.some((especificacao) => !especificacao.chave.trim() && especificacao.valor.trim())) {
+            setMensagem({ tipo: 'erro', texto: 'Preencha o nome da especificação ou remova a linha incompleta.' })
+            return
+        }
         setStep(3)
 
         console.log('Especificações:', especificacoes)
@@ -190,6 +198,10 @@ function CriarAnuncio ()
     function handleFotosSubmit (e)
     {
         e.preventDefault()
+        if (fotos.length < 1) {
+            setMensagem({ tipo: 'erro', texto: 'Adicione pelo menos uma foto do item antes de continuar.' })
+            return
+        }
         setStep(4)
 
         console.log('Fotos:', fotos)
@@ -198,6 +210,11 @@ function CriarAnuncio ()
     function handleLocalizacaoSubmit (e)
     {
         e.preventDefault()
+        const camposObrigatorios = ['cep', 'rua', 'numero', 'bairro', 'cidade', 'estado']
+        if (camposObrigatorios.some((campo) => !String(endereco[campo] || '').trim()) || endereco.estado === 'SELECIONE') {
+            setMensagem({ tipo: 'erro', texto: 'Preencha todos os campos obrigatórios da localização.' })
+            return
+        }
         setStep(5)
 
         console.log('Endereço:', endereco)
@@ -205,6 +222,10 @@ function CriarAnuncio ()
 
     function handleDisponibilidadeSubmit()
     {
+        if (disponivel.length === 0) {
+            setMensagem({ tipo: 'erro', texto: 'Selecione pelo menos um dia disponível.' })
+            return
+        }
         setStep(6)
 
         console.log('Disponibilidade:', disponivel)
@@ -213,6 +234,12 @@ function CriarAnuncio ()
     function handlePrecosSubmit(e)
     {
         e.preventDefault()
+        const preco = Number(precos.precoPorDia)
+        const caucao = Number(precos.caucao || 0)
+        if (!Number.isFinite(preco) || preco <= 0 || !Number.isFinite(caucao) || caucao < 0 || (precos.exigirCaucao && caucao <= 0)) {
+            setMensagem({ tipo: 'erro', texto: 'Informe um preço diário válido e uma caução não negativa. Se exigir caução, ela deve ser maior que zero.' })
+            return
+        }
         setStep(7)
 
         console.log('Preços e Condições:', precos)
@@ -247,7 +274,10 @@ function CriarAnuncio ()
                     descricao,
                     categoria,
                     subcategorias,
-                    especificacoes: especificacoes.filter(e => e.chave.trim() !== ''),
+                    especificacoes: especificacoes.filter(e => e.chave.trim() !== '').map(e => ({
+                        chave: e.chave.trim(),
+                        valor: e.valor.trim()
+                    })),
                     fotos: urlsFotos,
                     endereco,
                     disponivel,
@@ -279,7 +309,10 @@ function CriarAnuncio ()
                     descricao,
                     categoria,
                     subcategorias,
-                    especificacoes: especificacoes.filter(e => e.chave.trim() !== ''),
+                    especificacoes: especificacoes.filter(e => e.chave.trim() !== '').map(e => ({
+                        chave: e.chave.trim(),
+                        valor: e.valor.trim()
+                    })),
                     fotos: urlsFotos,
                     endereco,
                     disponivel,
@@ -377,6 +410,12 @@ function CriarAnuncio ()
                     <h1 className='text-2xl font-bold text-grafite'>Criar Novo Anúncio</h1> 
                     <p className='text-gray-400 text-sm mt-1'>Preencha as informações para anunciar seu item</p>
                 </div>
+
+                {mensagem && (
+                    <div className={`mt-4 rounded-xl border px-4 py-3 text-sm font-medium ${mensagem.tipo === 'erro' ? 'border-red-200 bg-red-50 text-red-700' : 'border-green-200 bg-green-50 text-green-700'}`}>
+                        {mensagem.texto}
+                    </div>
+                )}
                     
                 {step === 1 && 
                     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6"> 

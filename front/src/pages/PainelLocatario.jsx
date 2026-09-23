@@ -8,6 +8,7 @@ import { NotificacaoSino } from '../components/NotificacaoSino';
 import { useNotificacao } from '../context/NotificacaoContext';
 import { useConfirmacao } from '../context/ConfirmacaoContext';
 import { VistoriaFotos } from '../components/VistoriaFotos';
+import { CardPayment } from '@mercadopago/sdk-react';
 
 import {
   LuLayoutDashboard,
@@ -61,6 +62,8 @@ export default function PainelLocatario() {
   const [avaliacoesFeitas, setAvaliacoesFeitas] = useState({});
   const [conversaParaAbrir, setConversaParaAbrir] = useState(location.state?.abrirConversa || null);
   const [enviandoVistoria, setEnviandoVistoria] = useState(false);
+  const [pagamentoParaPagar, setPagamentoParaPagar] = useState(null);
+  const [erroPagamento, setErroPagamento] = useState('');
 
   useEffect(() => {
     document.title = 'Painel Locatário';
@@ -173,7 +176,7 @@ export default function PainelLocatario() {
   }, [todosAlugueis, avaliacoesFeitas]);
 
   const pagamentosPorAba = useMemo(() => ({
-    pendentes: pagamentos.filter(p => p.status === 'pendente' || p.status === 'atrasado'),
+    pendentes: pagamentos.filter(p => ['pendente', 'atrasado', 'processando', 'falhou'].includes(p.status)),
     confirmados: pagamentos.filter(p => p.status === 'confirmado'),
   }), [pagamentos]);
 
@@ -217,16 +220,43 @@ const toneClasses = {
     }
   }
 
-  async function pagarAgora(id) {
+  function pagarAgora(pagamento) {
+    setErroPagamento('');
+    setPagamentoParaPagar(pagamento);
+  }
+
+  // O Brick do Mercado Pago espera que onSubmit rejeite em caso de falha,
+  // para sair do estado de carregamento e permitir uma nova tentativa.
+  async function enviarPagamento(dadosCartao) {
+    if (!pagamentoParaPagar) return;
+    const pagamentoId = pagamentoParaPagar._id;
+    setErroPagamento('');
+
     try {
-      await apiRequest(`/api/pagamentos/${id}/status`, {
-        method: 'PATCH',
-        body: { status: 'confirmado' }
-      })
-      setPagamentos(prev => prev.map(p => p._id === id ? { ...p, status: 'confirmado' } : p));
-      notificar('Pagamento confirmardo com sucesso!', 'sucesso');
+      const resposta = await apiRequest(`/api/pagamentos/${pagamentoId}/checkout`, {
+        method: 'POST',
+        body: {
+          token: dadosCartao.token,
+          payment_method_id: dadosCartao.payment_method_id,
+          installments: dadosCartao.installments,
+          payer: dadosCartao.payer
+        }
+      });
+
+      setPagamentos(prev => prev.map(p => p._id === pagamentoId
+        ? { ...p, status: resposta.status, mpOrderId: resposta.orderId }
+        : p));
+      setPagamentoParaPagar(null);
+      notificar(
+        resposta.status === 'confirmado' ? 'Pagamento aprovado!' : 'Pagamento em análise pelo Mercado Pago.',
+        'sucesso'
+      );
     } catch (e) {
-      notificar(e.message, 'erro');
+      if (e.data?.status) {
+        setPagamentos(prev => prev.map(p => p._id === pagamentoId ? { ...p, status: e.data.status } : p));
+      }
+      setErroPagamento(e.message);
+      throw e;
     }
   }
 
@@ -448,6 +478,50 @@ const toneClasses = {
         onStatusAvaliacao={handleStatusAvaliacao}
         onAbrirChat={abrirChatComLocador}
       />
+
+      {pagamentoParaPagar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-[#1A1A1A]">Pagar aluguel</h2>
+                <p className="text-sm text-gray-500">
+                  Total: R$ {Number(pagamentoParaPagar.valor || 0).toFixed(2)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPagamentoParaPagar(null)}
+                className="text-gray-400 hover:text-[#1A1A1A]"
+                aria-label="Fechar pagamento"
+              >
+                <LuX size={20} />
+              </button>
+            </div>
+
+            {erroPagamento && (
+              <p className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                {erroPagamento}
+              </p>
+            )}
+
+            <CardPayment
+              initialization={{ amount: Number(pagamentoParaPagar.valor) }}
+              customization={{
+                paymentMethods: {
+                  types: { included: ['credit_card'] },
+                },
+              }}
+              locale="pt-BR"
+              onSubmit={enviarPagamento}
+              onError={(erro) => {
+                console.error('Erro no CardPayment:', erro);
+                setErroPagamento(`Erro no formulário de pagamento: ${erro?.message || erro?.type || 'desconhecido'}`);
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -633,11 +707,23 @@ function LinhaPagamento({ pagamento, abaPagamentos, onPagarAgora }) {
           </span>
         )}
 
+        {pagamento.status === 'processando' && (
+          <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full">
+            Processando
+          </span>
+        )}
+
+        {pagamento.status === 'falhou' && (
+          <span className="text-[11px] font-semibold text-[#A32D2D] bg-red-50 px-2.5 py-1 rounded-full">
+            Recusado
+          </span>
+        )}
+
         <span className="font-semibold text-grafite text-sm tabular-nums">R$ {pagamento.valor}</span>
 
-        {abaPagamentos === 'pendentes' && (
+        {abaPagamentos === 'pendentes' && pagamento.status !== 'processando' && (
           <button
-            onClick={() => onPagarAgora(pagamento._id)}
+            onClick={() => onPagarAgora(pagamento)}
             className="bg-grafite text-white text-[11px] font-semibold px-3.5 py-2 rounded-lg hover:bg-azul-oceano transition-colors cursor-pointer"
           >
             Pagar agora

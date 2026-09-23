@@ -21,6 +21,8 @@ const Mensagem = require('./models/Mensagem');
 const Notificacao = require('./models/Notificacao');
 const app = express();
 const path = require('path');
+const { WebhookSignatureValidator } = require('mercadopago');
+const { ErroMercadoPago, criarOrder, buscarOrder } = require('./config/mercadopago');
 
 const origensPermitidas = (process.env.FRONTEND_URL || 'http://localhost:5173')
   .split(',')
@@ -29,6 +31,19 @@ const origensPermitidas = (process.env.FRONTEND_URL || 'http://localhost:5173')
 
 app.use(cors({ origin: origensPermitidas }));
 app.use(express.json());
+
+function processarUploadFotos(limite) {
+  const middlewareUpload = upload.array('fotos', limite);
+  return (req, res, next) => {
+    middlewareUpload(req, res, (erro) => {
+      if (!erro) return next();
+      if (erro.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({ erro: 'Cada foto deve ter no máximo 5 MB.' });
+      }
+      return res.status(400).json({ erro: erro.message || 'Não foi possível enviar as fotos.' });
+    });
+  };
+}
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', servico: 'lendloop-api' });
@@ -44,6 +59,10 @@ async function criarNotificacao({ usuario, tipo, titulo, texto, linkPainel = nul
     console.error('Erro ao criar notificação:', erro);
   }
 }
+
+// Valores monetários são comparados e enviados em centavos: o Mercado Pago
+// rejeita valores com mais de 2 casas decimais.
+const emCentavos = (valor) => Math.round(Number(valor) * 100);
 
 function criarTokenDeSessao(usuarioId) {
   return jwt.sign({ id: usuarioId }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -132,13 +151,10 @@ app.put('/api/anuncios/:id', autenticacao, async (req, res) => {
 // Cadastro
 app.post('/api/usuarios', async (req, res) => {
   try {
-const { nome, email, senha, telefone, cep, localizacao, objetivo } = req.body;
-
-if (!nome?.trim() || !email?.trim() || !senha || senha.length < 8) {
-  return res.status(400).json({
-    erro: 'Nome, e-mail e senha com pelo menos 8 caracteres são obrigatórios.'
-  });
-
+    const { nome, senha, telefone, cep, localizacao, objetivo } = req.body;
+    const email = String(req.body.email || '').trim().toLowerCase();
+    if (!nome?.trim() || !email || !senha || senha.length < 8) {
+      return res.status(400).json({ erro: 'Nome, e-mail e senha com pelo menos 8 caracteres são obrigatórios.' });
     }
     const senhaCriptografada = await bcrypt.hash(senha, 10);
     const novoUsuario = new Usuario({
@@ -267,7 +283,11 @@ app.delete('/api/usuarios/:id', autenticacao, async (req, res) => {
 // Login
 app.post('/api/login', async (req, res) => {
   try {
-    const { email, senha } = req.body;
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const { senha } = req.body;
+    if (!email || !senha) {
+      return res.status(400).json({ erro: 'E-mail e senha são obrigatórios.' });
+    }
     const usuario = await Usuario.findOne({ email });
 
     if (!usuario) {
@@ -348,6 +368,9 @@ app.post('/api/redefinir-senha', async (req, res) => {
     if (!token || !novaSenha) {
       return res.status(400).json({ erro: 'Token e nova senha são obrigatórios.' });
     }
+    if (novaSenha.length < 8) {
+      return res.status(400).json({ erro: 'A nova senha deve ter pelo menos 8 caracteres.' });
+    }
 
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
     const usuario = await Usuario.findOne({
@@ -400,6 +423,12 @@ app.post('/api/anuncios', autenticacao, async (req, res) => {
     }
 
     const { titulo, descricao, categoria, subcategorias, especificacoes, fotos, endereco, disponivel, precos, status } = req.body;
+    if (typeof titulo !== 'string' || titulo.trim().length < 3 || typeof descricao !== 'string' || descricao.trim().length < 20 || !categoria || !endereco || !precos) {
+      return res.status(400).json({ erro: 'Título, descrição, categoria, endereço e preços válidos são obrigatórios.' });
+    }
+    if (!Number.isFinite(Number(precos.precoPorDia)) || Number(precos.precoPorDia) <= 0 || Number(precos.caucao || 0) < 0) {
+      return res.status(400).json({ erro: 'Informe um preço diário válido e uma caução não negativa.' });
+    }
 
     const novoAnuncio = new Anuncio({
       titulo, descricao, categoria, subcategorias, especificacoes,
@@ -673,7 +702,7 @@ app.get('/api/alugueis/locador/:locadorId', autenticacao, async (req, res) => {
 
 // Registra fotos do estado do item. O locador registra a retirada antes de
 // aceitar a reserva; o locatário registra a devolução antes de solicitá-la.
-app.post('/api/alugueis/:id/vistoria/:momento', autenticacao, upload.array('fotos', 8), async (req, res) => {
+app.post('/api/alugueis/:id/vistoria/:momento', autenticacao, processarUploadFotos(8), async (req, res) => {
   try {
     const { momento } = req.params;
     if (!['retirada', 'devolucao'].includes(momento)) {
@@ -715,6 +744,10 @@ app.post('/api/alugueis/:id/vistoria/:momento', autenticacao, upload.array('foto
 app.patch('/api/alugueis/:id/status', autenticacao, async (req, res) => {
   try {
     const { status } = req.body;
+    const statusPermitidos = ['pendente', 'aceito', 'recusado', 'andamento', 'aguardando_confirmacao', 'concluido', 'cancelado'];
+    if (!statusPermitidos.includes(status)) {
+      return res.status(400).json({ erro: 'Status de aluguel inválido.' });
+    }
 
     const aluguel = await Aluguel.findById(req.params.id);
 
@@ -775,6 +808,11 @@ app.patch('/api/alugueis/:id/status', autenticacao, async (req, res) => {
       const pagamento = await Pagamento.findOne({ aluguel: aluguel._id });
       if (pagamento?.status === 'confirmado') {
         return res.status(400).json({ erro: 'Não é possível cancelar um aluguel com pagamento confirmado.' });
+      }
+      // A cobrança pode estar em andamento no Mercado Pago: apagar o pagamento
+      // agora deixaria uma aprovação posterior sem registro.
+      if (pagamento?.status === 'processando') {
+        return res.status(400).json({ erro: 'O pagamento deste aluguel está em processamento. Aguarde a confirmação.' });
       }
       if (pagamento) await pagamento.deleteOne();
     }
@@ -852,6 +890,10 @@ app.post('/api/pagamentos', autenticacao, async (req, res) => {
       return res.status(400).json({ erro: 'O pagamento só pode ser criado para um aluguel aceito.' });
     }
 
+    if (metodo && !['pix', 'cartao', 'boleto'].includes(metodo)) {
+      return res.status(400).json({ erro: 'Método de pagamento inválido.' });
+    }
+
     const pagamentoExistente = await Pagamento.findOne({ aluguel: aluguelEncontrado._id });
     if (pagamentoExistente) {
       return res.status(409).json({ erro: 'Já existe um pagamento para este aluguel.', pagamento: pagamentoExistente });
@@ -876,6 +918,268 @@ app.post('/api/pagamentos', autenticacao, async (req, res) => {
   }
 });
 
+// Status da Order no Mercado Pago -> status do Pagamento no LendLoop.
+const STATUS_POR_ORDER = {
+  processed: 'confirmado',
+  failed: 'falhou',
+  canceled: 'falhou',
+  cancelled: 'falhou',
+  expired: 'falhou',
+  created: 'processando',
+  processing: 'processando',
+  action_required: 'processando',
+};
+
+const MENSAGENS_RECUSA = {
+  invalid_users_involved: 'O pagador não é aceito por esta conta do Mercado Pago. Em testes, use o e-mail de um comprador de teste.',
+};
+
+function mensagemRecusa(statusDetail) {
+  return MENSAGENS_RECUSA[statusDetail]
+    || `O pagamento foi recusado pelo Mercado Pago${statusDetail ? ` (${statusDetail})` : ''}. Tente outro cartão.`;
+}
+
+async function aoConfirmarPagamento(pagamento) {
+  const aluguelId = pagamento.aluguel?._id || pagamento.aluguel;
+  await Aluguel.updateOne({ _id: aluguelId, status: 'aceito' }, { status: 'andamento' });
+
+  const aluguel = await Aluguel.findById(aluguelId).select('anuncio locador');
+  if (!aluguel) return;
+
+  const anuncio = await Anuncio.findById(aluguel.anuncio).select('titulo');
+  await criarNotificacao({
+    usuario: aluguel.locador,
+    tipo: 'status_aluguel',
+    titulo: 'Pagamento confirmado',
+    texto: `O pagamento do aluguel de "${anuncio?.titulo || 'seu anúncio'}" foi confirmado.`,
+    linkPainel: '/painelLocador',
+    estadoNavegacao: { abrirAba: 'solicitacoes' }
+  });
+}
+
+// Aplica ao pagamento o estado de uma Order consultada na API do Mercado Pago.
+// É a única fonte do status: o corpo do webhook nunca é usado para isso.
+async function aplicarOrderNoPagamento(pagamento, order) {
+  if (order.external_reference !== String(pagamento._id) || emCentavos(order.total_amount) !== emCentavos(pagamento.valor)) {
+    console.warn('Order do Mercado Pago não corresponde ao pagamento:', order.id, String(pagamento._id));
+    return pagamento;
+  }
+
+  const novoStatus = STATUS_POR_ORDER[order.status];
+  if (!novoStatus) return pagamento;
+
+  // Só a Order atual pode mudar o status. A exceção é uma confirmação: se
+  // qualquer Order deste pagamento foi paga, o dinheiro foi cobrado.
+  if (order.id !== pagamento.mpOrderId && novoStatus !== 'confirmado') return pagamento;
+
+  const statusAnterior = pagamento.status;
+  // Um pagamento confirmado nunca volta atrás por uma notificação fora de ordem.
+  if (statusAnterior === 'confirmado') return pagamento;
+
+  const pagamentoMp = order.transactions?.payments?.[0];
+  pagamento.status = novoStatus;
+  pagamento.mpOrderId = order.id;
+  if (pagamentoMp?.id) pagamento.mpPaymentId = String(pagamentoMp.id);
+  pagamento.mpStatusDetail = pagamentoMp?.status_detail || order.status_detail || '';
+  // Uma recusa definitiva libera uma nova chave de idempotência para a próxima tentativa.
+  if (novoStatus === 'falhou' && statusAnterior !== 'falhou') pagamento.tentativas += 1;
+  await pagamento.save();
+
+  if (novoStatus === 'confirmado') {
+    // O dinheiro já foi cobrado: uma falha aqui não pode mudar o resultado do pagamento.
+    await aoConfirmarPagamento(pagamento).catch((erro) => {
+      console.error('Pagamento confirmado, mas houve erro ao atualizar o aluguel:', String(pagamento._id), erro.message);
+    });
+  }
+  return pagamento;
+}
+
+async function reconciliarPagamento(pagamento) {
+  if (!pagamento.mpOrderId) return pagamento;
+  return aplicarOrderNoPagamento(pagamento, await buscarOrder(pagamento.mpOrderId));
+}
+
+app.post('/api/pagamentos/:id/checkout', autenticacao, async (req, res) => {
+  let pagamentoTravado = null;
+  let statusAntesDoCheckout = null;
+
+  try {
+    const { token, payment_method_id, installments, payer } = req.body;
+    const parcelas = Number(installments);
+    if (typeof token !== 'string' || !token || typeof payment_method_id !== 'string' || !payment_method_id
+      || !Number.isInteger(parcelas) || parcelas < 1 || parcelas > 24) {
+      return res.status(400).json({ erro: 'Dados do cartão inválidos ou incompletos.' });
+    }
+
+    let pagamento = await Pagamento.findById(req.params.id).populate('aluguel', 'status');
+    if (!pagamento) {
+      return res.status(404).json({ erro: 'Pagamento não encontrado.' });
+    }
+    if (pagamento.locatario.toString() !== req.usuarioId) {
+      return res.status(403).json({ erro: 'Você não tem permissão para pagar isto.' });
+    }
+    if (!['aceito', 'andamento'].includes(pagamento.aluguel?.status)) {
+      return res.status(400).json({ erro: 'Este aluguel não está disponível para pagamento.' });
+    }
+
+    // Uma tentativa anterior ficou sem resposta final: consulta o Mercado Pago antes de cobrar de novo.
+    if (pagamento.status === 'processando' && pagamento.mpOrderId) {
+      pagamento = await reconciliarPagamento(pagamento);
+    }
+    if (pagamento.status === 'confirmado') {
+      return res.status(409).json({ erro: 'Este pagamento já foi confirmado.', status: 'confirmado' });
+    }
+    if (pagamento.status === 'processando') {
+      return res.status(409).json({ erro: 'Este pagamento já está sendo processado.', status: 'processando' });
+    }
+
+    const locatario = await Usuario.findById(pagamento.locatario).select('email');
+    // Em testes, o Mercado Pago só aceita pagadores que sejam usuários de teste.
+    const emailPagador = String(process.env.MP_TEST_PAYER_EMAIL || '').trim() || locatario?.email;
+    if (!emailPagador) {
+      return res.status(400).json({ erro: 'Não foi possível identificar o pagador.' });
+    }
+
+    // Trava o pagamento: um segundo envio simultâneo recebe 409 em vez de cobrar de novo.
+    statusAntesDoCheckout = pagamento.status;
+    pagamentoTravado = await Pagamento.findOneAndUpdate(
+      { _id: pagamento._id, status: statusAntesDoCheckout },
+      { $set: { status: 'processando' }, $unset: { mpOrderId: 1, mpPaymentId: 1, mpStatusDetail: 1 } },
+      { new: true }
+    );
+    if (!pagamentoTravado) {
+      return res.status(409).json({ erro: 'Este pagamento já está sendo processado.', status: 'processando' });
+    }
+
+    const valor = (emCentavos(pagamentoTravado.valor) / 100).toFixed(2);
+    const identificacao = payer?.identification?.type && payer?.identification?.number
+      ? { type: String(payer.identification.type), number: String(payer.identification.number) }
+      : undefined;
+
+    let order;
+    try {
+      order = await criarOrder({
+        type: 'online',
+        processing_mode: 'automatic',
+        total_amount: valor,
+        external_reference: String(pagamentoTravado._id),
+        payer: { email: emailPagador, ...(identificacao ? { identification: identificacao } : {}) },
+        transactions: {
+          payments: [{
+            amount: valor,
+            payment_method: { id: payment_method_id, type: 'credit_card', token, installments: parcelas },
+          }],
+        },
+      }, `pagamento-${pagamentoTravado._id}-${pagamentoTravado.tentativas}`);
+    } catch (erro) {
+      // Recusa do pagamento: o Mercado Pago cria a Order com falha e devolve o id dela.
+      if (!(erro instanceof ErroMercadoPago) || !erro.corpo?.data?.id) throw erro;
+      order = await buscarOrder(erro.corpo.data.id);
+    }
+
+    pagamentoTravado.mpOrderId = order.id;
+    const pagamentoAtualizado = await aplicarOrderNoPagamento(pagamentoTravado, order);
+    pagamentoTravado = null;
+
+    if (pagamentoAtualizado.status === 'falhou') {
+      return res.status(402).json({
+        erro: mensagemRecusa(pagamentoAtualizado.mpStatusDetail),
+        status: 'falhou',
+        statusDetail: pagamentoAtualizado.mpStatusDetail
+      });
+    }
+
+    res.status(200).json({
+      status: pagamentoAtualizado.status,
+      orderId: pagamentoAtualizado.mpOrderId,
+      statusDetail: pagamentoAtualizado.mpStatusDetail
+    });
+  } catch (erro) {
+    console.error('Erro no checkout do Mercado Pago:', erro.status, erro.message, JSON.stringify(erro.corpo || {}));
+
+    // Sem resposta definitiva do Mercado Pago: libera o pagamento com a mesma
+    // chave de idempotência, então repetir o envio não duplica a cobrança.
+    if (pagamentoTravado) {
+      await Pagamento.updateOne({ _id: pagamentoTravado._id, status: 'processando' }, { status: statusAntesDoCheckout })
+        .catch((erroReversao) => console.error('Erro ao liberar pagamento:', erroReversao));
+    }
+
+    // 401/403 do Mercado Pago são problemas de credencial do servidor, não da
+    // sessão do usuário: repassá-los faria o front deslogar o locatário.
+    if (erro instanceof ErroMercadoPago && erro.status >= 400 && erro.status < 500 && ![401, 403].includes(erro.status)) {
+      return res.status(400).json({ erro: `O Mercado Pago recusou os dados do pagamento: ${erro.message}` });
+    }
+    res.status(502).json({ erro: 'Não foi possível falar com o Mercado Pago agora. Tente novamente em instantes.' });
+  }
+});
+
+app.post('/api/pagamentos/webhook', async (req, res) => {
+  const tipo = req.query.type || req.body?.type;
+  const dataId = String(req.query['data.id'] || req.body?.data?.id || '');
+  if (tipo !== 'order' || !dataId) {
+    return res.status(200).json({ recebido: true });
+  }
+
+  const segredo = String(process.env.MP_WEBHOOK_SECRET || '').trim();
+  if (!segredo) {
+    console.error('MP_WEBHOOK_SECRET não configurado: webhook do Mercado Pago ignorado.');
+    return res.status(500).json({ erro: 'Webhook não configurado.' });
+  }
+
+  try {
+    // O Mercado Pago assina o data.id em minúsculas, e os IDs de Order têm maiúsculas.
+    WebhookSignatureValidator.validate({
+      xSignature: req.headers['x-signature'],
+      xRequestId: req.headers['x-request-id'],
+      dataId: dataId.toLowerCase(),
+      secret: segredo,
+    });
+  } catch (erro) {
+    console.warn('Webhook do Mercado Pago rejeitado:', erro.reason || erro.message, req.headers['x-request-id']);
+    return res.status(401).json({ erro: 'Assinatura do webhook inválida.' });
+  }
+
+  try {
+    const order = await buscarOrder(dataId);
+    const filtro = [{ mpOrderId: order.id }];
+    if (/^[a-f0-9]{24}$/i.test(order.external_reference || '')) filtro.push({ _id: order.external_reference });
+
+    const pagamento = await Pagamento.findOne({ $or: filtro });
+    if (pagamento) await aplicarOrderNoPagamento(pagamento, order);
+
+    return res.status(200).json({ recebido: true });
+  } catch (erro) {
+    if (erro instanceof ErroMercadoPago && erro.status === 404) {
+      return res.status(200).json({ recebido: true });
+    }
+    // Responder com erro faz o Mercado Pago reenviar a notificação mais tarde.
+    console.error('Erro ao processar webhook do Mercado Pago:', erro.status, erro.message);
+    return res.status(500).json({ erro: 'Falha ao processar a notificação.' });
+  }
+});
+
+// Confere no Mercado Pago os pagamentos que ficaram sem resposta final
+// (webhook perdido ou rejeitado) e libera checkouts interrompidos.
+async function reconciliarPagamentosPendentes() {
+  const doisMinutosAtras = new Date(Date.now() - 2 * 60 * 1000);
+  const pagamentos = await Pagamento.find({ status: 'processando', updatedAt: { $lt: doisMinutosAtras } }).limit(20);
+
+  for (const pagamento of pagamentos) {
+    try {
+      if (pagamento.mpOrderId) {
+        await reconciliarPagamento(pagamento);
+      } else {
+        // Checkout interrompido antes da resposta do Mercado Pago. A chave de
+        // idempotência não mudou, então uma nova tentativa não cobra duas vezes.
+        pagamento.status = 'pendente';
+        await pagamento.save();
+      }
+    } catch (erro) {
+      console.error('Erro ao reconciliar pagamento', String(pagamento._id), erro.message);
+    }
+  }
+}
+
 // Listar pagamentos de um locatário (usado em PainelLocatario)
 app.get('/api/pagamentos/locatario/:locatarioId', autenticacao, async (req, res) => {
   try {
@@ -884,41 +1188,23 @@ app.get('/api/pagamentos/locatario/:locatarioId', autenticacao, async (req, res)
     }
 
     const pagamentos = await Pagamento.find({ locatario: req.params.locatarioId }).populate('aluguel');
+
+    // Pagamentos sem resposta final são conferidos no Mercado Pago antes de listar.
+    await Promise.allSettled(
+      pagamentos
+        .filter((pagamento) => pagamento.status === 'processando' && pagamento.mpOrderId)
+        .map((pagamento) => reconciliarPagamento(pagamento))
+    );
+
     res.status(200).json(pagamentos);
   } catch (erro) {
     res.status(500).json({ erro: 'Erro ao buscar pagamentos do locatário' });
   }
 });
 
-// Confirmar pagamento (botão "Pagar Agora")
+// O status do pagamento é atualizado exclusivamente pelo Mercado Pago/webhook.
 app.patch('/api/pagamentos/:id/status', autenticacao, async (req, res) => {
-  try {
-    const { status } = req.body;
-
-    const pagamento = await Pagamento.findById(req.params.id);
-
-    if (!pagamento) {
-      return res.status(404).json({ erro: 'Pagamento não encontrado' });
-    }
-
-    if (pagamento.locatario.toString() !== req.usuarioId) {
-      return res.status(403).json({ erro: 'Você não tem permissão para alterar este pagamento.' });
-    }
-
-    if (status !== 'confirmado' || pagamento.status !== 'pendente') {
-      return res.status(400).json({ erro: 'Esta mudança de status do pagamento não é permitida.' });
-    }
-
-    pagamento.status = status;
-    await pagamento.save();
-
-    res.status(200).json({
-      mensagem: 'Status do pagamento atualizado com sucesso!',
-      pagamento
-    });
-  } catch (erro) {
-    res.status(500).json({ erro: 'Erro ao atualizar status do pagamento', detalhes: erro.message });
-  }
+  return res.status(405).json({ erro: 'O status é atualizado pelo Mercado Pago.' });
 });
 
 // Criar avaliação (só permitido se o aluguel estiver concluído)
@@ -1518,4 +1804,9 @@ connectDB().then(() => {
   app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
   });
+
+  setInterval(() => {
+    reconciliarPagamentosPendentes().catch((erro) => console.error('Erro na reconciliação de pagamentos:', erro));
+  }, 5 * 60 * 1000);
+  reconciliarPagamentosPendentes().catch((erro) => console.error('Erro na reconciliação de pagamentos:', erro));
 });

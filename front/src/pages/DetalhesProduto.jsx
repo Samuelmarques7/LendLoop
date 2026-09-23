@@ -102,6 +102,7 @@ export function DetalhesProduto() {
     ? Math.ceil((new Date(dataFim) - new Date(dataInicio)) / (1000 * 60 * 60 * 24)) : 0;
 
   const diasValidos = dias > 0 ? dias : 0;
+  const datasDisponiveis = new Set((anuncio.disponivel || []).map((data) => new Date(data).toISOString().slice(0, 10)));
   const subtotal = diasValidos * anuncio.precos.precoPorDia;
   const taxaServico = subtotal * 0.03;
   const caucao = anuncio.precos.caucao || 0;
@@ -125,6 +126,18 @@ export function DetalhesProduto() {
     if (diasValidos <= 0) {
       setMensagem({tipo: 'erro', texto: 'A data de término deve ser depois da data de início.'});
       return;
+    }
+
+    if (datasDisponiveis.size > 0) {
+      const inicio = new Date(`${dataInicio}T00:00:00.000Z`);
+      for (let indice = 0; indice < diasValidos; indice += 1) {
+        const dia = new Date(inicio);
+        dia.setUTCDate(dia.getUTCDate() + indice);
+        if (!datasDisponiveis.has(dia.toISOString().slice(0, 10))) {
+          setMensagem({tipo: 'erro', texto: 'O anúncio não está disponível durante todo o período escolhido.'});
+          return;
+        }
+      }
     }
 
     const usuarioLogado = JSON.parse(dadosUsuarioRaw);
