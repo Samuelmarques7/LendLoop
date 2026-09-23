@@ -10,14 +10,13 @@ import {
   LuPackage,
   LuSearch,
   LuShieldCheck,
-  LuSparkles,
   LuTrendingUp,
   LuWallet,
   LuX,
 } from 'react-icons/lu';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
-import heroEscuro from '../assets/hero/lendloop-hero-dark-v6.png';
+import heroEscuro from '../assets/hero/lendloop-hero-dark-v10.png';
 import { useBuscasRecentes } from '../hooks/useBuscasRecentes';
 import { SUGESTOES_POPULARES, BANCO_DE_PALAVRAS } from '../constants/buscasPopulares';
 import { CATEGORIAS } from '../constants/categorias';
@@ -38,12 +37,12 @@ function escaparRegex(texto) {
   return texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function destacarTexto(texto, busca) {
+function DestacarTexto({ texto, busca }) {
   if (!busca) return texto;
   const regex = new RegExp(`(${escaparRegex(busca)})`, 'gi');
 
   return texto.split(regex).map((parte, indice) => (
-    <span key={`${parte}-${indice}`} className={parte.toLowerCase() === busca.toLowerCase() ? 'text-azul-oceano font-semibold' : ''}>
+    <span key={`${parte}-${indice}`} className={parte.toLowerCase() === busca.toLowerCase() ? 'font-semibold text-azul-oceano' : ''}>
       {parte}
     </span>
   ));
@@ -89,55 +88,45 @@ export function PaginaInicial() {
       .sort((primeiro, segundo) => Number(segundo.toLowerCase().startsWith(buscaNormalizada)) - Number(primeiro.toLowerCase().startsWith(buscaNormalizada)))
       .slice(0, 6)
     : SUGESTOES_POPULARES;
-  const mostrarDropdown = mostrarSugestoes && (buscaNormalizada || recentesFiltradas.length || sugestoesFiltradas.length);
+  const mostrarDropdown = mostrarSugestoes;
 
   return (
-    <div className="page-shell min-h-screen text-grafite">
+    <div className="min-h-screen bg-white text-grafite">
       <Header />
 
       <main>
-        <section className="relative isolate overflow-visible bg-verde-escuro px-6 py-16 sm:px-8 lg:min-h-[540px] lg:py-20">
-          <img src={heroEscuro} alt="Itens variados disponíveis para aluguel" className="hero-pan absolute inset-0 -z-30 h-full w-full object-cover object-center" />
-          <div className="absolute inset-0 -z-20 bg-black/25" />
-          <div className="absolute inset-0 -z-10 bg-[linear-gradient(120deg,rgba(3,45,84,.25),transparent_52%,rgba(0,0,0,.22))]" />
+        <section className="relative z-10 isolate overflow-visible bg-[#031f3b] px-5 py-16 sm:px-8 sm:py-20 lg:min-h-[590px] lg:px-10 lg:py-24">
+          <img src={heroEscuro} alt="Itens disponíveis para alugar, como câmera, furadeira, carrinho de bebê, piscina inflável, caixa de som, controle de videogame e livros" className="absolute inset-0 -z-10 h-full w-full object-cover object-[66%_center] sm:object-center" />
 
-          <div className="mx-auto flex w-full max-w-5xl flex-col items-center text-center">
-            <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-ciano/50 bg-ciano/15 px-4 py-2 text-[11px] font-bold tracking-[0.16em] text-white">
-              <LuSparkles size={14} className="text-verde-agua" /> ALUGUE. USE. DEVOLVA.
-            </span>
-            <h1 className="max-w-3xl text-4xl font-black leading-[1.06] tracking-tight text-white sm:text-5xl lg:text-6xl">
-              O que você precisa,<br /><span className="text-verde-agua">sem precisar comprar.</span>
-            </h1>
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-white/80 sm:text-lg">
-              Descubra itens de pessoas da sua região para projetos, viagens, festas e o dia a dia.
-            </p>
+          <div className="mx-auto w-full max-w-6xl">
+            <div className="max-w-2xl">
+              <p className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-white/75"><span className="h-2 w-2 rounded-full bg-verde-agua" /> Itens úteis, pessoas por perto.</p>
+              <h1 className="max-w-xl text-5xl font-semibold leading-[1.02] tracking-[-0.045em] text-white sm:text-6xl lg:text-7xl">O que você precisa, <span className="text-verde-agua">por perto.</span></h1>
+              <p className="mt-6 max-w-xl text-base leading-relaxed text-white/75 sm:text-lg">Alugue itens para o momento certo — sem comprar, acumular ou ir longe.</p>
+            </div>
 
-            <div ref={buscaRef} className="relative mt-9 w-full max-w-3xl text-left">
-              <form onSubmit={(evento) => { evento.preventDefault(); executarBusca(); }} className="hero-search flex min-h-16 w-full items-center rounded-2xl bg-white p-2 shadow-2xl shadow-black/25 ring-1 ring-white/20">
-                <LuSearch size={21} className="ml-3 mr-3 shrink-0 text-azul-oceano" />
+            <div ref={buscaRef} className="relative mt-9 w-full max-w-2xl">
+              <form onSubmit={(evento) => { evento.preventDefault(); executarBusca(); }} onClick={() => setMostrarSugestoes(true)} className="hero-search flex min-h-[72px] w-full items-center rounded-2xl bg-white p-2 shadow-[0_22px_55px_rgba(0,0,0,.28)]">
+                <LuSearch size={22} className="mx-3 shrink-0 text-azul-oceano" />
                 <input
                   type="text"
                   aria-label="Buscar itens para alugar"
                   aria-autocomplete="list"
                   aria-controls="sugestoes-de-busca"
                   aria-expanded={mostrarDropdown}
-                  placeholder="O que você quer alugar hoje?"
+                  placeholder="Busque ferramentas, itens para festa e muito mais"
                   value={buscaHome}
                   onFocus={() => setMostrarSugestoes(true)}
                   onChange={(evento) => setBuscaHome(evento.target.value)}
-                  className="hero-search-input min-w-0 flex-1 bg-transparent py-3 text-base font-medium text-grafite outline-none placeholder:text-gray-400"
+                  className="hero-search-input min-w-0 flex-1 bg-transparent py-3 text-[15px] font-medium text-grafite outline-none placeholder:text-slate-400 sm:text-base"
                 />
-                <button type="submit" className="hidden rounded-xl bg-verde-agua px-6 py-3 font-bold text-white transition-colors hover:bg-ciano focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-verde-escuro sm:block">Buscar</button>
-                <button type="submit" aria-label="Buscar" className="rounded-xl bg-verde-agua p-3 text-white transition-colors hover:bg-ciano focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-verde-escuro sm:hidden"><LuSearch size={20} /></button>
+                <button type="submit" className="hidden rounded-xl bg-verde-agua px-7 py-3.5 text-sm font-bold text-white transition-colors hover:bg-[#20ac40] sm:block">Buscar</button>
+                <button type="submit" aria-label="Buscar" className="rounded-xl bg-verde-agua p-3.5 text-white transition-colors hover:bg-[#20ac40] sm:hidden"><LuSearch size={20} /></button>
               </form>
 
               {mostrarDropdown && (
-                <div id="sugestoes-de-busca" className="absolute left-0 top-[calc(100%+10px)] z-30 w-full overflow-hidden rounded-2xl border border-gray-100 bg-white py-2 shadow-2xl shadow-verde-escuro/15">
-                  {buscaNormalizada && (
-                    <button onClick={() => executarBusca()} className="flex w-full items-center gap-3 bg-azul-oceano/5 px-5 py-3 text-left text-sm font-bold text-azul-oceano transition-colors hover:bg-azul-oceano/10">
-                      <LuSearch size={16} /> Buscar por “{buscaHome}”
-                    </button>
-                  )}
+                <div id="sugestoes-de-busca" className="absolute left-0 top-[calc(100%+10px)] z-30 w-full overflow-hidden rounded-2xl border border-slate-100 bg-white py-2 shadow-2xl shadow-slate-950/20">
+                  {buscaNormalizada && <button onClick={() => executarBusca()} className="flex w-full items-center gap-3 bg-azul-oceano/5 px-5 py-3 text-left text-sm font-bold text-azul-oceano transition-colors hover:bg-azul-oceano/10"><LuSearch size={16} /> Buscar por “{buscaHome}”</button>}
 
                   {recentesFiltradas.length > 0 && (
                     <div className="py-2">
@@ -146,8 +135,8 @@ export function PaginaInicial() {
                         {!buscaNormalizada && <button onClick={limparBuscasRecentes} className="text-[10px] font-bold uppercase tracking-wider text-azul-oceano hover:text-verde-escuro">Limpar</button>}
                       </div>
                       {recentesFiltradas.slice(0, 4).map((termo) => (
-                        <div key={termo} className="flex items-center px-2 hover:bg-gray-50">
-                          <button onClick={() => executarBusca(termo)} className="flex flex-1 items-center gap-3 px-3 py-2.5 text-left text-sm text-gray-600"><LuClock size={16} className="text-gray-400" /> {destacarTexto(termo, buscaNormalizada)}</button>
+                        <div key={termo} className="flex items-center px-2 hover:bg-slate-50">
+                          <button onClick={() => executarBusca(termo)} className="flex flex-1 items-center gap-3 px-3 py-2.5 text-left text-sm text-gray-600"><LuClock size={16} className="text-gray-400" /> <DestacarTexto texto={termo} busca={buscaNormalizada} /></button>
                           <button onClick={(evento) => removerBuscaRecente(termo, evento)} aria-label={`Remover ${termo}`} className="rounded-lg p-2 text-gray-300 transition-colors hover:bg-red-50 hover:text-red-500"><LuX size={15} /></button>
                         </div>
                       ))}
@@ -155,12 +144,12 @@ export function PaginaInicial() {
                   )}
 
                   {sugestoesFiltradas.length > 0 && (
-                    <div className="border-t border-gray-100 py-2">
+                    <div className="border-t border-slate-100 py-2">
                       <span className="block px-5 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.14em] text-gray-400">{buscaNormalizada ? 'Sugestões' : 'Mais procurados'}</span>
                       {sugestoesFiltradas.map((termo) => (
-                        <button key={termo} onClick={() => executarBusca(termo)} className="flex w-full items-center gap-3 px-5 py-2.5 text-left text-sm font-medium text-grafite transition-colors hover:bg-gray-50">
+                        <button key={termo} onClick={() => executarBusca(termo)} className="flex w-full items-center gap-3 px-5 py-2.5 text-left text-sm font-medium text-grafite transition-colors hover:bg-slate-50">
                           {buscaNormalizada ? <LuSearch size={16} className="text-gray-400" /> : <LuTrendingUp size={16} className="text-verde-agua" />}
-                          {destacarTexto(termo, buscaNormalizada)}
+                          <DestacarTexto texto={termo} busca={buscaNormalizada} />
                         </button>
                       ))}
                     </div>
@@ -169,9 +158,10 @@ export function PaginaInicial() {
               )}
             </div>
 
-            <div className="mt-5 flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs font-medium text-white/75">
-              <span className="inline-flex items-center gap-1.5"><LuShieldCheck size={15} className="text-verde-agua" /> Perfis verificados</span>
-              <span className="inline-flex items-center gap-1.5"><LuMapPin size={15} className="text-verde-agua" /> Alugue perto de você</span>
+            <div className="mt-6 flex max-w-2xl flex-wrap gap-x-5 gap-y-3 border-t border-white/15 pt-5 text-xs font-medium text-white/75 sm:text-sm">
+              <span className="inline-flex items-center gap-2"><LuShieldCheck size={16} className="text-verde-agua" /> Perfis verificados</span>
+              <span className="inline-flex items-center gap-2"><LuMapPin size={16} className="text-verde-agua" /> Retirada combinada</span>
+              <span className="inline-flex items-center gap-2"><LuCheck size={16} className="text-verde-agua" /> Vistoria registrada</span>
             </div>
           </div>
         </section>
@@ -205,6 +195,7 @@ export function PaginaInicial() {
               <p className="mt-4 max-w-md leading-relaxed text-white/70">A LendLoop aproxima quem precisa de quem tem, com uma experiência direta, local e segura.</p>
               <button onClick={() => navigate('/busca')} className="mt-7 inline-flex items-center gap-2 rounded-xl border border-white/25 px-5 py-3 text-sm font-bold text-white transition-colors hover:border-verde-agua hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-verde-agua">Começar a explorar <LuArrowRight size={17} /></button>
             </div>
+
             <ol className="grid gap-3 sm:grid-cols-3">
               {etapas.map(({ icone: Icone, numero, titulo, descricao }) => (
                 <li key={numero} className="relative rounded-2xl border border-white/10 bg-white/[0.07] p-5 sm:min-h-56">
