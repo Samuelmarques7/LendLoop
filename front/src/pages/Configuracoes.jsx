@@ -8,7 +8,8 @@ import {
   LuIdCard,
   LuCircleCheck,
   LuTimer,
-  LuCircleX
+  LuCircleX,
+  LuCheck
 } from 'react-icons/lu';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
@@ -143,7 +144,7 @@ export default function Configuracoes() {
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans flex flex-col text-grafite">
+    <div className="page-shell min-h-screen font-sans flex flex-col text-grafite">
       <Header />
 
       <main className="flex-grow w-full pb-16">
@@ -156,10 +157,10 @@ export default function Configuracoes() {
             Voltar
           </button>
 
-          <h1 className="text-2xl font-black text-grafite mt-4">Configurações</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Gerencie sua conta e as preferências da plataforma.
-          </p>
+          <div className="mt-5 border-l-4 border-ciano pl-4">
+            <h1 className="text-xl font-semibold text-grafite">Configurações da conta</h1>
+            <p className="mt-1 text-sm text-gray-500">Gerencie sua conta e as preferências da plataforma.</p>
+          </div>
 
           {erro && (
             <div className="mt-6 bg-red-50 border border-red-100 text-red-600 text-sm font-medium px-4 py-3 rounded-xl">
@@ -172,8 +173,8 @@ export default function Configuracoes() {
             {usuarioLogado ? (
               <>
                 {/* === SESSÃO DE VERIFICAÇÃO DE IDENTIDADE (KYC) === */}
-                <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-                  <div className="p-6 border-b border-gray-100 flex items-center gap-3">
+                <section className="overflow-hidden rounded-3xl border border-gray-100 border-l-4 border-l-verde-agua bg-white shadow-md shadow-verde-escuro/5">
+                  <div className="flex items-center gap-3 border-b border-verde-escuro/10 bg-verde-escuro/[0.025] p-6">
                     <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-verde-escuro/10 text-verde-escuro">
                       <LuIdCard size={20} />
                     </span>
@@ -238,8 +239,8 @@ export default function Configuracoes() {
                 </section>
 
                 {/* === TIPO DE CONTA === */}
-                <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-                  <div className="p-6 border-b border-gray-100 flex items-center gap-3">
+                <section className="overflow-hidden rounded-3xl border border-gray-100 border-l-4 border-l-azul-oceano bg-white shadow-md shadow-azul-oceano/5">
+                  <div className="flex items-center gap-3 border-b border-azul-oceano/10 bg-azul-oceano/[0.025] p-6">
                     <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-azul-oceano/10 text-azul-oceano">
                       <LuUserCog size={20} />
                     </span>
@@ -252,29 +253,31 @@ export default function Configuracoes() {
                   </div>
                   <div className="p-6 space-y-3">
                     {OPCOES_OBJETIVO.map((op) => (
-                      <div
+                      <button
+                        type="button"
                         key={op.valor}
                         onClick={() => handleAlterarObjetivo(op.valor)}
-                        className={`p-4 border rounded-2xl cursor-pointer transition-all ${
+                        disabled={salvandoObjetivo}
+                        aria-pressed={objetivoAtual === op.valor}
+                        className={`flex w-full items-center justify-between gap-4 rounded-2xl border p-4 text-left transition-all ${
                           objetivoAtual === op.valor
-                            ? 'border-verde-agua bg-verde-agua/10 ring-1 ring-verde-agua'
-                            : 'border-gray-200 hover:border-verde-agua/50'
+                            ? 'border-verde-agua bg-verde-agua/10 shadow-sm ring-1 ring-verde-agua'
+                            : 'border-gray-200 hover:border-azul-oceano/35 hover:bg-azul-oceano/[0.025]'
                         } ${salvandoObjetivo ? 'opacity-60 pointer-events-none' : ''}`}
                       >
-                        <span className={`block text-sm font-bold ${
-                          objetivoAtual === op.valor ? 'text-verde-escuro' : 'text-grafite'
-                        }`}>
-                          {op.titulo}
+                        <span>
+                          <span className={`block text-sm font-semibold ${objetivoAtual === op.valor ? 'text-verde-escuro' : 'text-grafite'}`}>{op.titulo}</span>
+                          <span className="mt-0.5 block text-xs text-gray-500">{op.descricao}</span>
                         </span>
-                        <span className="block text-xs text-gray-500 mt-0.5">{op.descricao}</span>
-                      </div>
+                        {objetivoAtual === op.valor && <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-verde-agua text-white"><LuCheck size={15} /></span>}
+                      </button>
                     ))}
                   </div>
                 </section>
 
                 {/* === ZONA DE PERIGO === */}
-                <section className="bg-white rounded-3xl border border-red-100 shadow-sm overflow-hidden">
-                  <div className="p-6 border-b border-red-100 flex items-center gap-3">
+                <section className="overflow-hidden rounded-3xl border border-red-100 border-l-4 border-l-red-400 bg-white shadow-md shadow-red-500/5">
+                  <div className="flex items-center gap-3 border-b border-red-100 bg-red-50/60 p-6">
                     <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-red-50 text-red-500">
                       <LuShieldAlert size={20} />
                     </span>

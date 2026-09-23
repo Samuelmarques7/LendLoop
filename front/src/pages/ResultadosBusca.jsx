@@ -149,7 +149,7 @@ export function ResultadosBusca() {
   const mostrarDropdown = mostrarSugestoes && (buscaLower !== '' || recentesFiltradas.length > 0 || sugestoesFiltradas.length > 0);
 
   return (
-    <div className="min-h-screen bg-white font-sans text-grafite flex flex-col">
+    <div className="page-shell min-h-screen font-sans text-grafite flex flex-col">
       <Header />
 
       <main className="max-w-7xl mx-auto w-full flex-grow p-6 pt-10">

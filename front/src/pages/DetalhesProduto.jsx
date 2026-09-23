@@ -76,7 +76,7 @@ export function DetalhesProduto() {
 
   if (carregando) {
     return (
-      <div className='min-h-screen bg-white flex flex-col'>
+      <div className='page-shell min-h-screen flex flex-col'>
         <Header />
         <main className='flex-grow flex items-center justify-center'>
           <p className='text-gray-400 font-medium'> Carregando anúncio...</p>
@@ -88,7 +88,7 @@ export function DetalhesProduto() {
 
   if (erro || !anuncio) {
     return (
-      <div className='min-h-screen bg-white flex flex-col'>
+      <div className='page-shell min-h-screen flex flex-col'>
         <Header />
         <main className='flex-grow flex items-center justify-center'>
           <p className='text-red-500 font-medium'>{erro || 'Anúncio não encontrado'}</p>
@@ -188,7 +188,7 @@ export function DetalhesProduto() {
   // -----------------------------------
 
   return (
-    <div className="min-h-screen bg-white font-sans text-grafite flex flex-col">
+    <div className="page-shell min-h-screen font-sans text-grafite flex flex-col">
       
       <Header />
 

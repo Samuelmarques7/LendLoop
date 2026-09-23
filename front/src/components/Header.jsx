@@ -30,16 +30,16 @@ export function Header() {
   }
 
   return (
-    <header className="bg-white border-b border-gray-100 px-8 py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
+    <header className="sticky top-0 z-50 flex items-center justify-between border-b border-gray-100 bg-white/95 px-4 py-3 shadow-sm backdrop-blur sm:px-6 lg:px-8">
       
       <img
         src={logo}
         alt="LendLoop"
-        className="h-13 w-auto cursor-pointer"
+        className="h-10 w-auto cursor-pointer sm:h-12"
         onClick={() => navigate('/')}
       />
 
-      <nav className="flex items-center gap-6">
+      <nav className="flex items-center gap-2 sm:gap-4 lg:gap-6">
         
         {/* === VISUAL EXCLUSIVO DO ADMINISTRADOR === */}
         {isAdmin ? (

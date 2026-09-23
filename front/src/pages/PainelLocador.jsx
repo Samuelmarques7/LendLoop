@@ -36,8 +36,22 @@ import {
   LuCamera
 } from "react-icons/lu";
 
+const DESCRICOES_SECOES = {
+  painel: 'Veja o que precisa da sua atenção hoje.',
+  anuncios: 'Organize seus itens, disponibilidade e informações de cada anúncio.',
+  solicitacoes: 'Revise os novos pedidos e acompanhe devoluções pendentes.',
+  calendario: 'Consulte as reservas confirmadas e os próximos períodos ocupados.',
+  ganhos: 'Acompanhe valores recebidos, em andamento e seu histórico de aluguéis.',
+  mensagens: 'Converse com interessados e mantenha cada aluguel alinhado.',
+  config: 'Ajuste como sua conta de locador funciona na plataforma.',
+};
+
+const TITULOS_SECOES = {
+  painel: 'Resumo da sua atividade',
+};
+
 const PAINEIS_DISPONIVEIS = [
-  { id: 'painel', label: 'Painel Locador' },
+  { id: 'painel', label: 'Visão geral' },
   { id: 'anuncios', label: 'Meus anúncios' },
   { id: 'solicitacoes', label: 'Solicitações recebidas' },
   { id: 'calendario', label: 'Calendário' },
@@ -190,7 +204,7 @@ export default function PainelLocador() {
   };
 
   const menuItems = [
-    { id: 'painel', label: 'Painel', icon: LuLayoutDashboard },
+    { id: 'painel', label: 'Visão geral', icon: LuLayoutDashboard },
     { id: 'anuncios', label: 'Meus anúncios', icon: LuPackage },
     { id: 'solicitacoes', label: 'Solicitações recebidas', icon: LuInbox },
     { id: 'calendario', label: 'Calendário', icon: LuCalendar },
@@ -332,8 +346,8 @@ export default function PainelLocador() {
         body: { objetivo: novoObjetivo }
       });
 
-      localStorage.setItem('dadosUsuario', JSON.stringify({ ...usuarioLogado, objetivo: data.usuario.objetivo }));
       setDadosLocador(data.usuario);
+      localStorage.setItem('dadosUsuario', JSON.stringify({ ...usuarioLogado, objetivo: data.usuario.objetivo }));
 
       if (novoObjetivo === 'locatario') {
         navigate('/painellocatario', { replace: true });
@@ -421,16 +435,18 @@ export default function PainelLocador() {
   }
 
   const secaoAtual = menuItems.find(i => i.id === activeTab) || (activeTab === 'config' ? { label: 'Configurações' } : null);
+  const tituloAtual = TITULOS_SECOES[activeTab] || secaoAtual?.label || 'Painel';
+  const descricaoAtual = DESCRICOES_SECOES[activeTab] || 'Acompanhe os detalhes da sua atividade como locador.';
 
   return (
-    <div className="min-h-screen bg-white font-sans text-grafite">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="w-full h-19 flex items-center px-8 gap-8">
+    <div className="page-shell min-h-screen font-sans text-grafite">
+      <header className="sticky top-0 z-10 border-b border-gray-200 bg-white">
+        <div className="flex min-h-18 w-full items-center gap-3 px-4 sm:h-19 sm:gap-6 sm:px-6 lg:px-8">
           <button onClick={() => navigate('/')} className="flex-shrink-0 cursor-pointer">
-            <img src={logo} alt="LendLoop" className="h-16 w-auto" />
+            <img src={logo} alt="LendLoop" className="h-[3.875rem] w-auto sm:h-[4.125rem]" />
           </button>
 
-          <nav className="flex-1 flex items-center gap-1 h-full overflow-x-auto">
+          <nav className="flex h-full flex-1 items-center gap-1 overflow-x-auto">
             {menuItems.map((item) => {
               const isActive = activeTab === item.id;
               const Icon = item.icon;
@@ -438,7 +454,7 @@ export default function PainelLocador() {
                 <button
                   key={item.id}
                   onClick={() => handleMenuClick(item)}
-                  className={`h-full flex items-center gap-2 px-4 text-[15px] font-medium whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
+                  className={`flex h-full items-center gap-2 whitespace-nowrap border-b-2 px-4 text-[15px] font-medium transition-colors cursor-pointer ${
                     isActive
                       ? 'border-grafite text-grafite'
                       : 'border-transparent text-gray-500 hover:text-grafite'
@@ -451,42 +467,42 @@ export default function PainelLocador() {
             })}
           </nav>
 
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex flex-shrink-0 items-center gap-2">
             <NotificacaoSino />
             <button
               onClick={() => navigate('/configuracoes')}
               title="Configurações"
-              className="p-2 rounded-lg text-gray-500 hover:bg-gray-50 hover:text-grafite transition-colors cursor-pointer"
+              className="cursor-pointer rounded-full bg-gray-50 p-2.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-verde-agua"
             >
-              <LuSettings size={22} />
+              <LuSettings size={18} />
             </button>
 
             <button
               onClick={() => navigate('/meu-perfil')}
-              className="flex items-center gap-2.5 pl-3 ml-1 border-l border-gray-200 cursor-pointer group"
+              className="group ml-1 flex cursor-pointer items-center gap-2.5 border-l border-gray-200 pl-3"
             >
-              <div className="w-10 h-10 rounded-full bg-grafite text-white flex items-center justify-center font-semibold text-sm overflow-hidden flex-shrink-0">
+              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-verde-escuro text-sm font-semibold text-white">
                 {dadosLocador?.avatar ? (
-                  <img src={dadosLocador.avatar} alt={dadosLocador.nome} className="w-full h-full object-cover" />
+                  <img src={dadosLocador.avatar} alt={dadosLocador.nome} className="h-full w-full object-cover" />
                 ) : (
                   dadosLocador?.nome?.charAt(0).toUpperCase() || 'U'
                 )}
               </div>
-              <div className="hidden lg:block text-left min-w-0">
-                <p className="text-[14px] font-semibold text-grafite whitespace-nowrap leading-tight group-hover:text-azul-oceano transition-colors">
+              <div className="hidden min-w-0 text-left lg:block">
+                <p className="whitespace-nowrap text-[14px] font-semibold leading-tight text-verde-escuro transition-colors group-hover:text-verde-agua">
                   {dadosLocador?.nome ? dadosLocador.nome.split(' ').slice(0, 2).join(' ') : 'Carregando...'}
                 </p>
-                <p className="text-[12px] text-gray-400 leading-tight">Locador</p>
+                <p className="text-[12px] leading-tight text-gray-400">Ver perfil</p>
               </div>
             </button>
           </div>
         </div>
       </header>
 
-      <main className="px-10 py-8 max-w-[1600px] mx-auto w-full space-y-6">
+      <main className="mx-auto w-full max-w-[1600px] space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
         <div>
-          <h1 className="text-xl font-semibold text-grafite">{secaoAtual?.label || 'Painel'}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Gerencie seus anúncios, solicitações, reservas e ganhos em um só lugar.</p>
+          <h1 className="text-xl font-semibold text-grafite">{tituloAtual}</h1>
+          <p className="mt-1 text-sm text-gray-500">{descricaoAtual}</p>
         </div>
         {renderConteudo()}
       </main>
@@ -619,7 +635,7 @@ function SecaoPainel({ stats, toneClasses, meusAnuncios, solicitacoes, devolucoe
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <section className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col">
           <div className="px-6 py-4.5 border-b border-gray-100 flex justify-between items-center">
-            <h2 className="text-[15px] font-semibold text-grafite">Meus anúncios</h2>
+            <h2 className="text-[15px] font-semibold text-grafite">Anúncios recentes</h2>
             <button
               onClick={onNovoAnuncio}
               className="flex items-center gap-1.5 text-[12px] font-semibold text-white bg-grafite px-3.5 py-2 rounded-lg hover:bg-azul-oceano transition-colors cursor-pointer"
@@ -651,6 +667,7 @@ function SecaoPainel({ stats, toneClasses, meusAnuncios, solicitacoes, devolucoe
         <SecaoSolicitacoes 
           solicitacoes={solicitacoes} 
           devolucoes={devolucoes} 
+          titulo="Pendências para revisar"
           onAceitar={onAceitar} 
           onAbrirVistoria={onAbrirVistoria}
           onRecusar={onRecusar} 
@@ -696,13 +713,13 @@ function SecaoAnuncios({ meusAnuncios, onNovoAnuncio, onAbrirAnuncio, onEditarAn
   );
 }
 
-function SecaoSolicitacoes({ solicitacoes, devolucoes, onAbrirVistoria, onRecusar, onConfirmarDevolucao }) {
+function SecaoSolicitacoes({ solicitacoes, devolucoes, titulo = 'Solicitações recebidas', onAbrirVistoria, onRecusar, onConfirmarDevolucao }) {
   const total = solicitacoes.length + (devolucoes?.length || 0);
 
   return (
     <section className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col">
       <div className="px-6 py-4.5 border-b border-gray-100 flex justify-between items-center">
-        <h2 className="text-[15px] font-semibold text-grafite">Solicitações recebidas</h2>
+        <h2 className="text-[15px] font-semibold text-grafite">{titulo}</h2>
         {total > 0 && (
           <span className="bg-grafite text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{total}</span>
         )}

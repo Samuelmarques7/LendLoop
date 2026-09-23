@@ -11,6 +11,27 @@
 
 body {
   font-family: var(--font-outfit);
+  background: #f8fafc;
+  color: var(--color-grafite);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-verde-agua) 30%, white);
+  color: var(--color-verde-escuro);
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8;
 }
 
 /* Mantém somente o botão de visibilidade criado pela aplicação. */
@@ -28,7 +49,49 @@ button:not(:disabled),
   outline: 2px solid var(--color-azul-oceano);
   outline-offset: 3px;
 }
+
+@keyframes hero-pan {
+  0%, 100% { transform: scale(1.035) translate3d(0, 0, 0); }
+  50% { transform: scale(1.075) translate3d(-0.7%, -0.45%, 0); }
+}
+
+.hero-pan {
+  animation: hero-pan 22s ease-in-out infinite;
+  will-change: transform;
+}
+
+.hero-search {
+  transition: box-shadow 180ms ease, outline-color 180ms ease;
+}
+
+.hero-search:focus-within {
+  outline: 3px solid color-mix(in srgb, var(--color-azul-oceano) 68%, transparent);
+  outline-offset: 3px;
+}
+
+.hero-search-input:focus-visible {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  .hero-pan {
+    animation: none;
+  }
+}
 @layer components {
+  .page-shell {
+    background: linear-gradient(180deg, #f7fafc 0, #ffffff 30rem);
+  }
+
   .btn-next {
     @apply bg-verde-agua text-white px-6 py-2.5 rounded-xl font-bold shadow-sm hover:bg-verde-escuro transition-all cursor-pointer uppercase tracking-widest text-xs active:scale-95;
   }

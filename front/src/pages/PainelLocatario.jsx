@@ -26,6 +26,19 @@ import {
   LuClock
 } from "react-icons/lu";
 
+const DESCRICOES_SECOES = {
+  painel: 'Veja o que está próximo, pendente ou precisa da sua atenção.',
+  alugueis: 'Acompanhe datas, status e devoluções dos itens que você alugou.',
+  solicitacoes: 'Consulte os pedidos enviados e cancele os que não fazem mais sentido.',
+  pagamentos: 'Veja seus pagamentos pendentes, confirmados e vencimentos.',
+  mensagens: 'Converse com locadores e alinhe os detalhes do aluguel.',
+  config: 'Ajuste as preferências da sua conta de locatário.',
+};
+
+const TITULOS_SECOES = {
+  painel: 'Resumo dos seus aluguéis',
+};
+
 export default function PainelLocatario() {
   const [activeTab, setActiveTab] = useState('painel');
   const navigate = useNavigate();
@@ -180,7 +193,7 @@ const toneClasses = {
 };
 
   const menuItems = [
-    { id: 'painel', label: 'Painel', icon: LuLayoutDashboard },
+    { id: 'painel', label: 'Visão geral', icon: LuLayoutDashboard },
     { id: 'alugueis', label: 'Meus aluguéis', icon: LuPackage },
     { id: 'solicitacoes', label: 'Solicitações enviadas', icon: LuSend },
     { id: 'pagamentos', label: 'Pagamentos', icon: LuWallet },
@@ -272,8 +285,8 @@ const toneClasses = {
         body: { objetivo: novoObjetivo }
       });
 
-      localStorage.setItem('dadosUsuario', JSON.stringify({ ...usuarioLogado, objetivo: data.usuario.objetivo }));
       setDadosLocatario(data.usuario);
+      localStorage.setItem('dadosUsuario', JSON.stringify({ ...usuarioLogado, objetivo: data.usuario.objetivo }));
 
       if (novoObjetivo === 'locador') {
         navigate('/painelLocador', { replace: true });
@@ -354,16 +367,18 @@ const toneClasses = {
   }
 
   const secaoAtual = menuItems.find(i => i.id === activeTab) || (activeTab === 'config' ? { label: 'Configurações' } : null);
+  const tituloAtual = TITULOS_SECOES[activeTab] || secaoAtual?.label || 'Painel';
+  const descricaoAtual = DESCRICOES_SECOES[activeTab] || 'Acompanhe os detalhes da sua atividade como locatário.';
 
   return (
-    <div className="min-h-screen bg-white font-sans text-grafite">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="w-full h-19 flex items-center px-8 gap-8">
+    <div className="page-shell min-h-screen font-sans text-grafite">
+      <header className="sticky top-0 z-10 border-b border-gray-200 bg-white">
+        <div className="flex min-h-18 w-full items-center gap-3 px-4 sm:h-19 sm:gap-6 sm:px-6 lg:px-8">
           <button onClick={() => navigate('/')} className="flex-shrink-0 cursor-pointer">
-            <img src={logo} alt="LendLoop" className="h-16 w-auto" />
+            <img src={logo} alt="LendLoop" className="h-[3.875rem] w-auto sm:h-[4.125rem]" />
           </button>
 
-          <nav className="flex-1 flex items-center gap-1 h-full overflow-x-auto">
+          <nav className="flex h-full flex-1 items-center gap-1 overflow-x-auto">
             {menuItems.map((item) => {
               const isActive = activeTab === item.id;
               const Icon = item.icon;
@@ -371,7 +386,7 @@ const toneClasses = {
                 <button
                   key={item.id}
                   onClick={() => handleMenuClick(item)}
-                  className={`h-full flex items-center gap-2 px-4 text-[15px] font-medium whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
+                  className={`flex h-full items-center gap-2 whitespace-nowrap border-b-2 px-4 text-[15px] font-medium transition-colors cursor-pointer ${
                     isActive
                       ? 'border-grafite text-grafite'
                       : 'border-transparent text-gray-500 hover:text-grafite'
@@ -384,42 +399,42 @@ const toneClasses = {
             })}
           </nav>
 
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex flex-shrink-0 items-center gap-2">
             <NotificacaoSino />
             <button
               onClick={() => navigate('/configuracoes')}
               title="Configurações"
-              className="p-2 rounded-lg text-gray-500 hover:bg-gray-50 hover:text-grafite transition-colors cursor-pointer"
+              className="cursor-pointer rounded-full bg-gray-50 p-2.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-verde-agua"
             >
-              <LuSettings size={22} />
+              <LuSettings size={18} />
             </button>
 
             <button
               onClick={() => navigate('/meu-perfil')}
-              className="flex items-center gap-2.5 pl-3 ml-1 border-l border-gray-200 cursor-pointer group"
+              className="group ml-1 flex cursor-pointer items-center gap-2.5 border-l border-gray-200 pl-3"
             >
-              <div className="w-10 h-10 rounded-full bg-grafite text-white flex items-center justify-center font-semibold text-sm overflow-hidden flex-shrink-0">
+              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-verde-escuro text-sm font-semibold text-white">
                 {dadosLocatario?.avatar ? (
-                  <img src={dadosLocatario.avatar} alt={dadosLocatario.nome} className="w-full h-full object-cover" />
+                  <img src={dadosLocatario.avatar} alt={dadosLocatario.nome} className="h-full w-full object-cover" />
                 ) : (
                   dadosLocatario?.nome?.charAt(0).toUpperCase() || 'U'
                 )}
               </div>
-              <div className="hidden lg:block text-left min-w-0">
-                <p className="text-[14px] font-semibold text-grafite whitespace-nowrap leading-tight group-hover:text-azul-oceano transition-colors">
+              <div className="hidden min-w-0 text-left lg:block">
+                <p className="whitespace-nowrap text-[14px] font-semibold leading-tight text-verde-escuro transition-colors group-hover:text-verde-agua">
                   {dadosLocatario?.nome ? dadosLocatario.nome.split(' ').slice(0, 2).join(' ') : 'Carregando...'}
                 </p>
-                <p className="text-[12px] text-gray-400 leading-tight">Locatário</p>
+                <p className="text-[12px] leading-tight text-gray-400">Ver perfil</p>
               </div>
             </button>
           </div>
         </div>
       </header>
 
-      <main className="px-10 py-8 max-w-[1600px] mx-auto w-full space-y-6">
+      <main className="mx-auto w-full max-w-[1600px] space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
         <div>
-          <h1 className="text-xl font-semibold text-grafite">{secaoAtual?.label || 'Painel'}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Acompanhe seus aluguéis, solicitações e pagamentos em um só lugar.</p>
+          <h1 className="text-xl font-semibold text-grafite">{tituloAtual}</h1>
+          <p className="mt-1 text-sm text-gray-500">{descricaoAtual}</p>
         </div>
         {renderConteudo()}
       </main>
@@ -545,10 +560,10 @@ function CardSecao({ titulo, acao, children }) {
   );
 }
 
-function SecaoAlugueis({ alugueis, abaAlugueis, setAbaAlugueis, onAbrirDetalhes, usuarioLogadoId, onStatusAvaliacao }) {
+function SecaoAlugueis({ alugueis, abaAlugueis, setAbaAlugueis, onAbrirDetalhes, usuarioLogadoId, onStatusAvaliacao, titulo = 'Meus aluguéis' }) {
   return (
     <CardSecao
-      titulo="Meus aluguéis"
+      titulo={titulo}
       acao={
         <AbaFiltro
           abas={[
@@ -589,9 +604,9 @@ function CardSolicitacao({ solicitacao, onCancelarSolicitacao }) {
   );
 }
 
-function SecaoSolicitacoesEnviadas({ solicitacoesEnviadas, onCancelarSolicitacao }) {
+function SecaoSolicitacoesEnviadas({ solicitacoesEnviadas, onCancelarSolicitacao, titulo = 'Solicitações enviadas' }) {
   return (
-    <CardSecao titulo="Solicitações enviadas">
+    <CardSecao titulo={titulo}>
       {solicitacoesEnviadas.length === 0 ? (
         <EstadoVazio texto="Nenhuma solicitação enviada" />
       ) : (
@@ -633,10 +648,10 @@ function LinhaPagamento({ pagamento, abaPagamentos, onPagarAgora }) {
   );
 }
 
-function SecaoPagamentos({ pagamentos, abaPagamentos, setAbaPagamentos, onPagarAgora }) {
+function SecaoPagamentos({ pagamentos, abaPagamentos, setAbaPagamentos, onPagarAgora, titulo = 'Pagamentos' }) {
   return (
     <CardSecao
-      titulo="Pagamentos"
+      titulo={titulo}
       acao={
         <AbaFiltro
           abas={[
@@ -680,11 +695,11 @@ function SecaoPainel({ stats, toneClasses, alugueis, pagamentos, solicitacoesEnv
         })}
       </section>
 
-      <SecaoAlugueis alugueis={alugueis} abaAlugueis={abaAlugueis} setAbaAlugueis={setAbaAlugueis} onAbrirDetalhes={onAbrirDetalhes} usuarioLogadoId={usuarioLogadoId} onStatusAvaliacao={onStatusAvaliacao} />
+      <SecaoAlugueis titulo="Atividade dos seus aluguéis" alugueis={alugueis} abaAlugueis={abaAlugueis} setAbaAlugueis={setAbaAlugueis} onAbrirDetalhes={onAbrirDetalhes} usuarioLogadoId={usuarioLogadoId} onStatusAvaliacao={onStatusAvaliacao} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <SecaoSolicitacoesEnviadas solicitacoesEnviadas={solicitacoesEnviadas} onCancelarSolicitacao={onCancelarSolicitacao} />
-        <SecaoPagamentos pagamentos={pagamentos} abaPagamentos={abaPagamentos} setAbaPagamentos={setAbaPagamentos} onPagarAgora={onPagarAgora} />
+        <SecaoSolicitacoesEnviadas titulo="Pedidos em andamento" solicitacoesEnviadas={solicitacoesEnviadas} onCancelarSolicitacao={onCancelarSolicitacao} />
+        <SecaoPagamentos titulo="Resumo de pagamentos" pagamentos={pagamentos} abaPagamentos={abaPagamentos} setAbaPagamentos={setAbaPagamentos} onPagarAgora={onPagarAgora} />
       </div>
     </div>
   );

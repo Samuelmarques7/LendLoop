@@ -58,8 +58,8 @@ export default function RedefinirSenha() {
 
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 border border-gray-100 text-center">
+      <div className="page-shell min-h-screen flex items-center justify-center p-4">
+        <div className="max-w-md w-full rounded-3xl border border-gray-100 bg-white p-7 text-center shadow-xl shadow-verde-escuro/5 sm:p-8">
           <h2 className="text-2xl font-bold text-verde-escuro mb-4">Link inválido</h2>
           <p className="text-grafite mb-6">Este link de recuperação é inválido ou está incompleto.</p>
           <Link to="/esqueceu-senha" className="text-verde-agua hover:text-verde-escuro font-semibold hover:underline transition-colors cursor-pointer">
@@ -71,8 +71,8 @@ export default function RedefinirSenha() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 border border-gray-100">
+    <div className="page-shell min-h-screen flex items-center justify-center p-4">
+      <div className="max-w-md w-full rounded-3xl border border-gray-100 bg-white p-7 shadow-xl shadow-verde-escuro/5 sm:p-8">
 
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-verde-escuro">Nova Senha</h2>

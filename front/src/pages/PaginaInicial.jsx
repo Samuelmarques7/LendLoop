@@ -17,7 +17,7 @@ import {
 } from 'react-icons/lu';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
-import heroEscuro from '../assets/hero/lendloop-hero-dark-v5.png';
+import heroEscuro from '../assets/hero/lendloop-hero-dark-v6.png';
 import { useBuscasRecentes } from '../hooks/useBuscasRecentes';
 import { SUGESTOES_POPULARES, BANCO_DE_PALAVRAS } from '../constants/buscasPopulares';
 import { CATEGORIAS } from '../constants/categorias';
@@ -92,14 +92,14 @@ export function PaginaInicial() {
   const mostrarDropdown = mostrarSugestoes && (buscaNormalizada || recentesFiltradas.length || sugestoesFiltradas.length);
 
   return (
-    <div className="min-h-screen bg-white text-grafite">
+    <div className="page-shell min-h-screen text-grafite">
       <Header />
 
       <main>
         <section className="relative isolate overflow-visible bg-verde-escuro px-6 py-16 sm:px-8 lg:min-h-[540px] lg:py-20">
-          <img src={heroEscuro} alt="Itens variados disponíveis para aluguel" className="absolute inset-0 -z-30 h-full w-full object-cover object-center" />
-          <div className="absolute inset-0 -z-20 bg-black/45" />
-          <div className="absolute inset-0 -z-10 bg-[linear-gradient(120deg,rgba(3,45,84,.32),rgba(3,45,84,.08)_52%,rgba(0,0,0,.32))]" />
+          <img src={heroEscuro} alt="Itens variados disponíveis para aluguel" className="hero-pan absolute inset-0 -z-30 h-full w-full object-cover object-center" />
+          <div className="absolute inset-0 -z-20 bg-black/25" />
+          <div className="absolute inset-0 -z-10 bg-[linear-gradient(120deg,rgba(3,45,84,.25),transparent_52%,rgba(0,0,0,.22))]" />
 
           <div className="mx-auto flex w-full max-w-5xl flex-col items-center text-center">
             <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-ciano/50 bg-ciano/15 px-4 py-2 text-[11px] font-bold tracking-[0.16em] text-white">
@@ -113,7 +113,7 @@ export function PaginaInicial() {
             </p>
 
             <div ref={buscaRef} className="relative mt-9 w-full max-w-3xl text-left">
-              <form onSubmit={(evento) => { evento.preventDefault(); executarBusca(); }} className="flex min-h-16 w-full items-center rounded-2xl bg-white p-2 shadow-2xl shadow-black/25 ring-1 ring-white/20">
+              <form onSubmit={(evento) => { evento.preventDefault(); executarBusca(); }} className="hero-search flex min-h-16 w-full items-center rounded-2xl bg-white p-2 shadow-2xl shadow-black/25 ring-1 ring-white/20">
                 <LuSearch size={21} className="ml-3 mr-3 shrink-0 text-azul-oceano" />
                 <input
                   type="text"
@@ -125,7 +125,7 @@ export function PaginaInicial() {
                   value={buscaHome}
                   onFocus={() => setMostrarSugestoes(true)}
                   onChange={(evento) => setBuscaHome(evento.target.value)}
-                  className="min-w-0 flex-1 bg-transparent py-3 text-base font-medium text-grafite outline-none placeholder:text-gray-400"
+                  className="hero-search-input min-w-0 flex-1 bg-transparent py-3 text-base font-medium text-grafite outline-none placeholder:text-gray-400"
                 />
                 <button type="submit" className="hidden rounded-xl bg-verde-agua px-6 py-3 font-bold text-white transition-colors hover:bg-ciano focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-verde-escuro sm:block">Buscar</button>
                 <button type="submit" aria-label="Buscar" className="rounded-xl bg-verde-agua p-3 text-white transition-colors hover:bg-ciano focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-verde-escuro sm:hidden"><LuSearch size={20} /></button>

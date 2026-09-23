@@ -16,6 +16,7 @@ import { Footer } from '../components/Footer';
 import SeloVerificado from '../components/SeloVerificado';
 import { apiRequest } from '../services/api';
 import { PainelAvaliacoes } from '../components/PainelAvaliacoes';
+import { useConfirmacao } from '../context/ConfirmacaoContext';
 
 function urlAvatarPadrao(nome) {
   const nomeSeguro = (nome || 'Usuário').trim() || 'Usuário';
@@ -37,6 +38,7 @@ function formatarMembroDesde(dataCriacao) {
 export default function MeuPerfil() {
   const navigate = useNavigate();
   const { id: idDaRota } = useParams();
+  const confirmar = useConfirmacao();
   const fileInputRef = useRef(null);
 
   const dadosSalvos = localStorage.getItem('dadosUsuario');
@@ -129,7 +131,17 @@ export default function MeuPerfil() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const confirmou = await confirmar({
+      titulo: 'Sair da conta?',
+      mensagem: 'Você precisará entrar novamente para acessar seus painéis e informações.',
+      textoConfirmar: 'Sair',
+      textoCancelar: 'Ficar',
+      variante: 'perigo',
+    });
+
+    if (!confirmou) return;
+
     localStorage.removeItem('usuarioLogado');
     localStorage.removeItem('dadosUsuario');
     localStorage.removeItem('token');
@@ -169,7 +181,7 @@ export default function MeuPerfil() {
 
   if (carregando) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="page-shell min-h-screen flex items-center justify-center">
         <p className="text-gray-500 font-medium">Carregando perfil...</p>
       </div>
     );
@@ -177,7 +189,7 @@ export default function MeuPerfil() {
 
   if (erro && !usuario) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="page-shell min-h-screen flex items-center justify-center">
         <p className="text-red-600 font-medium">{erro}</p>
       </div>
     );
@@ -191,14 +203,14 @@ export default function MeuPerfil() {
   const mostrarLinhaDivisoria = temTelefone || temVerificacao;
 
   return (
-    <div className="min-h-screen bg-white font-sans flex flex-col text-grafite">
+    <div className="page-shell min-h-screen font-sans flex flex-col text-grafite">
       <Header />
 
       <main className="flex-grow w-full pb-16">
-        <section className="w-full bg-white border-b border-gray-100">
+        <section className="w-full border-b border-verde-escuro/10 bg-verde-escuro/[0.025]">
           <div className="max-w-5xl mx-auto px-6 sm:px-8 py-10 flex flex-col sm:flex-row items-center sm:items-center gap-6">
             <div className={`relative group ${ehPerfilProprio ? 'cursor-pointer' : ''}`} onClick={ehPerfilProprio ? handleAvatarClick : undefined}>
-              <div className="w-32 h-32 rounded-full border-4 border-white bg-white shadow-md overflow-hidden relative">
+              <div className="relative h-32 w-32 overflow-hidden rounded-full border-4 border-white bg-white shadow-md ring-4 ring-verde-agua/15">
                 <img
                   src={usuario.avatar || urlAvatarPadrao(usuario.nome)}
                   alt="Avatar"
@@ -228,25 +240,25 @@ export default function MeuPerfil() {
 
             <div className="text-center sm:text-left flex-grow">
               <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
-                <h1 className="text-2xl font-black text-grafite">{usuario.nome}</h1>
+                <h1 className="text-2xl font-semibold text-grafite">{usuario.nome}</h1>
                 {temVerificacao && <SeloVerificado />}
               </div>
-              {ehPerfilProprio && <p className="text-gray-500 font-medium mt-1">{usuario.email}</p>}
+              {ehPerfilProprio && <p className="mt-1 text-sm text-gray-500">{usuario.email}</p>}
               {erro && <p className="text-red-600 text-sm font-medium mt-2">{erro}</p>}
             </div>
 
             {ehPerfilProprio && (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col items-stretch gap-2 sm:items-stretch">
                 <button
                   onClick={abrirModalEdicao}
-                  className="flex items-center gap-2 bg-white border border-gray-200 text-grafite font-bold px-6 py-2.5 rounded-xl hover:border-verde-agua hover:text-verde-agua transition-colors shadow-sm cursor-pointer"
+                  className="flex items-center gap-2 rounded-xl border border-verde-agua/35 bg-white px-5 py-2.5 text-sm font-semibold text-verde-escuro shadow-sm transition-colors hover:border-verde-agua hover:bg-verde-agua/5 cursor-pointer"
                 >
                   <LuSettings size={16} /> Editar Perfil
                 </button>
 
                 <button
                   onClick={handleLogout}
-                  className="flex items-center justify-center gap-2 bg-white border-2 border-red-100 text-red-500 font-bold px-6 py-2 rounded-xl hover:border-red-400 hover:bg-red-50 transition-colors shadow-sm cursor-pointer"
+                  className="flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-5 py-2.5 text-sm font-semibold text-red-500 shadow-sm transition-colors hover:border-red-400 hover:bg-red-50 cursor-pointer"
                 >
                 <LuLogOut size={16} /> Sair
                 </button>
@@ -260,22 +272,22 @@ export default function MeuPerfil() {
           <div className="md:col-span-4 space-y-8">
 
             {ehPerfilProprio && (
-              <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">
-                  {objetivoUsuario === 'ambos' ? 'Alternar Painel' : 'Meu Painel'}
+              <div className="rounded-3xl border border-gray-100 border-l-4 border-l-azul-oceano bg-white p-6 shadow-sm">
+                <h2 className="mb-4 text-sm font-semibold text-grafite">
+                  {objetivoUsuario === 'ambos' ? 'Acessos rápidos' : 'Seu painel'}
                 </h2>
 
                 <div className="space-y-3">
                   {(objetivoUsuario === 'ambos' || objetivoUsuario === 'locatario') && (
                     <button
                       onClick={() => navigate('/painellocatario')}
-                      className="w-full flex items-center p-4 rounded-2xl border-2 border-transparent hover:border-verde-agua bg-gray-50 hover:bg-verde-agua/5 transition-all text-left group cursor-pointer"
+                      className="group flex w-full items-center rounded-2xl border border-gray-100 bg-gray-50 p-4 text-left transition-all hover:border-azul-oceano/35 hover:bg-azul-oceano/[0.03] cursor-pointer"
                     >
                       <div className="w-12 h-12 rounded-xl bg-azul-oceano/10 text-azul-oceano flex items-center justify-center shrink-0 mr-4 group-hover:bg-verde-agua group-hover:text-white transition-colors">
                         <LuShoppingBag size={24} />
                       </div>
                       <div>
-                        <h3 className="font-bold text-grafite">Modo Locatário</h3>
+                        <h3 className="font-semibold text-grafite">Modo locatário</h3>
                         <p className="text-xs text-gray-500 mt-0.5">Gerenciar meus aluguéis</p>
                       </div>
                     </button>
@@ -284,13 +296,13 @@ export default function MeuPerfil() {
                   {(objetivoUsuario === 'ambos' || objetivoUsuario === 'locador') && (
                     <button
                       onClick={() => navigate('/painelLocador')}
-                      className="w-full flex items-center p-4 rounded-2xl border-2 border-transparent hover:border-verde-agua bg-gray-50 hover:bg-verde-agua/5 transition-all text-left group cursor-pointer"
+                      className="group flex w-full items-center rounded-2xl border border-gray-100 bg-gray-50 p-4 text-left transition-all hover:border-verde-agua/40 hover:bg-verde-agua/[0.03] cursor-pointer"
                     >
-                      <div className="w-12 h-12 rounded-xl bg-orange-100 text-orange-500 flex items-center justify-center shrink-0 mr-4 group-hover:bg-verde-agua group-hover:text-white transition-colors">
+                      <div className="mr-4 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-verde-escuro/10 text-verde-escuro transition-colors group-hover:bg-verde-agua group-hover:text-white">
                         <LuPackage size={24} />
                       </div>
                       <div>
-                        <h3 className="font-bold text-grafite">Modo Locador</h3>
+                        <h3 className="font-semibold text-grafite">Modo locador</h3>
                         <p className="text-xs text-gray-500 mt-0.5">Meus anúncios e ganhos</p>
                       </div>
                     </button>
@@ -299,8 +311,8 @@ export default function MeuPerfil() {
               </div>
             )}
 
-            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-              <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6">Informações da Conta</h2>
+            <div className="rounded-3xl border border-gray-100 border-l-4 border-l-ciano bg-white p-6 shadow-sm">
+              <h2 className="mb-6 text-sm font-semibold text-grafite">Detalhes da conta</h2>
               <ul className="space-y-4">
                 {/* Exibe o telefone (apenas se for o próprio perfil e o telefone estiver preenchido) */}
                 {temTelefone && (
@@ -325,8 +337,8 @@ export default function MeuPerfil() {
           </div>
 
           <div className="md:col-span-8 space-y-8">
-            <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
-              <h2 className="text-xl font-bold text-grafite mb-4">Sobre {ehPerfilProprio ? 'mim' : usuario.nome}</h2>
+            <div className="rounded-3xl border border-gray-100 border-l-4 border-l-verde-agua bg-white p-7 shadow-sm sm:p-8">
+              <h2 className="mb-4 text-lg font-semibold text-grafite">Sobre {ehPerfilProprio ? 'mim' : usuario.nome}</h2>
               {usuario.bio ? (
                 <p className="text-gray-600 leading-relaxed whitespace-pre-line">{usuario.bio}</p>
               ) : (
@@ -348,7 +360,7 @@ export default function MeuPerfil() {
 
       {modalAberto && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl shadow-xl w-full max-w-md p-8 relative">
+          <div className="relative w-full max-w-md rounded-3xl bg-white p-7 shadow-xl sm:p-8">
             <button
               onClick={() => setModalAberto(false)}
               className="absolute top-6 right-6 text-gray-400 hover:text-grafite cursor-pointer"
@@ -356,7 +368,7 @@ export default function MeuPerfil() {
               <LuX size={22} />
             </button>
 
-            <h2 className="text-xl font-bold text-grafite mb-6">Editar Perfil</h2>
+            <h2 className="mb-6 text-lg font-semibold text-grafite">Editar perfil</h2>
 
             {erroForm && (
               <div className="p-3 mb-4 rounded-lg bg-red-50 text-red-700 border border-red-200 text-sm font-medium">
@@ -372,7 +384,7 @@ export default function MeuPerfil() {
                   value={formEdicao.nome}
                   onChange={(e) => setFormEdicao({ ...formEdicao, nome: e.target.value })}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ciano outline-none text-grafite"
+                  className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-grafite focus:ring-2 focus:ring-ciano outline-none"
                 />
               </div>
 
@@ -383,7 +395,7 @@ export default function MeuPerfil() {
                   value={formEdicao.telefone}
                   onChange={(e) => setFormEdicao({ ...formEdicao, telefone: e.target.value })}
                   placeholder="(35) 99999-9999"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ciano outline-none text-grafite"
+                  className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-grafite focus:ring-2 focus:ring-ciano outline-none"
                 />
               </div>
 
@@ -394,14 +406,14 @@ export default function MeuPerfil() {
                   onChange={(e) => setFormEdicao({ ...formEdicao, bio: e.target.value })}
                   rows={4}
                   placeholder="Conte um pouco sobre você..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ciano outline-none text-grafite resize-none"
+                  className="w-full resize-none rounded-xl border border-gray-300 px-4 py-2.5 text-grafite focus:ring-2 focus:ring-ciano outline-none"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={salvando}
-                className={`w-full text-white font-bold py-3 rounded-lg transition-colors mt-2 shadow-md cursor-pointer ${salvando ? 'bg-gray-400 cursor-not-allowed' : 'bg-verde-agua hover:bg-verde-escuro'}`}
+                className={`mt-2 w-full rounded-xl py-3 text-sm font-semibold text-white shadow-md transition-colors cursor-pointer ${salvando ? 'bg-gray-400 cursor-not-allowed' : 'bg-verde-agua hover:bg-verde-escuro'}`}
               >
                 {salvando ? 'Salvando...' : 'Salvar Alterações'}
               </button>

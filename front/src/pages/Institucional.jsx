@@ -6,7 +6,7 @@ import { Footer } from '../components/Footer';
 
 function PaginaInstitucional({ etiqueta, titulo, descricao, children }) {
   return (
-    <div className="flex min-h-screen flex-col bg-white text-grafite">
+    <div className="page-shell flex min-h-screen flex-col text-grafite">
       <Header />
       <main className="flex-1">
         <section className="bg-verde-escuro px-6 py-14 sm:px-8 lg:py-16">

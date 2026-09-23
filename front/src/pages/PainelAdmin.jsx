@@ -12,7 +12,7 @@ const ABAS = [
 
 const SECOES = [
   { valor: 'verificacoes', titulo: 'Verificações', icone: LuShieldCheck },
-  { valor: 'notificacoes', titulo: 'Central de notificações', icone: LuBell },
+  { valor: 'notificacoes', titulo: 'Notificações', icone: LuBell },
   { valor: 'administradores', titulo: 'Administradores', icone: LuUsers },
 ];
 
@@ -198,15 +198,15 @@ export default function PainelAdmin() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="page-shell min-h-screen flex flex-col">
       <Header />
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-10">
         <div className="flex items-center gap-3 mb-7">
           <div className="bg-verde-escuro/10 p-3 rounded-2xl text-verde-escuro"><LuShieldCheck size={22} /></div>
           <div>
-            <h1 className="text-2xl font-black text-verde-escuro">Painel administrativo</h1>
-            <p className="text-sm text-gray-500 mt-1">Verificações, alertas e acesso administrativo em um só lugar.</p>
+            <h1 className="text-2xl font-black tracking-tight text-verde-escuro">Central administrativa</h1>
+            <p className="mt-1 text-sm text-gray-500">Gerencie verificações de identidade, alertas e permissões.</p>
           </div>
         </div>
 
@@ -243,7 +243,7 @@ export default function PainelAdmin() {
         {secaoAtiva === 'notificacoes' && (
           <section className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
             <div className="flex flex-col gap-3 border-b border-gray-100 bg-gray-50/60 p-6 sm:flex-row sm:items-center sm:justify-between">
-              <div><h2 className="text-lg font-black text-verde-escuro">Documentos para analisar</h2><p className="mt-1 text-sm text-gray-500">Cada novo envio de identidade aparece nesta central.</p></div>
+              <div><h2 className="text-lg font-black text-verde-escuro">Fila de verificações</h2><p className="mt-1 text-sm text-gray-500">Analise novos envios de identidade e tome uma decisão.</p></div>
               {documentosNaoLidos > 0 && <button onClick={marcarTodasComoLidas} className="inline-flex items-center justify-center gap-2 rounded-xl border border-ciano/30 bg-white px-4 py-2.5 text-sm font-bold text-azul-oceano hover:border-ciano hover:text-verde-escuro"><LuCheckCheck size={17} /> Marcar como lidas</button>}
             </div>
             <div className="divide-y divide-gray-100">
@@ -263,7 +263,7 @@ export default function PainelAdmin() {
           </div>
           <div className="grid gap-8 lg:grid-cols-[1fr_2fr]">
             <div className="flex h-fit max-h-[700px] flex-col overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
-              <div className="border-b border-gray-100 bg-gray-50/50 p-5"><h2 className="text-sm font-bold uppercase tracking-wider text-gray-700">Lista de requisições</h2></div>
+              <div className="border-b border-gray-100 bg-gray-50/50 p-5"><h2 className="text-sm font-bold uppercase tracking-wider text-gray-700">Solicitações</h2></div>
               <div className="flex-1 overflow-y-auto p-2">
                 {carregando ? <div className="flex flex-col items-center justify-center py-16 text-verde-escuro/40"><LuLoaderCircle className="mb-2 animate-spin" size={32} /><p className="text-sm font-medium">Carregando lista...</p></div> : usuarios.length === 0 ? <div className="flex flex-col items-center justify-center py-16 text-gray-400"><LuUser size={40} className="mb-3 opacity-20" /><p className="text-sm font-medium">Fila vazia no momento.</p></div> : <div className="space-y-1">{usuarios.map((usuario) => <button key={usuario._id} onClick={() => abrirVerificacao(usuario)} className={`flex w-full items-center gap-4 rounded-2xl p-4 text-left transition-all ${selecionado?._id === usuario._id ? 'bg-verde-escuro/5 ring-1 ring-verde-escuro/20' : 'border border-transparent hover:bg-gray-50'}`}><span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg font-bold ${selecionado?._id === usuario._id ? 'bg-verde-escuro text-white' : 'bg-gray-100 text-gray-500'}`}>{usuario.nome.charAt(0).toUpperCase()}</span><span className="min-w-0 flex-1"><span className={`block truncate font-bold ${selecionado?._id === usuario._id ? 'text-verde-escuro' : 'text-gray-800'}`}>{usuario.nome}</span><span className="block truncate text-xs text-gray-500">{usuario.email}</span></span></button>)}</div>}
               </div>

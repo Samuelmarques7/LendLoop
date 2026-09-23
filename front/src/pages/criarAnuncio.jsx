@@ -306,7 +306,7 @@ function CriarAnuncio ()
 
     if (carregandoVerificacao) {
         return (
-            <div className="min-h-screen bg-white flex flex-col">
+            <div className="page-shell min-h-screen flex flex-col">
                 <Header />
                 <div className="flex-1 flex items-center justify-center text-gray-400">Carregando...</div>
                 <Footer />
@@ -322,7 +322,7 @@ function CriarAnuncio ()
         }
 
         return (
-            <div className="min-h-screen bg-white flex flex-col">
+            <div className="page-shell min-h-screen flex flex-col">
                 <Header />
                 <div className="flex-1 flex items-center justify-center px-6">
                     <div className="max-w-md w-full bg-white border border-gray-100 rounded-3xl shadow-sm p-8 text-center">
@@ -345,7 +345,7 @@ function CriarAnuncio ()
     }
 
     return (
-        <div className="min-h-screen bg-white flex flex-col">
+        <div className="page-shell min-h-screen flex flex-col">
             <Header />
             <div className={`mx-auto px-6 w-full flex-1 pt-10 pb-16 transition-all ${step === 7 ? 'max-w-6xl' : 'max-w-4xl'}`}>
 
