@@ -20,7 +20,12 @@ const pagamentoSchema = new mongoose.Schema({
   },
 
   mpOrderId: { type: String },
-  mpPaymentId: { type: String }
+  mpPaymentId: { type: String },
+  mpStatusDetail: { type: String },
+
+  // Compõe a chave de idempotência do checkout. Só avança depois de uma
+  // recusa definitiva, então repetir o envio nunca gera uma segunda cobrança.
+  tentativas: { type: Number, default: 0 }
 }, {
   timestamps: true
 });

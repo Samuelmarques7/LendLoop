@@ -163,7 +163,7 @@ export default function PainelLocatario() {
   }, [todosAlugueis, avaliacoesFeitas]);
 
   const pagamentosPorAba = useMemo(() => ({
-    pendentes: pagamentos.filter(p => p.status === 'pendente' || p.status === 'atrasado' || p.status === 'processando'),
+    pendentes: pagamentos.filter(p => ['pendente', 'atrasado', 'processando', 'falhou'].includes(p.status)),
     confirmados: pagamentos.filter(p => p.status === 'confirmado'),
   }), [pagamentos]);
 
@@ -212,11 +212,15 @@ const toneClasses = {
     setPagamentoParaPagar(pagamento);
   }
 
+  // O Brick do Mercado Pago espera que onSubmit rejeite em caso de falha,
+  // para sair do estado de carregamento e permitir uma nova tentativa.
   async function enviarPagamento(dadosCartao) {
     if (!pagamentoParaPagar) return;
+    const pagamentoId = pagamentoParaPagar._id;
+    setErroPagamento('');
 
     try {
-      const resposta = await apiRequest(`/api/pagamentos/${pagamentoParaPagar._id}/checkout`, {
+      const resposta = await apiRequest(`/api/pagamentos/${pagamentoId}/checkout`, {
         method: 'POST',
         body: {
           token: dadosCartao.token,
@@ -226,13 +230,20 @@ const toneClasses = {
         }
       });
 
-      setPagamentos(prev => prev.map(p => p._id === pagamentoParaPagar._id
-        ? { ...p, status: 'processando', mpOrderId: resposta.orderId }
+      setPagamentos(prev => prev.map(p => p._id === pagamentoId
+        ? { ...p, status: resposta.status, mpOrderId: resposta.orderId }
         : p));
       setPagamentoParaPagar(null);
-      notificar('Pagamento enviado para processamento.', 'sucesso');
+      notificar(
+        resposta.status === 'confirmado' ? 'Pagamento aprovado!' : 'Pagamento em análise pelo Mercado Pago.',
+        'sucesso'
+      );
     } catch (e) {
+      if (e.data?.status) {
+        setPagamentos(prev => prev.map(p => p._id === pagamentoId ? { ...p, status: e.data.status } : p));
+      }
       setErroPagamento(e.message);
+      throw e;
     }
   }
 
@@ -481,9 +492,17 @@ const toneClasses = {
 
             <CardPayment
               initialization={{ amount: Number(pagamentoParaPagar.valor) }}
+              customization={{
+                paymentMethods: {
+                  types: { included: ['credit_card'] },
+                },
+              }}
               locale="pt-BR"
               onSubmit={enviarPagamento}
-              onError={() => setErroPagamento('Não foi possível carregar o formulário de pagamento.')}
+              onError={(erro) => {
+                console.error('Erro no CardPayment:', erro);
+                setErroPagamento(`Erro no formulário de pagamento: ${erro?.message || erro?.type || 'desconhecido'}`);
+              }}
             />
           </div>
         </div>
@@ -676,6 +695,12 @@ function LinhaPagamento({ pagamento, abaPagamentos, onPagarAgora }) {
         {pagamento.status === 'processando' && (
           <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full">
             Processando
+          </span>
+        )}
+
+        {pagamento.status === 'falhou' && (
+          <span className="text-[11px] font-semibold text-[#A32D2D] bg-red-50 px-2.5 py-1 rounded-full">
+            Recusado
           </span>
         )}
 
