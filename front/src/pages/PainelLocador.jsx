@@ -441,12 +441,12 @@ export default function PainelLocador() {
   return (
     <div className="page-shell min-h-screen font-sans text-grafite">
       <header className="sticky top-0 z-10 border-b border-gray-200 bg-white">
-        <div className="flex min-h-18 w-full items-center gap-3 px-4 sm:h-19 sm:gap-6 sm:px-6 lg:px-8">
+        <div className="flex min-h-16 w-full items-center gap-2 px-3 sm:h-19 sm:gap-6 sm:px-6 lg:px-8">
           <button onClick={() => navigate('/')} className="flex-shrink-0 cursor-pointer">
-            <img src={logo} alt="LendLoop" className="h-[3.875rem] w-auto sm:h-[4.125rem]" />
+            <img src={logo} alt="LendLoop" className="h-10 w-auto sm:h-[4.125rem]" />
           </button>
 
-          <nav className="flex h-full flex-1 items-center gap-1 overflow-x-auto">
+          <nav className="flex h-full flex-1 items-center gap-1 overflow-x-auto overscroll-x-contain [scrollbar-width:thin]">
             {menuItems.map((item) => {
               const isActive = activeTab === item.id;
               const Icon = item.icon;
@@ -454,7 +454,7 @@ export default function PainelLocador() {
                 <button
                   key={item.id}
                   onClick={() => handleMenuClick(item)}
-                  className={`flex h-full items-center gap-2 whitespace-nowrap border-b-2 px-4 text-[15px] font-medium transition-colors cursor-pointer ${
+                  className={`flex h-full items-center gap-1 whitespace-nowrap border-b-2 px-3 text-sm font-medium transition-colors cursor-pointer sm:gap-2 sm:px-4 sm:text-[15px] ${
                     isActive
                       ? 'border-grafite text-grafite'
                       : 'border-transparent text-gray-500 hover:text-grafite'
@@ -467,21 +467,21 @@ export default function PainelLocador() {
             })}
           </nav>
 
-          <div className="flex flex-shrink-0 items-center gap-2">
+          <div className="flex flex-shrink-0 items-center gap-1 sm:gap-2">
             <NotificacaoSino />
             <button
               onClick={() => navigate('/configuracoes')}
               title="Configurações"
-              className="cursor-pointer rounded-full bg-gray-50 p-2.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-verde-agua"
+              className="cursor-pointer rounded-full bg-gray-50 p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-verde-agua sm:p-2.5"
             >
               <LuSettings size={18} />
             </button>
 
             <button
               onClick={() => navigate('/meu-perfil')}
-              className="group ml-1 flex cursor-pointer items-center gap-2.5 border-l border-gray-200 pl-3"
+              className="group ml-0.5 flex cursor-pointer items-center gap-2.5 border-l border-gray-200 pl-2 sm:ml-1 sm:pl-3"
             >
-              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-verde-escuro text-sm font-semibold text-white">
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-verde-escuro text-sm font-semibold text-white sm:h-9 sm:w-9">
                 {dadosLocador?.avatar ? (
                   <img src={dadosLocador.avatar} alt={dadosLocador.nome} className="h-full w-full object-cover" />
                 ) : (

@@ -153,10 +153,10 @@ export function ResultadosBusca() {
     <div className="page-shell min-h-screen font-sans text-grafite flex flex-col">
       <Header />
 
-      <main className="max-w-7xl mx-auto w-full flex-grow p-6 pt-10">
+      <main className="max-w-7xl mx-auto w-full flex-grow p-4 pt-6 sm:p-6 sm:pt-10">
         
         <section className="mb-8 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-          <div className="flex justify-between items-end mb-6">
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h1 className="text-2xl font-bold text-grafite">Resultados da Busca</h1>
               <p className="text-gray-400 text-sm mt-1">{obterSubtitulo()}</p>

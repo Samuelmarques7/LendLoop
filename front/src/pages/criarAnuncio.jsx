@@ -445,7 +445,7 @@ function CriarAnuncio ()
                                 />
                             </div>
 
-                            <div className = 'flex gap-4'>
+                            <div className = 'flex flex-col gap-4 sm:flex-row'>
                                 <div className='flex-1 mb-4'>
                                     <label className = 'label-field'>Categoria</label>
                                     <select
@@ -588,7 +588,7 @@ function CriarAnuncio ()
                             <div className="border-2 border-dashed border-gray-200 hover:border-verde-agua rounded-2xl p-4 transition-all">
     
                                 {fotos.length > 0 ? (
-                                    <div className="grid grid-cols-3 gap-3 mb-4">
+                                    <div className="grid grid-cols-2 gap-3 mb-4 sm:grid-cols-3">
                                         {fotos.map((foto, indice) => (
                                             <div key={indice} className="relative">
                                                 <img 
@@ -618,7 +618,7 @@ function CriarAnuncio ()
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-3 gap-3 mb-4">
+                                    <div className="grid grid-cols-2 gap-3 mb-4 sm:grid-cols-3">
                                         {Array.from({ length: 6 }).map((_, i) => (
                                             <div
                                                 key={`vazio-${i}`}
@@ -697,7 +697,7 @@ function CriarAnuncio ()
                                 />
                             </div>
 
-                            <div className = 'flex gap-4 mb-4'>
+                            <div className = 'flex flex-col gap-4 mb-4 sm:flex-row'>
                                 <div className = 'flex-1'>
                                     <label className = 'label-field'>Número</label>
                                     <input
@@ -733,7 +733,7 @@ function CriarAnuncio ()
                                 </div>
                             </div>
 
-                            <div className = 'flex gap-4 mb-4'>
+                            <div className = 'flex flex-col gap-4 mb-4 sm:flex-row'>
                                 <div className = 'flex-1'>
                                     <label className = 'label-field'>Bairro</label>
                                     <input
@@ -825,7 +825,7 @@ function CriarAnuncio ()
                                 <p className='text-gray-400 text-sm mt-1'>Defina quanto vai cobrar pela locação</p>
                             </div>
 
-                            <div className="flex gap-4 mb-4">
+                            <div className="flex flex-col gap-4 mb-4 sm:flex-row">
                                 <div className="flex-1">
                                     <label className="label-field">Preço por dia</label>
                                     <input
@@ -861,7 +861,7 @@ function CriarAnuncio ()
 
                             <div className='border-t border-gray-100 pt-6 mb-2'>
                                 <h3 className='text-sm font-bold text-grafite uppercase tracking-wide mb-4'>Regras de Reserva</h3>
-                                <div className="flex gap-4">
+                                <div className="flex flex-col gap-4 sm:flex-row">
                                     <div className="flex-1">
                                         <label className="label-field">Horário de retirada</label>
                                         <input

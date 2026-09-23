@@ -205,7 +205,7 @@ export function DetalhesProduto() {
       
       <Header />
 
-      <main className="max-w-7xl mx-auto w-full flex-grow p-6 pt-8">
+      <main className="max-w-7xl mx-auto w-full flex-grow p-4 pt-6 sm:p-6 sm:pt-8">
         
         <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-6">
           <span className="cursor-pointer hover:text-verde-agua" onClick={() => navigate('/')}>Início</span>
@@ -214,8 +214,8 @@ export function DetalhesProduto() {
         </div>
 
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-grafite mb-3">{anuncio?.titulo}</h1>
-          <div className="flex items-center gap-6 text-sm text-gray-500 font-medium">
+          <h1 className="mb-3 text-2xl font-bold text-grafite sm:text-3xl">{anuncio?.titulo}</h1>
+          <div className="flex flex-wrap items-center gap-3 text-sm font-medium text-gray-500 sm:gap-6">
               <MediaAvaliacao dadosExternos={avaliacoesLocador} tamanho="lg" />
             <span className="flex items-center gap-1.5">
               <LuMapPin className="text-verde-agua" size={18}/> {anuncio.endereco.cidade}, {anuncio.endereco.estado}
@@ -241,8 +241,8 @@ export function DetalhesProduto() {
           )}
         </div>
 
-        <div className="grid grid-cols-4 grid-rows-2 gap-4 h-[400px] mb-12 rounded-3xl overflow-hidden">
-          <div className="col-span-2 row-span-2 bg-gray-200 relative group cursor-pointer">
+        <div className="mb-8 grid h-[280px] grid-cols-1 gap-4 overflow-hidden rounded-3xl sm:mb-12 sm:h-[400px] sm:grid-cols-4 sm:grid-rows-2">
+          <div className="relative col-span-1 bg-gray-200 group cursor-pointer sm:col-span-2 sm:row-span-2">
             {anuncio.fotos?.[0] ? (
               <img src={anuncio.fotos[0]} alt={anuncio.titulo} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
             ) : (
@@ -251,7 +251,7 @@ export function DetalhesProduto() {
           </div>
 
         {[1, 2, 3, 4].map((indice) => (
-          <div key={indice} className="bg-gray-200 relative group cursor-pointer overflow-hidden">
+          <div key={indice} className="relative hidden overflow-hidden bg-gray-200 group cursor-pointer sm:block">
             {anuncio.fotos?.[indice] ? (
               <img src={anuncio.fotos[indice]} alt={`${anuncio.titulo} ${indice + 1}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
             ) : (
