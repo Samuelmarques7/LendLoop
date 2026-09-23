@@ -1239,21 +1239,21 @@ function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, 
 }
 
 function ModalEditarAnuncio({ anuncio, onClose, onSalvar }) {
-  const [titulo, setTitulo] = useState('');
-  const [descricao, setDescricao] = useState('');
-  const [precoPorDia, setPrecoPorDia] = useState(0);
-  const [caucao, setCaucao] = useState(0);
-  const [status, setStatus] = useState('publicado');
+const [titulo, setTitulo] = useState('');
+const [descricao, setDescricao] = useState('');
+const [precoPorDia, setPrecoPorDia] = useState(0);
+const [caucao, setCaucao] = useState(0);
+const [status, setStatus] = useState('publicado');
 
-  useEffect(() => {
-    if (!anuncio) return;
-    setTitulo(anuncio.titulo || '');
-    setDescricao(anuncio.descricao || '');
-    setPrecoPorDia(anuncio.precos?.precoPorDia || 0);
-    setCaucao(anuncio.precos?.caucao || 0);
-    setStatus(anuncio.status || 'publicado');
-  }, [anuncio]);
+useEffect(() => {
+  if (!anuncio) return;
 
+  setTitulo(anuncio.titulo || '');
+  setDescricao(anuncio.descricao || '');
+  setPrecoPorDia(anuncio.precos?.precoPorDia || 0);
+  setCaucao(anuncio.precos?.caucao || 0);
+  setStatus(anuncio.status || 'publicado');
+}, [anuncio]);
   if (!anuncio) return null;
 
   function handleSubmit(e) {

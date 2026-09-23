@@ -83,7 +83,7 @@ export default function PainelAdmin() {
     try {
       const dados = await apiRequest(`/api/admin/verificacoes?status=${status}`);
       setUsuarios(dados);
-      return dados;
+     return dados;
     } catch (error) {
       setErro(error.message || 'Não foi possível carregar a lista de usuários.');
       return [];
@@ -95,10 +95,16 @@ export default function PainelAdmin() {
   async function buscarImagem(usuarioIdParaBusca, campo) {
     try {
       const token = localStorage.getItem('token');
-      const resposta = await fetch(`${API_URL}/api/admin/verificacoes/${usuarioIdParaBusca}/documento/${campo}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+
+      const resposta = await fetch(
+        `${API_URL}/api/admin/verificacoes/${usuarioIdParaBusca}/documento/${campo}`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
       if (!resposta.ok) return '';
+
       return URL.createObjectURL(await resposta.blob());
     } catch {
       return '';
@@ -117,9 +123,14 @@ export default function PainelAdmin() {
       buscarImagem(usuario._id, 'documentoVerso'),
       buscarImagem(usuario._id, 'selfie'),
     ]);
-    setUrlsDocumentos({ documentoFrente: frente, documentoVerso: verso, selfie });
+
+    setUrlsDocumentos({
+      documentoFrente: frente,
+      documentoVerso: verso,
+      selfie
+    });
+
     setCarregandoDocumentos(false);
-  }
 
   async function decidir(acao) {
     if (!selecionado) return;

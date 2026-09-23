@@ -22,8 +22,17 @@ const Notificacao = require('./models/Notificacao');
 const app = express();
 const path = require('path');
 
-app.use(cors());
+const origensPermitidas = (process.env.FRONTEND_URL || 'http://localhost:5173')
+  .split(',')
+  .map((origem) => origem.trim())
+  .filter(Boolean);
+
+app.use(cors({ origin: origensPermitidas }));
 app.use(express.json());
+
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', servico: 'lendloop-api' });
+});
 
 
 // Cria uma notificação para um usuário. Nunca lança erro: uma falha aqui
@@ -123,9 +132,13 @@ app.put('/api/anuncios/:id', autenticacao, async (req, res) => {
 // Cadastro
 app.post('/api/usuarios', async (req, res) => {
   try {
-    const { nome, email, senha, telefone, cep, localizacao, objetivo } = req.body;
-    if (!nome?.trim() || !email?.trim() || !senha || senha.length < 8) {
-      return res.status(400).json({ erro: 'Nome, e-mail e uma senha de pelo menos 8 caracteres são obrigatórios.' });
+const { nome, email, senha, telefone, cep, localizacao, objetivo } = req.body;
+
+if (!nome?.trim() || !email?.trim() || !senha || senha.length < 8) {
+  return res.status(400).json({
+    erro: 'Nome, e-mail e senha com pelo menos 8 caracteres são obrigatórios.'
+  });
+}
     }
     const senhaCriptografada = await bcrypt.hash(senha, 10);
     const novoUsuario = new Usuario({
@@ -134,11 +147,12 @@ app.post('/api/usuarios', async (req, res) => {
     });
 
     await novoUsuario.save();
+    const token = jwt.sign({ id: novoUsuario._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
     res.status(201).json({
-      mensagem: 'Usuário criado com sucesso no LendLoop!',
-      token: criarTokenDeSessao(novoUsuario._id),
-      usuario: {
+        mensagem: 'Usuário criado com sucesso no LendLoop!',
+        token: criarTokenDeSessao(novoUsuario._id),
+        usuario: {
         id: novoUsuario._id,
         nome: novoUsuario.nome,
         email: novoUsuario.email,
@@ -411,7 +425,8 @@ app.get('/api/anuncios', async (req, res) => {
     const filtro = { status: 'publicado' };
 
     if (busca) {
-      const regex = new RegExp(busca, 'i'); // 'i' para case-insensitive
+      const termoSeguro = String(busca).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(termoSeguro, 'i');
       filtro.$or = [
         { titulo: regex },
         { descricao: regex },
@@ -531,20 +546,37 @@ app.post('/api/alugueis', autenticacao, async (req, res) => {
       return res.status(400).json({ erro: 'Você não pode alugar seu próprio anúncio.' });
     }
 
-    if (anuncioEncontrado.status !== 'publicado') {
-      return res.status(400).json({ erro: 'Este anúncio não está disponível para aluguel.' });
-    }
+if (anuncioEncontrado.status !== 'publicado') {
+  return res.status(400).json({
+    erro: 'Este anúncio não está disponível para aluguel.'
+  });
+}
 
-    const inicio = normalizarData(dataInicio);
-    const fim = normalizarData(dataFim);
-    if (!inicio || !fim || fim <= inicio) {
-      return res.status(400).json({ erro: 'Informe um período de aluguel válido.' });
-    }
+const inicio = normalizarData(dataInicio);
+const fim = normalizarData(dataFim);
 
-    const diasReservados = diasDoPeriodo(inicio, fim);
-    const diasDisponiveis = new Set((anuncioEncontrado.disponivel || []).map((dia) => normalizarData(dia)?.toISOString().slice(0, 10)));
-    if (!diasReservados.length || !diasReservados.every((dia) => diasDisponiveis.has(dia))) {
-      return res.status(400).json({ erro: 'O item não está disponível durante todo o período solicitado.' });
+if (!inicio || !fim || fim <= inicio) {
+  return res.status(400).json({
+    erro: 'Informe um período de aluguel válido.'
+  });
+}
+
+const diasReservados = diasDoPeriodo(inicio, fim);
+
+const diasDisponiveis = new Set(
+  (anuncioEncontrado.disponivel || []).map(
+    (dia) => normalizarData(dia)?.toISOString().slice(0, 10)
+  )
+);
+
+if (
+  !diasReservados.length ||
+  !diasReservados.every((dia) => diasDisponiveis.has(dia))
+) {
+  return res.status(409).json({
+    erro: 'O anúncio não está disponível durante todo o período escolhido.'
+  });
+}
     }
 
     const conflito = await Aluguel.exists({
@@ -554,17 +586,32 @@ app.post('/api/alugueis', autenticacao, async (req, res) => {
       dataFim: { $gt: inicio }
     });
     if (conflito) {
-      return res.status(409).json({ erro: 'Já existe uma solicitação ativa para esse período.' });
-    }
+return res.status(409).json({
+  erro: 'Já existe uma solicitação ativa para esse período.'
+});
+}
 
-    const precoPorDia = Number(anuncioEncontrado.precos?.precoPorDia);
-    if (!Number.isFinite(precoPorDia) || precoPorDia < 0) {
-      return res.status(400).json({ erro: 'O anúncio possui um preço inválido.' });
-    }
-    const subtotal = precoPorDia * diasReservados.length;
-    const taxaServico = Number((subtotal * 0.03).toFixed(2));
-    const caucao = Number(anuncioEncontrado.precos?.caucao || 0);
-    const precoTotal = Number((subtotal + taxaServico + caucao).toFixed(2));
+const precoPorDia = Number(anuncioEncontrado.precos?.precoPorDia);
+
+if (!Number.isFinite(precoPorDia) || precoPorDia < 0) {
+  return res.status(400).json({
+    erro: 'O anúncio possui um preço inválido.'
+  });
+}
+
+const subtotal = precoPorDia * diasReservados.length;
+
+const taxaCalculada = Number(
+  (subtotal * 0.03).toFixed(2)
+);
+
+const caucaoCalculada = anuncioEncontrado.precos?.exigirCaucao
+  ? Number(anuncioEncontrado.precos?.caucao || 0)
+  : 0;
+
+const precoTotal = Number(
+  (subtotal + taxaCalculada + caucaoCalculada).toFixed(2)
+);
 
     const novoAluguel = new Aluguel({
       anuncio,
@@ -573,7 +620,9 @@ app.post('/api/alugueis', autenticacao, async (req, res) => {
       dataInicio: inicio, dataFim: fim,
       horarioRetirada: horarioRetirada || anuncioEncontrado.precos?.horarioRetirada,
       horarioDevolucao: horarioDevolucao || anuncioEncontrado.precos?.horarioDevolucao,
-      precoTotal, taxaServico, caucao
+      precoTotal: precoTotal,
+      taxaServico: taxaCalculada,
+      caucao: caucaoCalculada
     });
 
     await novoAluguel.save();
@@ -1114,12 +1163,17 @@ app.post('/api/mensagens', autenticacao, async (req, res) => {
       return res.status(403).json({ erro: 'Você não faz parte desta conversa.' });
     }
 
-    const destinatarioEhOutroParticipante = conversaExistente.participantes.some(
-      (participante) => participante.toString() === destinatario && participante.toString() !== remetente
-    );
-    if (!destinatarioEhOutroParticipante) {
-      return res.status(400).json({ erro: 'O destinatário deve ser a outra pessoa da conversa.' });
-    }
+const destinatarioEhOutroParticipante = conversaExistente.participantes.some(
+  (participante) =>
+    participante.toString() === destinatario &&
+    participante.toString() !== remetente
+);
+
+if (!destinatarioEhOutroParticipante) {
+  return res.status(400).json({
+    erro: 'O destinatário deve ser a outra pessoa da conversa.'
+  });
+}
 
     const novaMensagem = new Mensagem({ conversa, remetente, destinatario, texto: texto.trim() });
     await novaMensagem.save();
@@ -1270,14 +1324,16 @@ app.post(
       const frente = req.files?.frente?.[0];
       const verso = req.files?.verso?.[0]; // <-- Capturando o verso
       const selfie = req.files?.selfie?.[0];
+      const cpf = String(req.body.cpf || '').replace(/\D/g, '');
 
-      if (!frente || !verso || !selfie) {
-        return res.status(400).json({ erro: 'Envie a frente, o verso e a selfie.' });
+      if (!frente || !verso || !selfie || cpf.length !== 11) {
+        return res.status(400).json({ erro: 'Envie a frente, o verso, a selfie e um CPF válido.' });
       }
 
       const usuario = await Usuario.findByIdAndUpdate(
         req.params.id,
         {
+          cpf,
           verificacao: {
             status: 'pendente',
             documentoFrente: frente.filename,
@@ -1455,6 +1511,10 @@ app.patch('/api/admin/verificacoes/:usuarioId', autenticacao, autenticacaoAdmin,
 // ==========================================
 
 const PORT = process.env.PORT || 3000;
+
+if (!process.env.MONGO_URI || !process.env.JWT_SECRET) {
+  throw new Error('MONGO_URI e JWT_SECRET precisam estar configurados no ambiente.');
+}
 
 connectDB().then(() => {
   app.listen(PORT, () => {

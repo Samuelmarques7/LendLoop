@@ -82,6 +82,7 @@ export default function Cadastro() {
             });
 
       localStorage.setItem('usuarioLogado', 'true');
+      localStorage.setItem('token', data.token);
       localStorage.setItem('dadosUsuario', JSON.stringify(data.usuario));
       localStorage.setItem('token', data.token);
 
@@ -89,7 +90,7 @@ export default function Cadastro() {
       setFormData({ nome: '', email: '', senha: '', telefone: '',cep: '', localizacao: '', objetivo: 'ambos' });
         
       setTimeout(() => {
-        navigate(-1);
+        navigate('/');
       }, 1000);
     } catch (error) {
       setMensagem({ tipo: 'erro', texto: error.message });
