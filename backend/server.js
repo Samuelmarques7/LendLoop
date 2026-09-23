@@ -520,6 +520,22 @@ app.get('/api/anuncios/:id', async (req, res) => {
   }
 });
 
+// Períodos já reservados de um anúncio, usados pelo calendário de reserva.
+// Expõe só as datas, sem nenhum dado de quem reservou.
+app.get('/api/anuncios/:id/ocupacao', async (req, res) => {
+  try {
+    const reservas = await Aluguel.find({
+      anuncio: req.params.id,
+      status: { $in: ['pendente', 'aceito', 'andamento', 'aguardando_confirmacao'] },
+      dataFim: { $gt: new Date() }
+    }).select('dataInicio dataFim -_id');
+
+    res.status(200).json(reservas);
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao buscar a ocupação do anúncio' });
+  }
+});
+
 app.get('/api/anuncios/locador/:locadorId', async (req, res) => {
   try {
     const anuncios = await Anuncio.find({ locador: req.params.locadorId });

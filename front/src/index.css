@@ -117,3 +117,131 @@ button:not(:disabled),
     @apply block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5;
   }
 }
+
+/* Calendário de reserva (DetalhesProduto): dias livres em verde, período
+   escolhido em azul-escuro e dias reservados riscados. */
+.calendario-reserva .rdp-root {
+  --rdp-accent-color: var(--color-verde-escuro);
+  --rdp-accent-background-color: color-mix(in srgb, var(--color-verde-escuro) 9%, white);
+  --rdp-day-width: 42px;
+  --rdp-day-height: 42px;
+  --rdp-day_button-width: 38px;
+  --rdp-day_button-height: 38px;
+  --rdp-day_button-border-radius: 12px;
+  --rdp-day_button-border: 0;
+  --rdp-selected-border: 0;
+  --rdp-disabled-opacity: 1;
+  --rdp-today-color: inherit;
+  --rdp-months-gap: 2.5rem;
+  --rdp-nav-height: 2.5rem;
+  --rdp-nav_button-width: 2rem;
+  --rdp-nav_button-height: 2rem;
+  font-size: 0.85rem;
+}
+
+.calendario-reserva .rdp-month_caption {
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  color: var(--color-grafite);
+}
+
+.calendario-reserva .rdp-button_previous,
+.calendario-reserva .rdp-button_next {
+  border-radius: 999px;
+  transition: background-color 150ms ease;
+}
+
+.calendario-reserva .rdp-button_previous:not(:disabled):hover,
+.calendario-reserva .rdp-button_next:not(:disabled):hover {
+  background: #f1f5f9;
+}
+
+.calendario-reserva .rdp-chevron {
+  fill: var(--color-grafite);
+  width: 14px;
+  height: 14px;
+}
+
+.calendario-reserva .rdp-weekday {
+  opacity: 1;
+  color: #94a3b8;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.calendario-reserva .rdp-day {
+  padding: 2px 0;
+}
+
+.calendario-reserva .rdp-day_button {
+  margin: 0 auto;
+  position: relative;
+  color: #cbd5e1;
+  font-weight: 500;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.calendario-reserva .rdp-day_button:disabled {
+  cursor: not-allowed;
+}
+
+.calendario-reserva .rdp-today .rdp-day_button::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: currentColor;
+  transform: translateX(-50%);
+}
+
+.calendario-reserva .dia-disponivel .rdp-day_button {
+  background: color-mix(in srgb, var(--color-verde-agua) 15%, white);
+  color: var(--color-verde-escuro);
+  font-weight: 600;
+}
+
+.calendario-reserva .dia-disponivel .rdp-day_button:hover {
+  background: color-mix(in srgb, var(--color-verde-agua) 32%, white);
+}
+
+.calendario-reserva .dia-ocupado .rdp-day_button {
+  background: #f1f5f9;
+  color: #94a3b8;
+  text-decoration: line-through;
+}
+
+/* Dia que só serve para devolver (a última diária termina na véspera). Vem
+   depois de .dia-ocupado porque um dia reservado pode ser a devolução. */
+.calendario-reserva .dia-devolucao .rdp-day_button {
+  background: #fff;
+  color: var(--color-verde-escuro);
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--color-verde-agua) 60%, white);
+}
+
+.calendario-reserva .rdp-selected {
+  font-size: inherit;
+}
+
+/* Com só a retirada escolhida, o dia recebe apenas .rdp-selected. */
+.calendario-reserva .rdp-selected .rdp-day_button {
+  background: var(--color-verde-escuro);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--color-verde-escuro) 70%, transparent);
+}
+
+.calendario-reserva .rdp-range_middle .rdp-day_button {
+  background: transparent;
+  color: var(--color-verde-escuro);
+  font-weight: 600;
+  box-shadow: none;
+}
