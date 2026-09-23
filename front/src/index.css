@@ -9,12 +9,24 @@
   --font-outfit: 'Outfit', sans-serif;
 }
 
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
 body {
   font-family: var(--font-outfit);
   background: #f8fafc;
   color: var(--color-grafite);
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+img {
+  max-width: 100%;
 }
 
 ::selection {

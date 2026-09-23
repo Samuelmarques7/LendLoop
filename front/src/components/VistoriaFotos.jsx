@@ -43,7 +43,7 @@ export function VistoriaFotos({ titulo, descricao, onEnviar, enviando = false })
       </label>
 
       {previews.length > 0 && (
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {previews.map(({ arquivo, url }, indice) => (
             <div key={`${arquivo.name}-${indice}`} className="relative aspect-square overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
               <img src={url} alt={`Foto de vistoria ${indice + 1}`} className="h-full w-full object-cover" />

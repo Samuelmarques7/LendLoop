@@ -38,7 +38,7 @@ export function Toast() {
   const Icone = estilo.icone;
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100] max-w-sm w-full animate-in fade-in slide-in-from-bottom-2">
+    <div className="fixed inset-x-4 bottom-4 z-[100] w-auto max-w-sm animate-in fade-in slide-in-from-bottom-2 sm:inset-x-auto sm:bottom-6 sm:right-6 sm:w-full">
       <div className={`flex items-start gap-3 p-4 rounded-xl border shadow-lg font-medium ${estilo.bg} ${estilo.borda} ${estilo.texto}`}>
         <Icone className={`shrink-0 mt-0.5 ${estilo.corIcone}`} size={20} />
         <p className="flex-grow text-sm">{notificacao.texto}</p>
