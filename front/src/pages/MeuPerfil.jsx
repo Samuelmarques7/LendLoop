@@ -14,7 +14,7 @@ import {
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import SeloVerificado from '../components/SeloVerificado';
-import { apiRequest, API_URL } from '../services/api';
+import { apiRequest } from '../services/api';
 import { PainelAvaliacoes } from '../components/PainelAvaliacoes';
 
 function urlAvatarPadrao(nome) {
@@ -107,15 +107,10 @@ export default function MeuPerfil() {
       const formData = new FormData();
       formData.append('fotos', arquivo);
 
-      const respostaUpload = await fetch(`${API_URL}/api/upload`, {
+      const dadosUpload = await apiRequest('/api/upload', {
         method: 'POST',
         body: formData
       });
-      const dadosUpload = await respostaUpload.json();
-
-      if (!respostaUpload.ok) {
-        throw new Error(dadosUpload.erro || 'Erro ao enviar foto');
-      }
 
       const novaUrlAvatar = dadosUpload.urls[0];
 

@@ -30,7 +30,8 @@ const passosAnfitriao = [
 // Função para destacar a parte da palavra que o usuário está digitando
 function destacarTexto(texto, busca) {
   if (!busca) return texto;
-  const regex = new RegExp(`(${busca})`, 'gi');
+  const termoSeguro = busca.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${termoSeguro})`, 'gi');
   const partes = texto.split(regex);
   return (
     <span>

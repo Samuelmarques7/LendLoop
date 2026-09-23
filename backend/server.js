@@ -32,6 +32,19 @@ const origensPermitidas = (process.env.FRONTEND_URL || 'http://localhost:5173')
 app.use(cors({ origin: origensPermitidas }));
 app.use(express.json());
 
+function processarUploadFotos(limite) {
+  const middlewareUpload = upload.array('fotos', limite);
+  return (req, res, next) => {
+    middlewareUpload(req, res, (erro) => {
+      if (!erro) return next();
+      if (erro.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({ erro: 'Cada foto deve ter no máximo 5 MB.' });
+      }
+      return res.status(400).json({ erro: erro.message || 'Não foi possível enviar as fotos.' });
+    });
+  };
+}
+
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', servico: 'lendloop-api' });
 });
@@ -476,26 +489,25 @@ app.post('/api/alugueis', autenticacao, async (req, res) => {
       return res.status(400).json({ erro: 'Você não pode alugar seu próprio anúncio.' });
     }
 
-    const inicio = new Date(dataInicio);
-    const fim = new Date(dataFim);
-    if (Number.isNaN(inicio.getTime()) || Number.isNaN(fim.getTime()) || fim <= inicio) {
+    const dataSomente = (valor) => String(valor || '').slice(0, 10);
+    const inicioTexto = dataSomente(dataInicio);
+    const fimTexto = dataSomente(dataFim);
+    const inicio = new Date(`${inicioTexto}T00:00:00.000Z`);
+    const fim = new Date(`${fimTexto}T00:00:00.000Z`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(inicioTexto) || !/^\d{4}-\d{2}-\d{2}$/.test(fimTexto) || Number.isNaN(inicio.getTime()) || Number.isNaN(fim.getTime()) || fim <= inicio) {
       return res.status(400).json({ erro: 'Informe um período de aluguel válido.' });
     }
 
-    const inicioDia = new Date(inicio);
-    inicioDia.setHours(0, 0, 0, 0);
-    const fimDia = new Date(fim);
-    fimDia.setHours(0, 0, 0, 0);
-    const dias = Math.ceil((fimDia - inicioDia) / (1000 * 60 * 60 * 24));
+    const inicioDia = inicio;
+    const dias = Math.round((fim - inicio) / (1000 * 60 * 60 * 24));
     const datasDisponiveis = new Set((anuncioEncontrado.disponivel || []).map((data) => {
-      const dia = new Date(data);
-      dia.setHours(0, 0, 0, 0);
-      return dia.getTime();
+      return new Date(data).toISOString().slice(0, 10);
     }));
     for (let indice = 0; indice < dias; indice += 1) {
       const dia = new Date(inicioDia);
       dia.setDate(dia.getDate() + indice);
-      if (datasDisponiveis.size && !datasDisponiveis.has(dia.getTime())) {
+      const diaTexto = dia.toISOString().slice(0, 10);
+      if (datasDisponiveis.size && !datasDisponiveis.has(diaTexto)) {
         return res.status(409).json({ erro: 'O anúncio não está disponível durante todo o período escolhido.' });
       }
     }
@@ -577,7 +589,7 @@ app.get('/api/alugueis/locador/:locadorId', autenticacao, async (req, res) => {
 
 // Registra fotos do estado do item. O locador registra a retirada antes de
 // aceitar a reserva; o locatário registra a devolução antes de solicitá-la.
-app.post('/api/alugueis/:id/vistoria/:momento', autenticacao, upload.array('fotos', 8), async (req, res) => {
+app.post('/api/alugueis/:id/vistoria/:momento', autenticacao, processarUploadFotos(8), async (req, res) => {
   try {
     const { momento } = req.params;
     if (!['retirada', 'devolucao'].includes(momento)) {
@@ -794,10 +806,15 @@ app.post('/api/pagamentos/:id/checkout', autenticacao, async (req, res) => {
       return res.status(409).json({ erro: 'Este pagamento já está sendo processado.' });
     }
 
-    const { token, payment_method_id, installments, issuer_id } = req.body;
+    const { token, payment_method_id, installments, payer } = req.body;
     const parcelas = Number(installments);
     if (!token || !payment_method_id || !Number.isInteger(parcelas) || parcelas < 1 || parcelas > 24) {
       return res.status(400).json({ erro: 'Dados do cartão inválidos ou incompletos.' });
+    }
+
+    const locatario = await Usuario.findById(pagamento.locatario).select('email');
+    if (!locatario?.email) {
+      return res.status(400).json({ erro: 'Não foi possível identificar o pagador.' });
     }
 
     const order = new Order(mpClient);
@@ -805,8 +822,13 @@ app.post('/api/pagamentos/:id/checkout', autenticacao, async (req, res) => {
     const resultado = await order.create({
       body: {
         type: 'online',
+        processing_mode: 'automatic',
         total_amount: pagamento.valor.toString(),
         external_reference: pagamento._id.toString(),
+        payer: {
+          email: locatario.email,
+          ...(payer?.identification ? { identification: payer.identification } : {}),
+        },
         transactions: {
           payments: [
             {
@@ -816,21 +838,28 @@ app.post('/api/pagamentos/:id/checkout', autenticacao, async (req, res) => {
                 type: 'credit_card',
                 token: token,
                 installments: parcelas,
-                issuer_id: issuer_id,
               },
             },
           ],
         },
       },
+      requestOptions: { idempotencyKey: `pagamento-${pagamento._id}` },
     });
 
+    const processado = await order.process({ id: resultado.id });
+
     pagamento.mpOrderId = resultado.id;
-    pagamento.status = 'processando';
+    pagamento.status = ['processed', 'approved'].includes(processado.status) ? 'confirmado' : 'processando';
     await pagamento.save();
 
-    res.status(200).json({ orderId: resultado.id, status: resultado.status });
+    res.status(200).json({ orderId: resultado.id, status: processado.status });
   } catch (erro) {
-    console.error('Erro ao criar order no Mercado Pago:', erro);
+    console.error('Erro ao criar order no Mercado Pago:', {
+      status: erro.status,
+      message: erro.message,
+      error: erro.error,
+      causes: erro.causes,
+    });
     res.status(500).json({ erro: 'Erro ao processar pagamento.' });
   }
 });
