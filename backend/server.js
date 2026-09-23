@@ -21,6 +21,8 @@ const Mensagem = require('./models/Mensagem');
 const Notificacao = require('./models/Notificacao');
 const app = express();
 const path = require('path');
+const { Order } = require('mercadopago');
+const mpClient = require('./config/mercadopago');
 
 const origensPermitidas = (process.env.FRONTEND_URL || 'http://localhost:5173')
   .split(',')
@@ -73,7 +75,8 @@ app.put('/api/anuncios/:id', autenticacao, async (req, res) => {
 // Cadastro
 app.post('/api/usuarios', async (req, res) => {
   try {
-    const { nome, email, senha, telefone, localizacao, objetivo } = req.body;
+    const { nome, senha, telefone, localizacao, objetivo } = req.body;
+    const email = String(req.body.email || '').trim().toLowerCase();
     if (!nome?.trim() || !email?.trim() || !senha || senha.length < 8) {
       return res.status(400).json({ erro: 'Nome, e-mail e senha com pelo menos 8 caracteres são obrigatórios.' });
     }
@@ -198,7 +201,11 @@ app.delete('/api/usuarios/:id', autenticacao, async (req, res) => {
 // Login
 app.post('/api/login', async (req, res) => {
   try {
-    const { email, senha } = req.body;
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const { senha } = req.body;
+    if (!email || !senha) {
+      return res.status(400).json({ erro: 'E-mail e senha são obrigatórios.' });
+    }
     const usuario = await Usuario.findOne({ email });
 
     if (!usuario) {
@@ -279,6 +286,9 @@ app.post('/api/redefinir-senha', async (req, res) => {
     if (!token || !novaSenha) {
       return res.status(400).json({ erro: 'Token e nova senha são obrigatórios.' });
     }
+    if (novaSenha.length < 8) {
+      return res.status(400).json({ erro: 'A nova senha deve ter pelo menos 8 caracteres.' });
+    }
 
     const usuario = await Usuario.findOne({
       tokenRecuperacaoSenha: token,
@@ -330,6 +340,12 @@ app.post('/api/anuncios', autenticacao, async (req, res) => {
     }
 
     const { titulo, descricao, categoria, subcategorias, especificacoes, fotos, endereco, disponivel, precos, status } = req.body;
+    if (typeof titulo !== 'string' || titulo.trim().length < 3 || typeof descricao !== 'string' || descricao.trim().length < 20 || !categoria || !endereco || !precos) {
+      return res.status(400).json({ erro: 'Título, descrição, categoria, endereço e preços válidos são obrigatórios.' });
+    }
+    if (!Number.isFinite(Number(precos.precoPorDia)) || Number(precos.precoPorDia) <= 0 || Number(precos.caucao || 0) < 0) {
+      return res.status(400).json({ erro: 'Informe um preço diário válido e uma caução não negativa.' });
+    }
 
     const novoAnuncio = new Anuncio({
       titulo, descricao, categoria, subcategorias, especificacoes,
@@ -603,6 +619,10 @@ app.post('/api/alugueis/:id/vistoria/:momento', autenticacao, upload.array('foto
 app.patch('/api/alugueis/:id/status', autenticacao, async (req, res) => {
   try {
     const { status } = req.body;
+    const statusPermitidos = ['pendente', 'aceito', 'recusado', 'andamento', 'aguardando_confirmacao', 'concluido', 'cancelado'];
+    if (!statusPermitidos.includes(status)) {
+      return res.status(400).json({ erro: 'Status de aluguel inválido.' });
+    }
 
     const aluguel = await Aluguel.findById(req.params.id);
 
@@ -648,6 +668,22 @@ app.patch('/api/alugueis/:id/status', autenticacao, async (req, res) => {
     aluguel.status = status;
     await aluguel.save();
 
+    if (status === 'aceito') {
+      await Pagamento.findOneAndUpdate(
+        { aluguel: aluguel._id },
+        {
+          $setOnInsert: {
+            aluguel: aluguel._id,
+            locatario: aluguel.locatario,
+            valor: aluguel.precoTotal,
+            vencimento: aluguel.dataInicio,
+            status: 'pendente'
+          }
+        },
+        { upsert: true, setDefaultsOnInsert: true }
+      );
+    }
+
     // Notifica quem NÃO fez a alteração (a outra parte da negociação)
     const anuncioDoAluguel = await Anuncio.findById(aluguel.anuncio);
     const rotuloStatus = {
@@ -686,7 +722,7 @@ app.patch('/api/alugueis/:id/status', autenticacao, async (req, res) => {
 // Criar pagamento (gerado a partir de um aluguel)
 app.post('/api/pagamentos', autenticacao, async (req, res) => {
   try {
-    const { aluguel, valor, vencimento, metodo } = req.body;
+    const { aluguel, vencimento, metodo } = req.body;
 
     const aluguelEncontrado = await Aluguel.findById(aluguel);
 
@@ -698,7 +734,34 @@ app.post('/api/pagamentos', autenticacao, async (req, res) => {
       return res.status(403).json({ erro: 'Você não tem permissão para criar um pagamento para este aluguel.' });
     }
 
-    const novoPagamento = new Pagamento({ aluguel, locatario: req.usuarioId, valor, vencimento, metodo });
+    if (aluguelEncontrado.status === 'cancelado' || aluguelEncontrado.status === 'recusado') {
+      return res.status(400).json({ erro: 'Não é possível pagar um aluguel cancelado ou recusado.' });
+    }
+
+    if (metodo && !['pix', 'cartao', 'boleto'].includes(metodo)) {
+      return res.status(400).json({ erro: 'Método de pagamento inválido.' });
+    }
+
+    const pagamentoExistente = await Pagamento.findOne({
+      aluguel: aluguelEncontrado._id,
+      status: { $in: ['pendente', 'processando', 'confirmado'] }
+    });
+    if (pagamentoExistente) {
+      return res.status(200).json({ mensagem: 'Já existe um pagamento para este aluguel.', pagamento: pagamentoExistente });
+    }
+
+    const dataVencimento = vencimento ? new Date(vencimento) : new Date(aluguelEncontrado.dataInicio);
+    if (Number.isNaN(dataVencimento.getTime())) {
+      return res.status(400).json({ erro: 'Data de vencimento inválida.' });
+    }
+
+    const novoPagamento = new Pagamento({
+      aluguel: aluguelEncontrado._id,
+      locatario: req.usuarioId,
+      valor: aluguelEncontrado.precoTotal,
+      vencimento: dataVencimento,
+      metodo
+    });
 
     await novoPagamento.save();
 
@@ -708,6 +771,126 @@ app.post('/api/pagamentos', autenticacao, async (req, res) => {
     });
   } catch (erro) {
     res.status(500).json({ erro: 'Erro ao criar pagamento', detalhes: erro.message });
+  }
+});
+
+app.post('/api/pagamentos/:id/checkout', autenticacao, async (req, res) => {
+  try {
+    const pagamento = await Pagamento.findById(req.params.id).populate('aluguel');
+
+    if (!pagamento) {
+      return res.status(404).json({ erro: 'Pagamento não encontrado.' });
+    }
+
+    if (pagamento.locatario.toString() !== req.usuarioId) {
+      return res.status(403).json({ erro: 'Você não tem permissão para pagar isto.' });
+    }
+
+    if (pagamento.status === 'confirmado') {
+      return res.status(409).json({ erro: 'Este pagamento já foi confirmado.' });
+    }
+
+    if (pagamento.status === 'processando') {
+      return res.status(409).json({ erro: 'Este pagamento já está sendo processado.' });
+    }
+
+    const { token, payment_method_id, installments, issuer_id } = req.body;
+    const parcelas = Number(installments);
+    if (!token || !payment_method_id || !Number.isInteger(parcelas) || parcelas < 1 || parcelas > 24) {
+      return res.status(400).json({ erro: 'Dados do cartão inválidos ou incompletos.' });
+    }
+
+    const order = new Order(mpClient);
+
+    const resultado = await order.create({
+      body: {
+        type: 'online',
+        total_amount: pagamento.valor.toString(),
+        external_reference: pagamento._id.toString(),
+        transactions: {
+          payments: [
+            {
+              amount: pagamento.valor.toString(),
+              payment_method: {
+                id: payment_method_id,
+                type: 'credit_card',
+                token: token,
+                installments: parcelas,
+                issuer_id: issuer_id,
+              },
+            },
+          ],
+        },
+      },
+    });
+
+    pagamento.mpOrderId = resultado.id;
+    pagamento.status = 'processando';
+    await pagamento.save();
+
+    res.status(200).json({ orderId: resultado.id, status: resultado.status });
+  } catch (erro) {
+    console.error('Erro ao criar order no Mercado Pago:', erro);
+    res.status(500).json({ erro: 'Erro ao processar pagamento.' });
+  }
+});
+
+app.post('/api/pagamentos/webhook', async (req, res) => {
+  try {
+    const tipo = req.body?.type || req.body?.topic;
+    const recurso = req.body?.data?.id || req.body?.id;
+    if (tipo !== 'order' || !recurso) {
+      return res.status(200).json({ recebido: true });
+    }
+
+    const assinatura = req.headers['x-signature'];
+    const requestId = req.headers['x-request-id'];
+    const segredoWebhook = process.env.MP_WEBHOOK_SECRET;
+    if (!segredoWebhook || !assinatura || !requestId) {
+      return res.status(401).json({ erro: 'Webhook não autenticado.' });
+    }
+
+    const partesAssinatura = Object.fromEntries(
+      assinatura.split(',').map((parte) => parte.trim().split('='))
+    );
+    const manifest = `id:${recurso};request-id:${requestId};ts:${partesAssinatura.ts};`;
+    const assinaturaEsperada = crypto
+      .createHmac('sha256', segredoWebhook)
+      .update(manifest)
+      .digest('hex');
+    const assinaturaRecebida = partesAssinatura.v1 || '';
+    if (assinaturaRecebida.length !== assinaturaEsperada.length || !crypto.timingSafeEqual(Buffer.from(assinaturaRecebida), Buffer.from(assinaturaEsperada))) {
+      return res.status(401).json({ erro: 'Assinatura do webhook inválida.' });
+    }
+
+    const order = await new Order(mpClient).get({ id: String(recurso) });
+    const pagamento = await Pagamento.findOne({
+      $or: [{ mpOrderId: String(recurso) }, { _id: order.external_reference }]
+    });
+    if (!pagamento) {
+      return res.status(200).json({ recebido: true });
+    }
+
+    const statusPorOrdem = {
+      processed: 'confirmado',
+      approved: 'confirmado',
+      cancelled: 'falhou',
+      rejected: 'falhou',
+      failed: 'falhou',
+      created: 'processando',
+      processing: 'processando'
+    };
+    const novoStatus = statusPorOrdem[order.status];
+    if (novoStatus) pagamento.status = novoStatus;
+    if (order.transactions?.payments?.[0]?.id) {
+      pagamento.mpPaymentId = String(order.transactions.payments[0].id);
+    }
+    await pagamento.save();
+
+    return res.status(200).json({ recebido: true });
+  } catch (erro) {
+    console.error('Erro ao processar webhook do Mercado Pago:', erro);
+    return res.status(200).json({ recebido: true });
   }
 });
 
@@ -725,31 +908,9 @@ app.get('/api/pagamentos/locatario/:locatarioId', autenticacao, async (req, res)
   }
 });
 
-// Confirmar pagamento (botão "Pagar Agora")
+// O status do pagamento é atualizado exclusivamente pelo Mercado Pago/webhook.
 app.patch('/api/pagamentos/:id/status', autenticacao, async (req, res) => {
-  try {
-    const { status } = req.body;
-
-    const pagamento = await Pagamento.findById(req.params.id);
-
-    if (!pagamento) {
-      return res.status(404).json({ erro: 'Pagamento não encontrado' });
-    }
-
-    if (pagamento.locatario.toString() !== req.usuarioId) {
-      return res.status(403).json({ erro: 'Você não tem permissão para alterar este pagamento.' });
-    }
-
-    pagamento.status = status;
-    await pagamento.save();
-
-    res.status(200).json({
-      mensagem: 'Status do pagamento atualizado com sucesso!',
-      pagamento
-    });
-  } catch (erro) {
-    res.status(500).json({ erro: 'Erro ao atualizar status do pagamento', detalhes: erro.message });
-  }
+  return res.status(405).json({ erro: 'O status é atualizado pelo Mercado Pago.' });
 });
 
 // Criar avaliação (só permitido se o aluguel estiver concluído)
