@@ -39,7 +39,7 @@ function App() {
       <Toast />
       <ConfirmacaoProvider>
         <ModalConfirmacao />
-        <BrowserRouter>
+        <BrowserRouter basename={import.meta.env.BASE_URL}>
         <RolarParaOTopo />
         <Routes>
           <Route path="/" element={<PaginaInicial />} />

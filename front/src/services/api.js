@@ -28,7 +28,7 @@ export async function apiRequest(caminho, options = {}) {
         localStorage.removeItem('token');
         localStorage.removeItem('usuarioLogado');
         localStorage.removeItem('dadosUsuario');
-        window.location.href = '/login';
+        window.location.href = `${import.meta.env.BASE_URL}login`;
         throw new Error('Sessão expirada. Faça login novamente.');
     }
 

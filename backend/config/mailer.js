@@ -9,7 +9,12 @@ const transporter = nodemailer.createTransport({
 });
 
 async function enviarEmailRecuperacao(destinatario, token) {
-  const linkRecuperacao = `${process.env.FRONTEND_URL}/redefinir-senha?token=${token}`;
+  // FRONTEND_URL pode ter várias URLs separadas por vírgula; o link usa a primeira.
+  const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173')
+    .split(',')[0]
+    .trim()
+    .replace(/\/+$/, '');
+  const linkRecuperacao = `${frontendUrl}/redefinir-senha?token=${token}`;
 
   await transporter.sendMail({
     from: `"LendLoop" <${process.env.EMAIL_USER}>`,

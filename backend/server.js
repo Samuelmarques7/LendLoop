@@ -29,9 +29,19 @@ const OcupacaoDia = require('./models/OcupacaoDia');
 const { criarFiltroBusca, pontuarAnuncio } = require('./utils/busca');
 const { statusPagamentoDaOrder, aluguelPodeIniciar, pagamentoVencido } = require('./utils/pagamentos');
 
+// O navegador envia só a origem (sem caminho), então
+// "https://usuario.github.io/LendLoop" vira "https://usuario.github.io".
+function extrairOrigem(url) {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return url;
+  }
+}
+
 const origensPermitidas = (process.env.FRONTEND_URL || 'http://localhost:5173')
   .split(',')
-  .map((origem) => origem.trim())
+  .map((origem) => extrairOrigem(origem.trim()))
   .filter(Boolean);
 
 app.use(cors({ origin: origensPermitidas }));
