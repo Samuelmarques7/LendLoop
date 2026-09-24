@@ -5,6 +5,7 @@ import { MediaAvaliacao } from "../components/MediaAvaliacao";
 import { GaleriaFotos } from "../components/GaleriaFotos";
 import { PainelAvaliacoes } from "../components/PainelAvaliacoes";
 import { CalendarioReserva, LegendaCalendario } from "../components/CalendarioReserva";
+import { ModalSolicitacao } from "../components/ModalSolicitacao";
 import { chaveDaApi, chaveDoDia, diasDoPeriodo, diasOcupados as calcularDiasOcupados, formatarChave } from "../utils/datasReserva";
 
 import { 
@@ -76,6 +77,8 @@ export function DetalhesProduto() {
   const [horarioDevolucao, setHorarioDevolucao] = useState("17:00");
   const [enviando, setEnviando] = useState(false);
   const [mensagem, setMensagem] = useState(null);
+  // Estado do modal de solicitação: null | { estado: 'carregando'|'sucesso'|'erro', mensagem?, acao? }
+  const [modalSolicitacao, setModalSolicitacao] = useState(null);
   const [avaliacoesLocador, setAvaliacoesLocador] = useState(null);
   const [ocupacoes, setOcupacoes] = useState([]);
   const [calendarioAberto, setCalendarioAberto] = useState(false);
@@ -197,6 +200,7 @@ export function DetalhesProduto() {
 
     try {
       setEnviando(true);
+      setModalSolicitacao({ estado: 'carregando' });
 
       await apiRequest("/api/alugueis", {
         method: "POST",
@@ -214,14 +218,20 @@ export function DetalhesProduto() {
         },
       });
 
-      setMensagem({tipo: 'sucesso', texto: 'Solicitação de aluguel enviada com sucesso!'});
+      // O aluguel JÁ foi criado aqui. Mostra o sucesso antes de qualquer coisa
+      // que possa falhar depois (recarregar o calendário).
+      setModalSolicitacao({ estado: 'sucesso' });
       setDataInicio("");
       setDataFim("");
-      setOcupacoes(await buscarOcupacao(anuncio._id));
+      try {
+        setOcupacoes(await buscarOcupacao(anuncio._id));
+      } catch {
+        // Falha ao atualizar o calendário não desfaz a solicitação já enviada.
+      }
     } catch (e) {
-      setMensagem({
-        tipo: 'erro',
-        texto: e.message,
+      setModalSolicitacao({
+        estado: 'erro',
+        mensagem: e.message,
         acao: e.data?.verificacaoNecessaria ? { label: 'Verificar identidade', rota: '/configuracoes' } : null,
       });
     } finally {
@@ -614,7 +624,16 @@ export function DetalhesProduto() {
         </div>
       </main>
       <Footer />
-      
+
+      <ModalSolicitacao
+        estado={modalSolicitacao?.estado}
+        titulo={anuncio.titulo}
+        mensagem={modalSolicitacao?.mensagem}
+        acaoErro={modalSolicitacao?.acao}
+        onFechar={() => setModalSolicitacao(null)}
+        onVerSolicitacoes={() => navigate('/painellocatario', { state: { abrirAba: 'solicitacoes' } })}
+        onAcaoErro={() => navigate(modalSolicitacao.acao.rota)}
+      />
     </div>
   );
 }
