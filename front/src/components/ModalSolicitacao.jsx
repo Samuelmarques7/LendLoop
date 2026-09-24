@@ -12,6 +12,7 @@ import { useEffect, useRef } from 'react';
 //   acaoErro  { label, rota } opcional (ex.: verificar identidade)
 //   onFechar  fecha o modal (só quando NÃO está carregando)
 //   onVerSolicitacoes  ação principal do sucesso
+//   onContinuarNavegando leva à listagem de anúncios depois do sucesso
 //   onAcaoErro         ação extra do erro
 export function ModalSolicitacao({
   estado,
@@ -20,6 +21,7 @@ export function ModalSolicitacao({
   acaoErro,
   onFechar,
   onVerSolicitacoes,
+  onContinuarNavegando,
   onAcaoErro,
 }) {
   const botaoRef = useRef(null);
@@ -58,7 +60,7 @@ export function ModalSolicitacao({
         aria-modal="true"
         aria-live="polite"
         aria-labelledby="modal-solicitacao-titulo"
-        className="modal-solicitacao-caixa w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-xl"
+        className="modal-solicitacao-caixa max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-5 text-center shadow-xl sm:p-8"
         onClick={(e) => e.stopPropagation()}
       >
         {carregando && (
@@ -95,7 +97,7 @@ export function ModalSolicitacao({
               </button>
               <button
                 type="button"
-                onClick={onFechar}
+                onClick={onContinuarNavegando}
                 className="w-full rounded-xl py-3 text-sm font-bold text-gray-500 hover:bg-gray-100 cursor-pointer"
               >
                 Continuar navegando

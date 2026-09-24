@@ -21,6 +21,7 @@ import heroEscuroWide from '../assets/hero/lendloop-hero-dark-v12-wide.png';
 import { useBuscasRecentes } from '../hooks/useBuscasRecentes';
 import { SUGESTOES_POPULARES, BANCO_DE_PALAVRAS } from '../constants/buscasPopulares';
 import { CATEGORIAS } from '../constants/categorias';
+import { correspondeBusca, normalizarBusca } from '../utils/busca';
 
 const beneficios = [
   { icone: LuMapPin, titulo: 'Perto de você', descricao: 'Encontre itens disponíveis na sua região, sem deslocamentos desnecessários.' },
@@ -79,14 +80,14 @@ export function PaginaInicial() {
     navigate(`/busca?${new URLSearchParams({ categoria: categoria.value }).toString()}`);
   }
 
-  const buscaNormalizada = buscaHome.toLowerCase().trim();
+  const buscaNormalizada = normalizarBusca(buscaHome);
   const recentesFiltradas = buscaNormalizada
-    ? buscasRecentes.filter((termo) => termo.toLowerCase().includes(buscaNormalizada))
+    ? buscasRecentes.filter((termo) => correspondeBusca(termo, buscaNormalizada))
     : buscasRecentes;
   const sugestoesFiltradas = buscaNormalizada
     ? BANCO_DE_PALAVRAS
-      .filter((termo) => termo.toLowerCase().includes(buscaNormalizada))
-      .sort((primeiro, segundo) => Number(segundo.toLowerCase().startsWith(buscaNormalizada)) - Number(primeiro.toLowerCase().startsWith(buscaNormalizada)))
+      .filter((termo) => correspondeBusca(termo, buscaNormalizada))
+      .sort((primeiro, segundo) => Number(normalizarBusca(segundo).startsWith(buscaNormalizada)) - Number(normalizarBusca(primeiro).startsWith(buscaNormalizada)))
       .slice(0, 6)
     : SUGESTOES_POPULARES;
   const mostrarDropdown = mostrarSugestoes;

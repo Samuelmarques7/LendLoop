@@ -8,6 +8,7 @@ import { useNotificacao } from '../context/NotificacaoContext';
 import { useConfirmacao } from '../context/ConfirmacaoContext';
 import { VistoriaFotos } from '../components/VistoriaFotos';
 import { CardPayment } from '@mercadopago/sdk-react';
+import { mensagemAmigavelPagamento } from '../utils/errosPagamento';
 
 import {
   LuLayoutDashboard,
@@ -23,7 +24,9 @@ import {
   LuTrash2,
   LuShieldCheck,
   LuTriangleAlert,
-  LuClock
+  LuClock,
+  LuSearch,
+  LuArrowRight
 } from "react-icons/lu";
 
 const DESCRICOES_SECOES = {
@@ -86,6 +89,9 @@ export default function PainelLocatario() {
     }
     if (location.state?.abrirAba) {
       setActiveTab(location.state.abrirAba);
+    }
+    if (location.state?.abaPagamentos) {
+      setAbaPagamentos(location.state.abaPagamentos);
     }
   }, [location.state]);
 
@@ -176,14 +182,14 @@ export default function PainelLocatario() {
 
   const pagamentosPorAba = useMemo(() => ({
     pendentes: pagamentos.filter(p => ['pendente', 'atrasado', 'processando', 'falhou'].includes(p.status)),
-    confirmados: pagamentos.filter(p => p.status === 'confirmado'),
+    confirmados: pagamentos.filter(p => ['confirmado', 'reembolsado', 'contestado'].includes(p.status)),
   }), [pagamentos]);
 
   const stats = [
-  { id: 1, titulo: "Próximos aluguéis", valor: String(alugueis.andamento.length), icon: LuCalendar, tone: 'accent' },
-  { id: 2, titulo: "Solicitações pendentes", valor: String(solicitacoesEnviadas.length), icon: LuMailWarning, tone: 'warning' },
-  { id: 3, titulo: "Pagamentos pendentes", valor: `R$ ${pagamentosPorAba.pendentes.reduce((soma, p) => soma + p.valor, 0).toFixed(2)}`, icon: LuWallet, tone: pagamentosPorAba.pendentes.some(p => p.status === 'atrasado') ? 'danger' : 'success' },
-  { id: 4, titulo: "Mensagens não lidas", valor: String(mensagensNaoLidas), icon: LuMessageSquare, tone: 'neutral' }
+  { id: 1, titulo: "Próximos aluguéis", valor: String(alugueis.andamento.length), descricao: alugueis.andamento.length ? 'Acompanhe datas e próximas etapas.' : 'Nenhum aluguel agendado.', icon: LuCalendar, tone: 'accent' },
+  { id: 2, titulo: "Solicitações pendentes", valor: String(solicitacoesEnviadas.length), descricao: solicitacoesEnviadas.length ? 'Aguardando resposta do locador.' : 'Nenhuma resposta pendente.', icon: LuMailWarning, tone: 'warning' },
+  { id: 3, titulo: "Pagamentos pendentes", valor: `R$ ${pagamentosPorAba.pendentes.reduce((soma, p) => soma + p.valor, 0).toFixed(2)}`, descricao: pagamentosPorAba.pendentes.length ? 'Confira seus pagamentos em aberto.' : 'Nenhum pagamento em aberto.', icon: LuWallet, tone: pagamentosPorAba.pendentes.some(p => p.status === 'atrasado') ? 'danger' : 'success' },
+  { id: 4, titulo: "Mensagens não lidas", valor: String(mensagensNaoLidas), descricao: mensagensNaoLidas ? 'Novas conversas aguardam você.' : 'Sua caixa de entrada está em dia.', icon: LuMessageSquare, tone: 'neutral' }
 ];
 
 const toneClasses = {
@@ -365,6 +371,11 @@ const toneClasses = {
           onAbrirDetalhes={abrirDetalhesAluguel}
           usuarioLogadoId={usuarioLogado?.id}
           onStatusAvaliacao={handleStatusAvaliacao}
+          usuarioNome={dadosLocatario?.nome || usuarioLogado?.nome}
+          onExplorar={() => navigate('/busca')}
+          onVerAlugueis={() => setActiveTab('alugueis')}
+          onVerSolicitacoes={() => setActiveTab('solicitacoes')}
+          onVerPagamentos={() => setActiveTab('pagamentos')}
         />;
       case 'alugueis':
         return <SecaoAlugueis alugueis={alugueis} abaAlugueis={abaAlugueis} setAbaAlugueis={setAbaAlugueis} onAbrirDetalhes={abrirDetalhesAluguel} usuarioLogadoId={usuarioLogado?.id} onStatusAvaliacao={handleStatusAvaliacao} />;
@@ -412,11 +423,13 @@ const toneClasses = {
         usuario={dadosLocatario}
       />
 
-      <main className="mx-auto w-full max-w-[1600px] space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
-        <div className="rounded-r-2xl border-l-4 border-azul-oceano bg-azul-oceano/[0.05] py-2 pl-4">
-          <h1 className="text-xl font-semibold text-grafite">{tituloAtual}</h1>
-          <p className="mt-1 text-sm text-gray-500">{descricaoAtual}</p>
-        </div>
+      <main className="mx-auto w-full max-w-[1920px] space-y-5 px-3 py-5 sm:space-y-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10 2xl:space-y-8 2xl:px-12 2xl:py-12">
+        {activeTab !== 'painel' && (
+          <div className="border-l-4 border-azul-oceano py-1 pl-4">
+            <h1 className="text-2xl font-bold tracking-tight text-[#031f3b]">{tituloAtual}</h1>
+            <p className="mt-1 text-sm text-gray-500">{descricaoAtual}</p>
+          </div>
+        )}
         {renderConteudo()}
       </main>
 
@@ -467,7 +480,7 @@ const toneClasses = {
               onSubmit={enviarPagamento}
               onError={(erro) => {
                 console.error('Erro no CardPayment:', erro);
-                setErroPagamento(`Erro no formulário de pagamento: ${erro?.message || erro?.type || 'desconhecido'}`);
+                setErroPagamento(mensagemAmigavelPagamento(erro));
               }}
             />
           </div>
@@ -480,7 +493,7 @@ const toneClasses = {
 function StatusPill({ status }) {
   const map = {
     andamento: { label: 'Em andamento', dot: 'bg-verde-escuro', text: 'text-verde-escuro', bg: 'bg-verde-escuro/[0.08]' },
-    aceito: { label: 'Em andamento', dot: 'bg-verde-escuro', text: 'text-verde-escuro', bg: 'bg-verde-escuro/[0.08]' },
+    aceito: { label: 'Confirmado — aguardando início', dot: 'bg-azul-oceano', text: 'text-azul-oceano', bg: 'bg-azul-oceano/[0.08]' },
     aguardando_confirmacao: { label: 'Aguardando confirmação', dot: 'bg-azul-oceano', text: 'text-azul-oceano', bg: 'bg-azul-oceano/[0.08]' },
     concluido: { label: 'Concluído', dot: 'bg-gray-400', text: 'text-gray-600', bg: 'bg-gray-100' },
     pendente: { label: 'Pendente', dot: 'bg-amber-500', text: 'text-amber-700', bg: 'bg-amber-500/[0.1]' },
@@ -496,12 +509,12 @@ function StatusPill({ status }) {
 
 function AbaFiltro({ abas, atual, onChange }) {
   return (
-    <div className="flex items-center gap-1 rounded-lg bg-azul-oceano/[0.08] p-1">
+    <div className="flex max-w-full items-center gap-1 overflow-x-auto rounded-lg bg-azul-oceano/[0.08] p-1 [scrollbar-width:none]">
       {abas.map((aba) => (
         <button
           key={aba.key}
           onClick={() => onChange(aba.key)}
-          className={`relative px-3 py-1.5 rounded-md text-[12px] font-semibold transition-all cursor-pointer ${
+          className={`relative shrink-0 whitespace-nowrap px-3 py-1.5 rounded-md text-[12px] font-semibold transition-all cursor-pointer ${
             atual === aba.key
               ? 'bg-azul-oceano text-white shadow-sm shadow-azul-oceano/20'
               : 'text-slate-500 hover:bg-white/70 hover:text-azul-oceano'
@@ -537,7 +550,7 @@ function ListaAlugueis({ alugueis, aba, usuarioLogadoId, onAbrirDetalhes, onStat
     <div
       key={aluguel._id}
       onClick={() => onAbrirDetalhes(aluguel)}
-      className="flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-100 last:border-0 cursor-pointer"
+      className="flex flex-col gap-3 px-3 py-3.5 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-100 last:border-0 cursor-pointer sm:flex-row sm:items-center sm:justify-between sm:px-4"
     >
       <div className="flex items-center gap-3.5 min-w-0">
         {aluguel.anuncio?.fotos?.[0] ? (
@@ -553,7 +566,7 @@ function ListaAlugueis({ alugueis, aba, usuarioLogadoId, onAbrirDetalhes, onStat
         </div>
       </div>
 
-      <div className="flex items-center gap-3 shrink-0">
+      <div className="flex w-full flex-wrap items-center justify-between gap-2 sm:w-auto sm:flex-nowrap sm:justify-end sm:gap-3">
         <StatusPill status={aba === 'avaliar' ? 'concluido' : aluguel.status} />
         <span className="font-semibold text-grafite text-sm w-16 text-right tabular-nums">R$ {aluguel.precoTotal}</span>
         {aba === 'avaliar' && aluguel.locador && (
@@ -573,9 +586,9 @@ function ListaAlugueis({ alugueis, aba, usuarioLogadoId, onAbrirDetalhes, onStat
 
 function CardSecao({ titulo, acao, children }) {
   return (
-    <section className="flex flex-col overflow-hidden rounded-2xl border border-azul-oceano/[0.16] bg-white">
-      <div className="flex items-center justify-between border-b border-azul-oceano/[0.1] bg-azul-oceano/[0.018] px-6 py-4.5">
-        <h2 className="text-[15px] font-semibold text-grafite">{titulo}</h2>
+    <section className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/25">
+      <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <h2 className="text-lg font-bold tracking-tight text-[#031f3b]">{titulo}</h2>
         {acao}
       </div>
       <div className="p-2">
@@ -610,7 +623,7 @@ function SecaoAlugueis({ alugueis, abaAlugueis, setAbaAlugueis, onAbrirDetalhes,
 function CardSolicitacao({ solicitacao, onCancelarSolicitacao }) {
   return (
     <div className="p-4 hover:bg-gray-50 rounded-xl transition-colors border border-gray-100 mb-2 last:mb-0">
-      <div className="flex justify-between items-start mb-3 gap-3">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
         <div className="min-w-0">
           <h3 className="font-semibold text-grafite text-sm truncate">{solicitacao.anuncio?.titulo || 'Anúncio indisponível'}</h3>
           <p className="text-xs text-gray-400 mt-1">
@@ -645,13 +658,13 @@ function SecaoSolicitacoesEnviadas({ solicitacoesEnviadas, onCancelarSolicitacao
 
 function LinhaPagamento({ pagamento, abaPagamentos, onPagarAgora }) {
   return (
-    <div className="flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-100 last:border-0">
+    <div className="flex flex-col gap-3 px-3 py-3.5 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-100 last:border-0 sm:flex-row sm:items-center sm:justify-between sm:px-4">
       <div className="min-w-0">
         <h3 className="font-semibold text-grafite text-sm truncate">{pagamento.aluguel?.anuncio?.titulo || 'Aluguel'}</h3>
         <p className="text-xs text-gray-400 mt-0.5">Vencimento em {new Date(pagamento.vencimento).toLocaleDateString('pt-BR')}</p>
       </div>
 
-      <div className="flex items-center gap-3 shrink-0">
+      <div className="flex w-full flex-wrap items-center justify-between gap-2 sm:w-auto sm:flex-nowrap sm:justify-end sm:gap-3">
         {pagamento.status === 'atrasado' && (
           <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#A32D2D] bg-red-50 px-2.5 py-1 rounded-full">
             <LuTriangleAlert size={12} /> Em atraso
@@ -670,9 +683,21 @@ function LinhaPagamento({ pagamento, abaPagamentos, onPagarAgora }) {
           </span>
         )}
 
+        {pagamento.status === 'reembolsado' && (
+          <span className="text-[11px] font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full">
+            Reembolsado
+          </span>
+        )}
+
+        {pagamento.status === 'contestado' && (
+          <span className="text-[11px] font-semibold text-[#A32D2D] bg-red-50 px-2.5 py-1 rounded-full">
+            Contestado
+          </span>
+        )}
+
         <span className="font-semibold text-grafite text-sm tabular-nums">R$ {pagamento.valor}</span>
 
-        {abaPagamentos === 'pendentes' && pagamento.status !== 'processando' && (
+        {abaPagamentos === 'pendentes' && ['pendente', 'falhou'].includes(pagamento.status) && (
           <button
             onClick={() => onPagarAgora(pagamento)}
             className="rounded-lg bg-azul-oceano px-3.5 py-2 text-[11px] font-semibold text-white transition-colors hover:bg-verde-escuro cursor-pointer"
@@ -711,32 +736,110 @@ function SecaoPagamentos({ pagamentos, abaPagamentos, setAbaPagamentos, onPagarA
   );
 }
 
-function SecaoPainel({ stats, toneClasses, alugueis, pagamentos, solicitacoesEnviadas, abaAlugueis, setAbaAlugueis, abaPagamentos, setAbaPagamentos, onCancelarSolicitacao, onPagarAgora, onAbrirDetalhes, usuarioLogadoId, onStatusAvaliacao }) {
+function SecaoPainel({ stats, toneClasses, alugueis, pagamentos, solicitacoesEnviadas, abaAlugueis, setAbaAlugueis, abaPagamentos, setAbaPagamentos, onCancelarSolicitacao, onPagarAgora, onAbrirDetalhes, usuarioLogadoId, onStatusAvaliacao, usuarioNome, onExplorar, onVerAlugueis, onVerSolicitacoes, onVerPagamentos }) {
+  const primeiroNome = usuarioNome?.trim().split(/\s+/)[0] || 'por aqui';
+  const proximoAluguel = alugueis.andamento[0];
+
   return (
-    <div className="space-y-6">
-      <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+    <div className="space-y-5 sm:space-y-6">
+      <section className="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)] lg:items-stretch">
+        <div className="flex min-h-[230px] flex-col items-start justify-center overflow-hidden rounded-3xl border border-azul-oceano/15 bg-[radial-gradient(circle_at_90%_10%,rgba(0,154,173,0.12),transparent_34%),linear-gradient(135deg,#eaf4ff_0%,#ffffff_62%)] px-5 py-7 sm:px-8 sm:py-9 lg:px-10 2xl:min-h-[260px] 2xl:px-12">
+          <h1 className="max-w-4xl text-3xl font-bold leading-[1.08] tracking-[-0.035em] text-[#031f3b] sm:text-4xl lg:text-[2.65rem] 2xl:text-5xl">
+            Olá, {primeiroNome}. O que você precisa hoje?
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base">
+            Acompanhe seus aluguéis e encontre itens incríveis por perto, de forma simples e segura.
+          </p>
+          <button
+            type="button"
+            onClick={onExplorar}
+            className="group mt-6 inline-flex items-center gap-2.5 rounded-xl bg-azul-oceano px-5 py-3 text-sm font-bold text-white shadow-lg shadow-azul-oceano/20 transition-all hover:-translate-y-0.5 hover:bg-[#0868d8] hover:shadow-xl active:translate-y-0"
+          >
+            <LuSearch size={18} /> Explorar itens
+            <LuArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+          </button>
+        </div>
+
+        {proximoAluguel ? (
+          <button
+            type="button"
+            onClick={() => onAbrirDetalhes(proximoAluguel)}
+            className="group flex min-h-[210px] flex-col justify-between overflow-hidden rounded-3xl bg-[#031f3b] p-6 text-left text-white shadow-[0_18px_45px_rgba(3,31,59,0.14)] transition-transform hover:-translate-y-0.5 lg:min-h-[230px] 2xl:min-h-[260px] 2xl:p-8"
+          >
+            <span className="flex items-center justify-between gap-3">
+              <span className="flex items-center gap-2 text-xs font-semibold text-white/65"><LuCalendar size={16} className="text-[#5ba8ff]" /> Seu próximo aluguel</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-verde-agua/15 px-2.5 py-1 text-[11px] font-bold text-[#89ef9f]"><LuShieldCheck size={13} /> Confirmado</span>
+            </span>
+            <span className="mt-5 flex items-end gap-4">
+              {proximoAluguel.anuncio?.fotos?.[0] && (
+                <img src={proximoAluguel.anuncio.fotos[0]} alt="" className="h-20 w-20 shrink-0 rounded-2xl border border-white/10 object-cover" />
+              )}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-xl font-bold">{proximoAluguel.anuncio?.titulo || 'Próximo item'}</span>
+                <span className="mt-2 block text-sm text-white/65">
+                  {new Date(proximoAluguel.dataInicio).toLocaleDateString('pt-BR')} – {new Date(proximoAluguel.dataFim).toLocaleDateString('pt-BR')}
+                </span>
+                <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-[#5ba8ff]">Ver detalhes <LuArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" /></span>
+              </span>
+            </span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onExplorar}
+            className="group flex min-h-[210px] items-center gap-5 rounded-3xl border border-sky-200 bg-sky-50/75 p-6 text-left transition-all hover:-translate-y-0.5 hover:border-azul-oceano/40 hover:shadow-lg lg:min-h-[230px] 2xl:min-h-[260px] 2xl:p-8"
+          >
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-azul-oceano text-white shadow-sm"><LuShieldCheck size={26} /></span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-xl font-bold tracking-tight text-[#031f3b]">Tudo certo por aqui</span>
+              <span className="mt-1.5 block text-sm leading-relaxed text-gray-600">Você não tem aluguéis próximos. Que tal encontrar algo novo?</span>
+            </span>
+            <LuArrowRight size={20} className="shrink-0 text-azul-oceano transition-transform group-hover:translate-x-1" />
+          </button>
+        )}
+      </section>
+
+      <section className="grid overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/30 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
           const tone = toneClasses[stat.tone];
           return (
-            <div key={stat.id} className={`flex items-center gap-4 rounded-2xl border border-azul-oceano/[0.14] border-l-4 bg-white p-5 ${tone.border}`}>
-              <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${tone.bg} ${tone.text} flex-shrink-0`}>
+            <div key={stat.id} className="flex min-w-0 gap-4 border-b border-slate-100 p-5 last:border-b-0 sm:[&:nth-child(odd)]:border-r sm:[&:nth-last-child(-n+2)]:border-b-0 xl:border-b-0 xl:border-r xl:last:border-r-0 xl:p-6">
+              <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${tone.bg} ${tone.text}`}>
                 <Icon size={20} />
               </div>
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5 truncate">{stat.titulo}</p>
-                <p className="text-xl font-semibold text-grafite tabular-nums">{stat.valor}</p>
+                <p className="truncate text-xs font-semibold text-gray-500">{stat.titulo}</p>
+                <p className="mt-0.5 text-2xl font-bold tracking-tight text-[#031f3b] tabular-nums">{stat.valor}</p>
+                <p className="mt-1 hidden text-xs leading-relaxed text-gray-400 2xl:block">{stat.descricao}</p>
               </div>
             </div>
           );
         })}
       </section>
 
-      <SecaoAlugueis titulo="Atividade dos seus aluguéis" alugueis={alugueis} abaAlugueis={abaAlugueis} setAbaAlugueis={setAbaAlugueis} onAbrirDetalhes={onAbrirDetalhes} usuarioLogadoId={usuarioLogadoId} onStatusAvaliacao={onStatusAvaliacao} />
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(380px,0.65fr)]">
+        <div className="min-w-0">
+          <div className="mb-3 flex justify-end">
+            <button onClick={onVerAlugueis} className="group inline-flex items-center gap-1.5 text-xs font-bold text-azul-oceano hover:text-[#031f3b]">Ver todos os aluguéis <LuArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" /></button>
+          </div>
+          <SecaoAlugueis titulo="Atividade dos seus aluguéis" alugueis={alugueis} abaAlugueis={abaAlugueis} setAbaAlugueis={setAbaAlugueis} onAbrirDetalhes={onAbrirDetalhes} usuarioLogadoId={usuarioLogadoId} onStatusAvaliacao={onStatusAvaliacao} />
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <SecaoSolicitacoesEnviadas titulo="Pedidos em andamento" solicitacoesEnviadas={solicitacoesEnviadas} onCancelarSolicitacao={onCancelarSolicitacao} />
-        <SecaoPagamentos titulo="Resumo de pagamentos" pagamentos={pagamentos} abaPagamentos={abaPagamentos} setAbaPagamentos={setAbaPagamentos} onPagarAgora={onPagarAgora} />
+        <div className="min-w-0 space-y-6">
+          <div>
+            <div className="mb-3 flex justify-end">
+              <button onClick={onVerSolicitacoes} className="group inline-flex items-center gap-1.5 text-xs font-bold text-azul-oceano hover:text-[#031f3b]">Ver solicitações <LuArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" /></button>
+            </div>
+            <SecaoSolicitacoesEnviadas titulo="Pedidos em andamento" solicitacoesEnviadas={solicitacoesEnviadas} onCancelarSolicitacao={onCancelarSolicitacao} />
+          </div>
+          <div>
+            <div className="mb-3 flex justify-end">
+              <button onClick={onVerPagamentos} className="group inline-flex items-center gap-1.5 text-xs font-bold text-azul-oceano hover:text-[#031f3b]">Ver pagamentos <LuArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" /></button>
+            </div>
+            <SecaoPagamentos titulo="Resumo de pagamentos" pagamentos={pagamentos} abaPagamentos={abaPagamentos} setAbaPagamentos={setAbaPagamentos} onPagarAgora={onPagarAgora} />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -749,7 +852,7 @@ function ModalDetalhesAluguel({ aluguel, onClose, onSolicitarDevolucao, enviando
 
   const locador = aluguel.locador;
   const primeiroNome = locador?.nome?.split(' ')[0] || 'locador';
-  const podeSolicitarDevolucao = aluguel.status === 'aceito' || aluguel.status === 'andamento';
+  const podeSolicitarDevolucao = aluguel.status === 'andamento';
   const aguardandoConfirmacao = aluguel.status === 'aguardando_confirmacao';
   const concluido = aluguel.status === 'concluido';
 
@@ -935,7 +1038,7 @@ function SecaoConfiguracoes({ objetivoAtual, onAlterarObjetivo, onExcluirConta }
         <div className="px-6 py-4.5 border-b border-red-100">
           <h2 className="text-[15px] font-semibold text-[#A32D2D]">Zona de perigo</h2>
         </div>
-        <div className="p-6 flex items-center justify-between gap-4">
+        <div className="flex flex-col items-start gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
           <div>
             <p className="text-sm font-semibold text-grafite">Excluir minha conta</p>
             <p className="text-xs text-gray-500 mt-1">Essa ação é permanente e não pode ser desfeita.</p>

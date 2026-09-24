@@ -7,6 +7,7 @@ const ICONE_POR_TIPO = {
   mensagem: '💬',
   solicitacao: '📩',
   status_aluguel: '📦',
+  pagamento: '💳',
   avaliacao: '⭐',
 };
 
@@ -145,7 +146,7 @@ export function NotificacaoSino({ variant = 'standard' }) {
       </button>
 
       {aberto && (
-        <div className="absolute right-0 z-[60] mt-2 flex max-h-[28rem] w-[calc(100vw-2rem)] max-w-80 flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-lg">
+        <div className="fixed inset-x-4 top-[4.75rem] z-[60] flex max-h-[calc(100dvh-6rem)] w-auto flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-lg sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:max-h-[28rem] sm:w-[calc(100vw-2rem)] sm:max-w-80">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <span className="font-semibold text-verde-escuro">Notificações</span>
             {naoLidas > 0 && (

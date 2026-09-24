@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom"; // <-- ADICIONADO useNavigate
+import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { apiRequest } from "../services/api";
 import { MediaAvaliacao } from "../components/MediaAvaliacao";
 import { GaleriaFotos } from "../components/GaleriaFotos";
 import { PainelAvaliacoes } from "../components/PainelAvaliacoes";
 import { CalendarioReserva, LegendaCalendario } from "../components/CalendarioReserva";
+import { CampoHorario } from "../components/CampoHorario";
 import { ModalSolicitacao } from "../components/ModalSolicitacao";
 import { chaveDaApi, chaveDoDia, diasDoPeriodo, diasOcupados as calcularDiasOcupados, formatarChave } from "../utils/datasReserva";
 
@@ -65,7 +66,8 @@ import { buscarCategoriaPorValor } from "../constants/categorias";
 
 export function DetalhesProduto() {
   const { id } = useParams();
-  const navigate = useNavigate(); // <-- INICIALIZADO useNavigate
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const [anuncio, setAnuncio] = useState(null);
   const [carregando, setCarregando] = useState(true);
@@ -82,7 +84,11 @@ export function DetalhesProduto() {
   const [avaliacoesLocador, setAvaliacoesLocador] = useState(null);
   const [ocupacoes, setOcupacoes] = useState([]);
   const [calendarioAberto, setCalendarioAberto] = useState(false);
+  const [reservaDestacada, setReservaDestacada] = useState(false);
   const seletorDatasRef = useRef(null);
+  const cardReservaRef = useRef(null);
+  const reservaDiretaProcessadaRef = useRef(false);
+  const deveAbrirReserva = new URLSearchParams(location.search).get('reservar') === '1';
 
   // Dias que podem ser reservados: liberados pelo anunciante, sem reserva e a partir de hoje.
   const diasOcupados = useMemo(() => calcularDiasOcupados(ocupacoes), [ocupacoes]);
@@ -140,6 +146,23 @@ export function DetalhesProduto() {
     }
     buscarAnuncio();
   }, [id]);
+
+  useEffect(() => {
+    if (!anuncio || !deveAbrirReserva || reservaDiretaProcessadaRef.current) return;
+
+    const temporizadorRolagem = window.setTimeout(() => {
+      if (reservaDiretaProcessadaRef.current) return;
+      reservaDiretaProcessadaRef.current = true;
+      cardReservaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setReservaDestacada(true);
+      setCalendarioAberto(true);
+      seletorDatasRef.current?.querySelector('button')?.focus({ preventScroll: true });
+
+      window.setTimeout(() => setReservaDestacada(false), 2200);
+    }, 180);
+
+    return () => window.clearTimeout(temporizadorRolagem);
+  }, [anuncio, deveAbrirReserva]);
 
   if (carregando) {
     return (
@@ -294,7 +317,7 @@ export function DetalhesProduto() {
       
       <Header />
 
-      <main className="max-w-7xl mx-auto w-full flex-grow p-4 pt-6 sm:p-6 sm:pt-8">
+      <main className="mx-auto w-full max-w-7xl flex-grow p-3 pt-5 sm:p-6 sm:pt-8">
         
         <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-6">
           <span className="cursor-pointer hover:text-verde-agua" onClick={() => navigate('/')}>Início</span>
@@ -332,9 +355,9 @@ export function DetalhesProduto() {
 
         <GaleriaFotos key={id} fotos={anuncio.fotos} titulo={anuncio.titulo} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 relative">
+        <div className="relative grid grid-cols-1 gap-8 lg:grid-cols-3 lg:gap-12">
           
-          <div className="lg:col-span-2 space-y-12">
+          <div className="space-y-8 sm:space-y-12 lg:col-span-2">
             
             <section>
               <h2 className="text-xl font-bold text-grafite mb-4">Descrição</h2>
@@ -365,7 +388,7 @@ export function DetalhesProduto() {
             {/* Diretrizes e disponibilidade lado a lado. Entre lg e xl o card de reserva
                 estreita a coluna e o calendário não cabe na metade, então eles empilham. */}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-              <section className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+              <section className="rounded-2xl border border-gray-100 bg-gray-50 p-4 sm:p-6">
                 <h2 className="text-lg font-bold text-grafite mb-5">Diretrizes de Aluguel</h2>
                 <ul className="space-y-5">
                   <ItemDiretriz icone={LuMapPin} titulo="Retirada e devolução">
@@ -385,7 +408,7 @@ export function DetalhesProduto() {
                 </ul>
               </section>
 
-              <section className="flex flex-col bg-white p-6 rounded-2xl border border-gray-100">
+              <section className="flex flex-col rounded-2xl border border-gray-100 bg-white p-4 sm:p-6">
                 <div className="flex items-start justify-between gap-3">
                   <h2 className="text-lg font-bold text-grafite">Disponibilidade</h2>
                   {dataInicio && (
@@ -411,7 +434,7 @@ export function DetalhesProduto() {
             </div>
 
             <section className="border-t border-gray-200 pt-10">
-              <div className="flex items-center justify-between mb-6">
+              <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div
                   className="flex items-center gap-4 cursor-pointer group"
                   onClick={() => navigate(`/usuario/${anuncio.locador._id}`)}
@@ -440,7 +463,7 @@ export function DetalhesProduto() {
                 {/* BOTÃO ATUALIZADO AQUI */}
                 <button 
                   onClick={handleMensagemAnfitriao}
-                  className="flex items-center gap-2 border border-grafite text-grafite px-6 py-2.5 rounded-xl hover:bg-gray-50 transition-colors font-bold text-sm cursor-pointer"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-grafite px-4 py-2.5 text-sm font-bold text-grafite transition-colors hover:bg-gray-50 cursor-pointer sm:w-auto sm:px-6"
                 >
                   <LuMessageCircle size={18}/> Mensagem ao Anfitrião
                 </button>
@@ -464,7 +487,17 @@ export function DetalhesProduto() {
           </div>
 
           <div className="lg:col-span-1">
-            <div className="sticky top-28 bg-white border border-gray-100 rounded-3xl p-6 shadow-xl">
+            <div
+              id="reserva"
+              ref={cardReservaRef}
+              className={`rounded-3xl border bg-white p-4 shadow-xl transition-all duration-500 sm:p-6 lg:sticky lg:top-28 ${reservaDestacada ? 'border-verde-agua ring-4 ring-verde-agua/20 shadow-2xl shadow-verde-agua/20' : 'border-gray-100'}`}
+            >
+              {reservaDestacada && (
+                <div className="mb-4 flex items-center gap-2 rounded-xl bg-verde-agua/10 px-3 py-2 text-xs font-bold text-verde-escuro" role="status">
+                  <LuSparkles size={16} className="shrink-0" />
+                  Escolha as datas para continuar com a reserva.
+                </div>
+              )}
               
               <div className="flex items-end justify-between mb-6 border-b border-gray-100 pb-6">
                 <div>
@@ -551,22 +584,8 @@ export function DetalhesProduto() {
                   )}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="border border-gray-200 rounded-xl p-3 relative">
-                    <label className="block text-[9px] font-bold text-gray-400 uppercase mb-1">Horário de Retirada</label>
-                    <input 
-                      type="time" 
-                      value={horarioRetirada} 
-                      onChange={(e) => setHorarioRetirada(e.target.value)}
-                      className="w-full text-sm font-bold outline-none bg-transparent cursor-pointer" />
-                  </div>
-                  <div className="border border-gray-200 rounded-xl p-3 relative">
-                    <label className="block text-[9px] font-bold text-gray-400 uppercase mb-1">Horário de Devolução</label>
-                    <input 
-                      type="time" 
-                      value={horarioDevolucao} 
-                      onChange={(e) => setHorarioDevolucao(e.target.value)}
-                      className="w-full text-sm font-bold outline-none bg-transparent cursor-pointer" />
-                  </div>
+                  <CampoHorario label="Retirada" value={horarioRetirada} onChange={setHorarioRetirada} />
+                  <CampoHorario label="Devolução" value={horarioDevolucao} onChange={setHorarioDevolucao} />
                 </div>
               </div>
 
@@ -632,6 +651,7 @@ export function DetalhesProduto() {
         acaoErro={modalSolicitacao?.acao}
         onFechar={() => setModalSolicitacao(null)}
         onVerSolicitacoes={() => navigate('/painellocatario', { state: { abrirAba: 'solicitacoes' } })}
+        onContinuarNavegando={() => navigate('/busca')}
         onAcaoErro={() => navigate(modalSolicitacao.acao.rota)}
       />
     </div>

@@ -6,19 +6,19 @@ import logoCompleta from '../assets/logocompleta.png';
 const VARIANTES = {
   locatario: {
     nome: 'Locatário',
-    fundo: '#0750a5',
-    abaAtiva: 'bg-white/20 text-white',
+    fundo: '#031f3b',
+    abaAtiva: 'bg-azul-oceano text-white shadow-sm shadow-black/10',
     abaInativa: 'text-white/75 hover:bg-white/10 hover:text-white',
-    ponto: 'bg-[#8bc4ff]',
-    avatar: 'bg-white text-azul-oceano',
+    ponto: 'bg-azul-oceano shadow-[0_0_0_3px_rgba(0,115,243,0.18)]',
+    avatar: 'bg-azul-oceano text-white',
   },
   locador: {
     nome: 'Locador',
-    fundo: '#087a3a',
-    abaAtiva: 'bg-white/20 text-white',
-    abaInativa: 'text-white/80 hover:bg-white/10 hover:text-white',
-    ponto: 'bg-[#a4f6b7]',
-    avatar: 'bg-white text-verde-escuro',
+    fundo: '#031f3b',
+    abaAtiva: 'bg-verde-agua text-[#031f3b] shadow-sm shadow-black/10',
+    abaInativa: 'text-white/75 hover:bg-white/10 hover:text-white',
+    ponto: 'bg-verde-agua shadow-[0_0_0_3px_rgba(46,195,77,0.16)]',
+    avatar: 'bg-verde-agua text-[#031f3b]',
   },
 };
 
@@ -41,7 +41,7 @@ export function DashboardHeader({
       className="sticky top-0 z-50 text-white shadow-[0_10px_24px_rgba(3,45,84,0.16)]"
       style={{ backgroundColor: estilo.fundo }}
     >
-      <div className="flex min-h-[5.25rem] w-full items-center gap-2 px-3 sm:gap-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-[5.25rem] w-full max-w-[1920px] flex-wrap items-center justify-between gap-x-2 gap-y-1.5 px-3 py-2 sm:gap-x-4 sm:px-6 lg:flex-nowrap lg:justify-start lg:px-8 lg:py-0 2xl:px-12">
         <button
           type="button"
           onClick={onInicio}
@@ -59,7 +59,7 @@ export function DashboardHeader({
           <span className={`h-2 w-2 rounded-full ${estilo.ponto}`} aria-hidden="true" />
         </div>
 
-        <nav className="flex h-[5.25rem] min-w-0 flex-1 items-center gap-0 overflow-x-auto overscroll-x-contain [scrollbar-width:none]" aria-label={`Navegação do painel ${estilo.nome.toLowerCase()}`}>
+        <nav className="order-last flex h-11 w-full min-w-0 flex-none items-center gap-1.5 overflow-x-auto overscroll-x-contain px-0.5 [scrollbar-width:none] sm:gap-2 lg:order-none lg:h-[5.25rem] lg:w-auto lg:flex-1" aria-label={`Navegação do painel ${estilo.nome.toLowerCase()}`}>
           {menuItems.map((item) => {
             const isActive = activeTab === item.id;
             const Icon = item.icon;

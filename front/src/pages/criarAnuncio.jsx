@@ -1,17 +1,110 @@
 import { useState, useRef, useEffect } from 'react'
 import { DayPicker } from 'react-day-picker'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { LuCheck, LuFilePenLine, LuPencil, LuX } from 'react-icons/lu'
 import 'react-day-picker/dist/style.css'
 import { apiRequest } from '../services/api'
 import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
 import { SeletorLocalizacao } from '../components/SeletorLocalizao'
+import { CampoHorario } from '../components/CampoHorario'
 import { CATEGORIAS as categoriasDisponiveis, ESPECIFICACOES_SUGERIDAS as especificacoesSugeridas } from '../constants/categorias'
+
+function BotaoEditarResumo({ onClick, label }) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            title={label}
+            aria-label={label}
+            className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition-colors hover:border-azul-oceano hover:text-azul-oceano"
+        >
+            <LuPencil size={14} />
+        </button>
+    )
+}
+
+function ModalResultadoAnuncio({ resultado, onFechar, onVerAnuncios, onVerAnuncio }) {
+    if (!resultado) return null
+    const carregando = resultado.estado === 'carregando'
+    const publicado = resultado.tipo === 'publicado'
+
+    return (
+        <div
+            className="modal-solicitacao-fundo fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4"
+            onClick={() => { if (!carregando) onFechar() }}
+        >
+            <div
+                role="dialog"
+                aria-modal="true"
+                aria-live="polite"
+                className="modal-solicitacao-caixa w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-xl sm:p-8"
+                onClick={(evento) => evento.stopPropagation()}
+            >
+                {carregando && (
+                    <>
+                        <div className="modal-solicitacao-spin mx-auto mb-5 h-16 w-16 rounded-full border-4 border-gray-200 border-t-verde-agua" />
+                        <h2 className="text-lg font-bold text-grafite">
+                            {publicado ? 'Publicando seu anúncio...' : 'Salvando seu rascunho...'}
+                        </h2>
+                        <p className="mt-1 text-sm text-gray-500">Estamos enviando as informações e fotos.</p>
+                    </>
+                )}
+
+                {resultado.estado === 'sucesso' && (
+                    <>
+                        <span className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-verde-agua/10 text-verde-agua">
+                            {publicado ? <LuCheck size={34} strokeWidth={3} /> : <LuFilePenLine size={30} />}
+                        </span>
+                        <h2 className="text-xl font-bold text-grafite">
+                            {publicado ? 'Anúncio publicado!' : 'Rascunho salvo!'}
+                        </h2>
+                        <p className="mt-2 text-sm text-gray-500">
+                            {publicado
+                                ? 'Seu item já está disponível para aparecer nas buscas e receber solicitações.'
+                                : 'Suas alterações foram guardadas. Você pode continuar editando agora ou voltar depois pelo painel.'}
+                        </p>
+                        <div className="mt-6 flex flex-col gap-2">
+                            {publicado && resultado.anuncioId && (
+                                <button type="button" onClick={onVerAnuncio} className="w-full rounded-xl bg-grafite py-3 text-sm font-bold text-white hover:bg-black">
+                                    Ver anúncio publicado
+                                </button>
+                            )}
+                            <button type="button" onClick={onVerAnuncios} className={`w-full rounded-xl py-3 text-sm font-bold ${publicado ? 'text-gray-600 hover:bg-gray-100' : 'bg-grafite text-white hover:bg-black'}`}>
+                                Ir para meus anúncios
+                            </button>
+                            {!publicado && (
+                                <button type="button" onClick={onFechar} className="w-full rounded-xl py-3 text-sm font-bold text-gray-500 hover:bg-gray-100">
+                                    Continuar editando
+                                </button>
+                            )}
+                        </div>
+                    </>
+                )}
+
+                {resultado.estado === 'erro' && (
+                    <>
+                        <span className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-red-50 text-red-500">
+                            <LuX size={32} strokeWidth={2.5} />
+                        </span>
+                        <h2 className="text-xl font-bold text-grafite">Não foi possível salvar</h2>
+                        <p className="mt-2 text-sm text-gray-500">{resultado.mensagem}</p>
+                        <button type="button" onClick={onFechar} className="mt-6 w-full rounded-xl bg-grafite py-3 text-sm font-bold text-white hover:bg-black">
+                            Voltar e corrigir
+                        </button>
+                    </>
+                )}
+            </div>
+        </div>
+    )
+}
 
 function CriarAnuncio ()
 {
     const navigate = useNavigate()
+    const location = useLocation()
     const usuarioLogado = JSON.parse(localStorage.getItem('dadosUsuario'))
+    const anuncioInicial = location.state?.anuncioParaEditar || null
 
     const [statusVerificacao, setStatusVerificacao] = useState(null)
     const [carregandoVerificacao, setCarregandoVerificacao] = useState(true)
@@ -28,17 +121,19 @@ function CriarAnuncio ()
             .finally(() => setCarregandoVerificacao(false))
     }, [])
 
-    const [step, setStep] = useState(1)
+    const [step, setStep] = useState(location.state?.step || (anuncioInicial ? 7 : 1))
+    const [editandoDoResumo, setEditandoDoResumo] = useState(false)
+    const [anuncioId, setAnuncioId] = useState(anuncioInicial?._id || null)
     const steps = ['Detalhes', 'Especificações', 'Fotos', 'Localização', 'Disponibilidade', 'Preços', 'Resumo']
 
-    const [titulo, setTitulo] = useState("") 
-    const [descricao, setDescricao] = useState("")
-    const [categoria, setCategoria] = useState("")
+    const [titulo, setTitulo] = useState(anuncioInicial?.titulo || "")
+    const [descricao, setDescricao] = useState(anuncioInicial?.descricao || "")
+    const [categoria, setCategoria] = useState(anuncioInicial?.categoria || "")
 
-    const [subcategorias, setSubcategorias] = useState([])
+    const [subcategorias, setSubcategorias] = useState(anuncioInicial?.subcategorias || [])
     const [novaSubcategoria, setNovaSubcategoria] = useState("")
 
-    const [especificacoes, setEspecificacoes] = useState([])
+    const [especificacoes, setEspecificacoes] = useState(anuncioInicial?.especificacoes || [])
 
     useEffect(() => {
         if (!categoria) return
@@ -56,7 +151,7 @@ function CriarAnuncio ()
     }, [categoria])
 
     const inputFotoRef = useRef(null)
-    const [fotos, setFotos] = useState([])
+    const [fotos, setFotos] = useState(anuncioInicial?.fotos || [])
     
     const [endereco, setEndereco] = useState({
         cep: "",
@@ -68,7 +163,8 @@ function CriarAnuncio ()
         cidade: "",
         estado: "",
         latitude: null,
-        longitude: null
+        longitude: null,
+        ...(anuncioInicial?.endereco || {})
     })
 
     const [buscandoCoordenadas, setBuscandoCoordenadas] = useState(false)
@@ -121,17 +217,22 @@ function CriarAnuncio ()
 
     const estados = ['SELECIONE','AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO']
     
-    const [disponivel, setDisponivel] = useState([])
+    const [disponivel, setDisponivel] = useState(
+        (anuncioInicial?.disponivel || []).map((data) => new Date(data))
+    )
 
     const [precos, setPrecos] = useState({
         precoPorDia: '',
         caucao: '',
         exigirCaucao: false,
         horarioRetirada: '09:00',
-        horarioDevolucao: '17:00'
+        horarioDevolucao: '17:00',
+        ...(anuncioInicial?.precos || {})
     })
 
     const [mensagem, setMensagem] = useState(null)
+    const [resultadoSalvamento, setResultadoSalvamento] = useState(null)
+    const [salvando, setSalvando] = useState(false)
 
     function adicionarSubcategoria()
     {
@@ -167,6 +268,35 @@ function CriarAnuncio ()
         setEspecificacoes(especificacoes.filter((_, i) => i !== index))
     }
 
+    function concluirEtapa(proximoStep)
+    {
+        setMensagem(null)
+        if (editandoDoResumo) {
+            setEditandoDoResumo(false)
+            setStep(7)
+            return
+        }
+        setStep(proximoStep)
+    }
+
+    function editarEtapa(stepAlvo)
+    {
+        setMensagem(null)
+        setEditandoDoResumo(true)
+        setStep(stepAlvo)
+    }
+
+    function voltarEtapa()
+    {
+        setMensagem(null)
+        if (editandoDoResumo) {
+            setEditandoDoResumo(false)
+            setStep(7)
+            return
+        }
+        setStep((atual) => Math.max(1, atual - 1))
+    }
+
     function handleDetalhesSubmit (e)
     {
         e.preventDefault()
@@ -174,7 +304,7 @@ function CriarAnuncio ()
             setMensagem({ tipo: 'erro', texto: 'Preencha um título, uma descrição com pelo menos 20 caracteres e uma categoria.' })
             return
         }
-        setStep(2)
+        concluirEtapa(2)
 
         console.log('Dados do formulário:')
         console.log('Título:', titulo)
@@ -190,7 +320,7 @@ function CriarAnuncio ()
             setMensagem({ tipo: 'erro', texto: 'Preencha o nome da especificação ou remova a linha incompleta.' })
             return
         }
-        setStep(3)
+        concluirEtapa(3)
 
         console.log('Especificações:', especificacoes)
     }
@@ -202,7 +332,7 @@ function CriarAnuncio ()
             setMensagem({ tipo: 'erro', texto: 'Adicione pelo menos 3 fotos do item antes de continuar.' })
             return
         }
-        setStep(4)
+        concluirEtapa(4)
 
         console.log('Fotos:', fotos)
     }
@@ -215,7 +345,7 @@ function CriarAnuncio ()
             setMensagem({ tipo: 'erro', texto: 'Preencha todos os campos obrigatórios da localização.' })
             return
         }
-        setStep(5)
+        concluirEtapa(5)
 
         console.log('Endereço:', endereco)
     }
@@ -226,7 +356,7 @@ function CriarAnuncio ()
             setMensagem({ tipo: 'erro', texto: 'Selecione pelo menos um dia disponível.' })
             return
         }
-        setStep(6)
+        concluirEtapa(6)
 
         console.log('Disponibilidade:', disponivel)
     }
@@ -240,17 +370,19 @@ function CriarAnuncio ()
             setMensagem({ tipo: 'erro', texto: 'Informe um preço diário válido e uma caução não negativa. Se exigir caução, ela deve ser maior que zero.' })
             return
         }
-        setStep(7)
+        concluirEtapa(7)
 
         console.log('Preços e Condições:', precos)
     }
 
     async function handleUploadFotos()
     {
-        if (fotos.length === 0) return []
+        const urlsExistentes = fotos.filter((foto) => typeof foto === 'string')
+        const arquivosNovos = fotos.filter((foto) => foto instanceof File)
+        if (arquivosNovos.length === 0) return urlsExistentes
 
         const formData = new FormData()
-        fotos.forEach(foto => {
+        arquivosNovos.forEach(foto => {
             formData.append('fotos', foto)
         })
 
@@ -259,82 +391,66 @@ function CriarAnuncio ()
             body: formData
         })
 
-        return dados.urls
+        return [...urlsExistentes, ...dados.urls]
     }
 
-    async function handlePublicar()
+    function montarDadosAnuncio(urlsFotos, status)
     {
-        if (fotos.length < 3 || fotos.length > 6) {
+        return {
+            titulo,
+            descricao,
+            categoria,
+            subcategorias,
+            especificacoes: especificacoes.filter(e => e.chave.trim() !== '').map(e => ({
+                chave: e.chave.trim(),
+                valor: e.valor.trim()
+            })),
+            fotos: urlsFotos,
+            endereco,
+            disponivel,
+            precos,
+            status,
+            locador: usuarioLogado.id
+        }
+    }
+
+    async function salvarAnuncio(status)
+    {
+        if (status === 'publicado' && (fotos.length < 3 || fotos.length > 6)) {
             setMensagem({ tipo: 'erro', texto: 'Adicione de 3 a 6 fotos do item para publicar.' })
             setStep(3)
             return
         }
+
+        setSalvando(true)
+        setResultadoSalvamento({ estado: 'carregando', tipo: status })
         try {
             const urlsFotos = await handleUploadFotos()
-
-            await apiRequest('/api/anuncios', {
-                method: 'POST',
-                body: {
-                    titulo,
-                    descricao,
-                    categoria,
-                    subcategorias,
-                    especificacoes: especificacoes.filter(e => e.chave.trim() !== '').map(e => ({
-                        chave: e.chave.trim(),
-                        valor: e.valor.trim()
-                    })),
-                    fotos: urlsFotos,
-                    endereco,
-                    disponivel,
-                    precos,
-                    status: 'publicado',
-                    locador: usuarioLogado.id
-                }
-            });
-
-        setMensagem({ tipo: 'sucesso', texto: 'Anúncio publicado com sucesso!' });
-
-        setTimeout(() => {
-            navigate('/painelLocador');
-        }, 1000);
+            const resposta = await apiRequest(anuncioId ? `/api/anuncios/${anuncioId}` : '/api/anuncios', {
+                method: anuncioId ? 'PUT' : 'POST',
+                body: montarDadosAnuncio(urlsFotos, status)
+            })
+            const idSalvo = resposta.anuncio?._id || anuncioId
+            setAnuncioId(idSalvo)
+            setFotos(urlsFotos)
+            setMensagem(null)
+            setResultadoSalvamento({ estado: 'sucesso', tipo: status, anuncioId: idSalvo })
         } catch (error) {
             setMensagem({ tipo: 'erro', texto: error.message });
+            setResultadoSalvamento({ estado: 'erro', tipo: status, mensagem: error.message })
+        } finally {
+            setSalvando(false)
         }
     }
 
-    async function handleRascunho()
+    function handlePublicar()
     {
-        try {
-            const urlsFotos = await handleUploadFotos()
+        salvarAnuncio('publicado')
+    }
 
-            await apiRequest('/api/anuncios', {
-                method: 'POST',
-                body: {
-                    titulo,
-                    descricao,
-                    categoria,
-                    subcategorias,
-                    especificacoes: especificacoes.filter(e => e.chave.trim() !== '').map(e => ({
-                        chave: e.chave.trim(),
-                        valor: e.valor.trim()
-                    })),
-                    fotos: urlsFotos,
-                    endereco,
-                    disponivel,
-                    precos,
-                    status: 'rascunho',
-                    locador: usuarioLogado.id
-                }
-            });
-
-            setMensagem({ tipo: 'sucesso', texto: 'Anúncio salvo como rascunho!' });
-
-            setTimeout(() => {
-                navigate('/painelLocador');
-            }, 1000);
-        } catch (error) {
-            setMensagem({ tipo: 'erro', texto: error.message });
-        }
+    function handleRascunho()
+    {
+        salvarAnuncio('rascunho')
     }
     
     function removerFoto(index)
@@ -385,16 +501,16 @@ function CriarAnuncio ()
     return (
         <div className="page-shell min-h-screen flex flex-col">
             <Header />
-            <div className={`mx-auto px-6 w-full flex-1 pt-10 pb-16 transition-all ${step === 7 ? 'max-w-6xl' : 'max-w-4xl'}`}>
+            <div className={`mx-auto w-full flex-1 px-3 pb-12 pt-6 transition-all sm:px-6 sm:pb-16 sm:pt-10 ${step === 7 ? 'max-w-6xl' : 'max-w-4xl'}`}>
 
-                <div className='flex items-center justify-center mb-4'>
+                <div className='-mx-3 mb-4 flex items-center justify-start overflow-x-auto px-3 pb-2 [scrollbar-width:none] sm:mx-0 sm:justify-center sm:px-0'>
                     {steps.map((nome, index) => {
                         const complete = index + 1 < step
                         const active = index + 1 === step
 
                         return (
                             <div key={index} className='flex items-start'>
-                                <div className='flex flex-col items-center min-w-16'>
+                                <div className='flex min-w-14 flex-col items-center sm:min-w-16'>
                                 
                                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold transition-all ${active ? 'bg-verde-agua' : complete ? 'bg-grafite' : 'bg-gray-200'}`}>
                                         {index + 1}
@@ -405,7 +521,7 @@ function CriarAnuncio ()
                                     </span>
                                 </div>
 
-                                {index < steps.length - 1 && <div className={`w-12 h-0.5 mt-4 transition-all ${complete ? 'bg-grafite' : 'bg-gray-200'}`}></div>}
+                                {index < steps.length - 1 && <div className={`mt-4 h-0.5 w-6 transition-all sm:w-12 ${complete ? 'bg-grafite' : 'bg-gray-200'}`}></div>}
                             </div>
                         )
                     })}
@@ -421,9 +537,16 @@ function CriarAnuncio ()
                         {mensagem.texto}
                     </div>
                 )}
+
+                {editandoDoResumo && step !== 7 && (
+                    <div className="mt-4 flex flex-col gap-3 rounded-xl border border-azul-oceano/20 bg-azul-oceano/5 px-4 py-3 text-sm text-azul-oceano sm:flex-row sm:items-center sm:justify-between">
+                        <span className="font-semibold">Você está ajustando uma parte do rascunho. Ao avançar, voltará ao resumo.</span>
+                        <button type="button" onClick={voltarEtapa} className="shrink-0 font-bold underline underline-offset-2">Voltar ao resumo</button>
+                    </div>
+                )}
                     
                 {step === 1 && 
-                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6"> 
+                    <div className="mt-6 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm sm:p-8">
                         <div className='mb-6'>
                             <h2 className = 'text-xl font-bold text-grafite'>Detalhes do Anúncio</h2> 
                             <p className='text-gray-400 text-sm mt-1'>Conte para os locatários o que você está oferecendo</p>
@@ -516,7 +639,7 @@ function CriarAnuncio ()
                     </div>
                 }
                 {step === 2 &&
-                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
+                    <div className="mt-6 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm sm:p-8">
                         <div className='mb-6'>
                             <h2 className='text-xl font-bold text-grafite'>Especificações do Item</h2>
                             <p className='text-gray-400 text-sm mt-1'>Adicione detalhes técnicos que ajudam o locatário a entender o item (voltagem, marca, tamanho, etc.)</p>
@@ -564,15 +687,15 @@ function CriarAnuncio ()
                                 + Adicionar especificação
                             </button>
 
-                            <div className='flex justify-between mt-8'>
-                                <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
+                            <div className='mt-8 flex flex-col-reverse gap-2 sm:flex-row sm:justify-between'>
+                                <button type="button" onClick={voltarEtapa} className='btn-back'>↩ Voltar</button>
                                 <button type='submit' className='btn-next'>Próximo</button>
                             </div>
                         </form>
                     </div>
                 }
                 {step === 3 && 
-                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
+                    <div className="mt-6 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm sm:p-8">
                         <div className='mb-6'>
                             <h2 className = 'text-xl font-bold text-grafite'>Fotos do Anúncio</h2>
                             <p className='text-gray-500 text-sm mt-1'>Adicione de 3 a 6 fotos: mostre o item inteiro, outro ângulo e os detalhes.</p>
@@ -584,7 +707,7 @@ function CriarAnuncio ()
                             <input 
                                 type='file' 
                                 multiple
-                                accept="image/jpeg,image/png"
+                                accept="image/jpeg,image/png,image/webp"
                                 ref={inputFotoRef}
                                 className='hidden'
                                 onChange={(e) => {
@@ -594,8 +717,8 @@ function CriarAnuncio ()
                                         setMensagem({ tipo: 'erro', texto: 'Você pode adicionar no máximo 6 fotos.' })
                                         return
                                     }
-                                    if (novas.some(foto => !['image/jpeg', 'image/png'].includes(foto.type) || foto.size > 5 * 1024 * 1024)) {
-                                        setMensagem({ tipo: 'erro', texto: 'Use fotos JPG ou PNG de até 5 MB cada.' })
+                                    if (novas.some(foto => !['image/jpeg', 'image/png', 'image/webp'].includes(foto.type) || foto.size > 5 * 1024 * 1024)) {
+                                        setMensagem({ tipo: 'erro', texto: 'Use fotos JPG, PNG ou WebP de até 5 MB cada.' })
                                         return
                                     }
                                     setMensagem(null)
@@ -610,7 +733,7 @@ function CriarAnuncio ()
                                         {fotos.map((foto, indice) => (
                                             <div key={indice} className="relative">
                                                 <img 
-                                                    src={URL.createObjectURL(foto)} 
+                                                    src={typeof foto === 'string' ? foto : URL.createObjectURL(foto)}
                                                     className="w-full h-32 object-cover rounded-xl"
                                                 />
                                                 <button 
@@ -661,14 +784,14 @@ function CriarAnuncio ()
                             </div>
                             
                             <div className = 'flex justify-between mt-6'>
-                                <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
+                                <button type="button" onClick={voltarEtapa} className='btn-back'>↩ Voltar</button>
                                 <button type='submit' className='btn-next'>Próximo</button>
                             </div>
                         </form> 
                     </div>
                 }
                 {step === 4 &&
-                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
+                    <div className="mt-6 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm sm:p-8">
                         <div className='mb-6'>
                             <h2 className = 'text-xl font-bold text-grafite'>Localização</h2>
                             <p className='text-gray-400 text-sm mt-1'>Onde o locatário poderá retirar o item</p>
@@ -798,14 +921,14 @@ function CriarAnuncio ()
                             </div>
 
                             <div className = 'flex justify-between mt-6'>
-                                <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
+                                <button type="button" onClick={voltarEtapa} className='btn-back'>↩ Voltar</button>
                                 <button type='submit' className='btn-next'>Próximo</button>
                             </div>    
                         </form>
                     </div>
                 }
                 {step === 5 &&
-                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
+                    <div className="mt-6 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm sm:p-8">
                         <div className='mb-6'>
                             <h2 className = 'text-xl font-bold text-grafite'>Disponibilidade</h2>
                             <p className='text-gray-400 text-sm mt-1'>Selecione os dias em que o item estará disponível</p>
@@ -830,13 +953,13 @@ function CriarAnuncio ()
                         </p>
 
                         <div className = 'flex justify-between mt-6'>
-                            <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
+                            <button type="button" onClick={voltarEtapa} className='btn-back'>↩ Voltar</button>
                             <button onClick={handleDisponibilidadeSubmit} className='btn-next'>Próximo</button>                    
                         </div>
                     </div>
                 }
                 {step === 6 &&
-                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
+                    <div className="mt-6 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm sm:p-8">
                         <form onSubmit={handlePrecosSubmit}>
                             <div className='mb-6'>
                                 <h2 className='text-xl font-bold text-grafite'>Preços e Condições</h2>
@@ -881,36 +1004,32 @@ function CriarAnuncio ()
                                 <h3 className='text-sm font-bold text-grafite uppercase tracking-wide mb-4'>Regras de Reserva</h3>
                                 <div className="flex flex-col gap-4 sm:flex-row">
                                     <div className="flex-1">
-                                        <label className="label-field">Horário de retirada</label>
-                                        <input
-                                            type='time'
-                                            className='input-default'
+                                        <CampoHorario
+                                            label="Horário de retirada"
                                             value={precos.horarioRetirada}
-                                            onChange={(e) => setPrecos({...precos, horarioRetirada: e.target.value})}
+                                            onChange={(horarioRetirada) => setPrecos({...precos, horarioRetirada})}
                                         />
                                     </div>
 
                                     <div className="flex-1">
-                                        <label className="label-field">Horário de devolução</label>
-                                        <input
-                                            type='time'
-                                            className='input-default'
+                                        <CampoHorario
+                                            label="Horário de devolução"
                                             value={precos.horarioDevolucao}
-                                            onChange={(e) => setPrecos({...precos, horarioDevolucao: e.target.value})}
+                                            onChange={(horarioDevolucao) => setPrecos({...precos, horarioDevolucao})}
                                         />
                                     </div>
                                 </div>
                             </div>
 
                             <div className='flex justify-between mt-6'>
-                                <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
+                                <button type="button" onClick={voltarEtapa} className='btn-back'>↩ Voltar</button>
                                 <button type='submit' className='btn-next'>Concluir</button>
                             </div>
                         </form>
                     </div>
                 }
                 {step === 7 &&
-                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
+                    <div className="mt-6 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm sm:p-8">
                         <div className='mb-6'>
                             <h2 className='text-xl font-bold text-grafite'>Resumo do Anúncio</h2>
                             <p className='text-gray-400 text-sm mt-1'>Confira tudo antes de publicar</p>
@@ -919,10 +1038,11 @@ function CriarAnuncio ()
                         <div className="flex flex-col lg:flex-row gap-4 mb-6">
 
                             {/* Card de preview: foto + informações principais */}
-                            <div className="rounded-2xl border border-gray-100 overflow-hidden lg:w-[38%] shrink-0 flex flex-col">
+                            <div className="relative flex shrink-0 flex-col overflow-hidden rounded-2xl border border-gray-100 lg:w-[38%]">
                                 <div className="h-40 bg-gray-100 relative shrink-0">
+                                    <BotaoEditarResumo onClick={() => editarEtapa(3)} label="Editar fotos" />
                                     {fotos.length > 0 ? (
-                                        <img src={URL.createObjectURL(fotos[0])} className="w-full h-full object-cover" />
+                                        <img src={typeof fotos[0] === 'string' ? fotos[0] : URL.createObjectURL(fotos[0])} className="w-full h-full object-cover" />
                                     ) : (
                                         <div className="w-full h-full flex flex-col items-center justify-center text-gray-300">
                                             <span className="text-2xl mb-1">📷</span>
@@ -936,9 +1056,10 @@ function CriarAnuncio ()
                                     )}
                                 </div>
 
-                                <div className="p-5 flex-1">
+                                <div className="relative flex-1 p-5">
+                                    <BotaoEditarResumo onClick={() => editarEtapa(1)} label="Editar detalhes" />
                                     <div className="flex items-start justify-between gap-3 mb-1.5">
-                                        <h3 className="text-lg font-bold text-grafite truncate">
+                                        <h3 className="truncate pr-10 text-lg font-bold text-grafite">
                                             {titulo || <span className="text-gray-300 italic font-normal">Sem título</span>}
                                         </h3>
                                     </div>
@@ -961,10 +1082,11 @@ function CriarAnuncio ()
                             </div>
 
                             {/* Detalhes agrupados: grid 2x2 ao lado do preview, usando a largura extra */}
-                            <div className="grid grid-cols-2 gap-3 flex-1 content-start">
+                            <div className="grid flex-1 grid-cols-1 content-start gap-3 sm:grid-cols-2">
 
-                                <div className="bg-gray-50/70 rounded-xl p-4 border border-gray-100">
-                                    <h4 className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2">Especificações</h4>
+                                <div className="relative rounded-xl border border-gray-100 bg-gray-50/70 p-4">
+                                    <BotaoEditarResumo onClick={() => editarEtapa(2)} label="Editar especificações" />
+                                    <h4 className="mb-2 pr-9 text-[9px] font-bold uppercase tracking-widest text-gray-400">Especificações</h4>
                                     {especificacoes.filter(e => e.chave.trim()).length > 0 ? (
                                         <div className="flex flex-wrap gap-1">
                                             {especificacoes.filter(e => e.chave.trim()).map((e, i) => (
@@ -981,8 +1103,9 @@ function CriarAnuncio ()
                                     )}
                                 </div>
 
-                                <div className="bg-gray-50/70 rounded-xl p-4 border border-gray-100">
-                                    <h4 className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2">Localização</h4>
+                                <div className="relative rounded-xl border border-gray-100 bg-gray-50/70 p-4">
+                                    <BotaoEditarResumo onClick={() => editarEtapa(4)} label="Editar localização" />
+                                    <h4 className="mb-2 pr-9 text-[9px] font-bold uppercase tracking-widest text-gray-400">Localização</h4>
                                     {endereco.rua ? (
                                         <>
                                             <p className="text-xs font-semibold text-grafite truncate">{endereco.rua}, {endereco.numero}</p>
@@ -996,8 +1119,9 @@ function CriarAnuncio ()
                                     )}
                                 </div>
 
-                                <div className="bg-gray-50/70 rounded-xl p-4 border border-gray-100">
-                                    <h4 className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2">Disponibilidade</h4>
+                                <div className="relative rounded-xl border border-gray-100 bg-gray-50/70 p-4">
+                                    <BotaoEditarResumo onClick={() => editarEtapa(5)} label="Editar disponibilidade" />
+                                    <h4 className="mb-2 pr-9 text-[9px] font-bold uppercase tracking-widest text-gray-400">Disponibilidade</h4>
                                     {disponivel.length > 0 ? (
                                         <p className="text-xs font-semibold text-grafite">
                                             {disponivel.length} {disponivel.length === 1 ? 'dia selecionado' : 'dias selecionados'}
@@ -1007,8 +1131,9 @@ function CriarAnuncio ()
                                     )}
                                 </div>
 
-                                <div className="bg-gray-50/70 rounded-xl p-4 border border-gray-100">
-                                    <h4 className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2">Preço e Condições</h4>
+                                <div className="relative rounded-xl border border-gray-100 bg-gray-50/70 p-4">
+                                    <BotaoEditarResumo onClick={() => editarEtapa(6)} label="Editar preço e condições" />
+                                    <h4 className="mb-2 pr-9 text-[9px] font-bold uppercase tracking-widest text-gray-400">Preço e Condições</h4>
                                     <p className="text-xs font-semibold text-grafite">
                                         R$ {precos.precoPorDia || '0,00'} / dia
                                     </p>
@@ -1022,16 +1147,22 @@ function CriarAnuncio ()
 
                         </div>
 
-                        <div className="flex justify-between items-center">
-                            <button onClick={() => setStep(step - 1)} className='btn-back'>↩ Voltar</button>
-                            <div className="flex gap-4">
-                                <button onClick={handleRascunho} className='bg-transparent border-2 border-verde-agua text-verde-agua hover:text-verde-escuro hover:border-verde-escuro px-6 py-2 rounded-lg font-bold transition-all cursor-pointer uppercase tracking-widest'>Salvar como rascunho</button>
-                                <button onClick={handlePublicar} className='btn-next'>Publicar Anúncio</button>
+                        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <button type="button" onClick={voltarEtapa} className='btn-back'>↩ Voltar</button>
+                            <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
+                                <button type="button" disabled={salvando} onClick={handleRascunho} className='rounded-lg border-2 border-verde-agua bg-transparent px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-verde-agua transition-all hover:border-verde-escuro hover:text-verde-escuro disabled:cursor-wait disabled:opacity-60 sm:px-6'>Salvar como rascunho</button>
+                                <button type="button" disabled={salvando} onClick={handlePublicar} className='btn-next disabled:cursor-wait disabled:opacity-60'>Publicar Anúncio</button>
                             </div>
                         </div>
                     </div>
                 }
             </div>
+            <ModalResultadoAnuncio
+                resultado={resultadoSalvamento}
+                onFechar={() => setResultadoSalvamento(null)}
+                onVerAnuncios={() => navigate('/painelLocador', { state: { abrirAba: 'anuncios' } })}
+                onVerAnuncio={() => navigate(`/produto/${resultadoSalvamento?.anuncioId}`)}
+            />
             <Footer />
         </div>    
     )

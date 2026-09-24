@@ -34,7 +34,7 @@ export function ModalConfirmacao() {
         aria-modal="true"
         aria-labelledby="modal-confirmacao-titulo"
         aria-describedby="modal-confirmacao-mensagem"
-        className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl animate-in fade-in zoom-in-95"
+        className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl animate-in fade-in zoom-in-95 sm:p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start gap-3">
@@ -53,11 +53,11 @@ export function ModalConfirmacao() {
           </div>
         </div>
 
-        <div className="mt-6 flex justify-end gap-3">
+        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
           <button
             type="button"
             onClick={() => responder(false)}
-            className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 cursor-pointer"
+            className="rounded-lg px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 cursor-pointer sm:py-2"
           >
             {pedido.textoCancelar}
           </button>
@@ -65,7 +65,7 @@ export function ModalConfirmacao() {
             type="button"
             ref={botaoConfirmarRef}
             onClick={() => responder(true)}
-            className={`rounded-lg px-4 py-2 text-sm font-medium text-white cursor-pointer ${
+            className={`rounded-lg px-4 py-2.5 text-sm font-medium text-white cursor-pointer sm:py-2 ${
               ehPerigo ? 'bg-red-500 hover:bg-red-600' : 'bg-verde-escuro hover:bg-verde-escuro/90'
             }`}
           >

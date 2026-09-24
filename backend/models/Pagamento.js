@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const pagamentoSchema = new mongoose.Schema({
-  aluguel: { type: mongoose.Schema.Types.ObjectId, ref: 'Aluguel', required: true },
+  aluguel: { type: mongoose.Schema.Types.ObjectId, ref: 'Aluguel', required: true, unique: true, index: true },
   locatario: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario', required: true },
 
   valor: { type: Number, required: true },
@@ -9,7 +9,7 @@ const pagamentoSchema = new mongoose.Schema({
 
   status: {
     type: String,
-    enum: ['pendente', 'processando', 'confirmado', 'atrasado', 'falhou'],
+    enum: ['pendente', 'processando', 'confirmado', 'atrasado', 'falhou', 'cancelado', 'reembolsado', 'contestado'],
     default: 'pendente'
   },
 

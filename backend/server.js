@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const mongoose = require('mongoose');
 const connectDB = require('./config/db');
 const upload = require('./config/upload');
 const uploadVerificacao = require('./config/uploadVerificacao');
@@ -19,11 +20,14 @@ const Avaliacao = require('./models/Avaliacao');
 const Conversa = require('./models/Conversa');
 const Mensagem = require('./models/Mensagem');
 const Notificacao = require('./models/Notificacao');
+const Favorito = require('./models/Favorito');
 const app = express();
 const path = require('path');
 const { WebhookSignatureValidator } = require('mercadopago');
 const { ErroMercadoPago, criarOrder, buscarOrder } = require('./config/mercadopago');
 const OcupacaoDia = require('./models/OcupacaoDia');
+const { criarFiltroBusca, pontuarAnuncio } = require('./utils/busca');
+const { statusPagamentoDaOrder, aluguelPodeIniciar, pagamentoVencido } = require('./utils/pagamentos');
 
 const origensPermitidas = (process.env.FRONTEND_URL || 'http://localhost:5173')
   .split(',')
@@ -46,8 +50,18 @@ function processarUploadFotos(limite) {
   };
 }
 
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok', servico: 'lendloop-api' });
+app.get('/api/health', async (req, res) => {
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ status: 'indisponivel', servico: 'lendloop-api', banco: 'desconectado' });
+    }
+
+    await mongoose.connection.db.admin().ping();
+    return res.status(200).json({ status: 'ok', servico: 'lendloop-api', banco: 'conectado' });
+  } catch (erro) {
+    console.error('Erro no health check do banco:', erro.message);
+    return res.status(503).json({ status: 'indisponivel', servico: 'lendloop-api', banco: 'sem resposta' });
+  }
 });
 
 
@@ -83,12 +97,20 @@ function diasDoPeriodo(inicio, fim) {
   return dias;
 }
 
+class ErroHttp extends Error {
+  constructor(status, mensagem) {
+    super(mensagem);
+    this.statusHttp = status;
+  }
+}
+
 function usuarioPublico(usuario) {
   return {
     id: usuario._id,
     nome: usuario.nome,
     avatar: usuario.avatar,
     bio: usuario.bio,
+    localizacao: usuario.localizacao,
     createdAt: usuario.createdAt,
     verificacao: { status: usuario.verificacao?.status || 'nao_enviado' }
   };
@@ -99,6 +121,7 @@ function usuarioPublico(usuario) {
 async function removerDependenciasDeAnuncios(idsAnuncios) {
   if (!idsAnuncios.length) return;
   await OcupacaoDia.deleteMany({ anuncio: { $in: idsAnuncios } });
+  await Favorito.deleteMany({ anuncio: { $in: idsAnuncios } });
   await Conversa.updateMany({ anuncio: { $in: idsAnuncios } }, { $set: { anuncio: null } });
 }
 
@@ -127,18 +150,45 @@ app.put('/api/anuncios/:id', autenticacao, async (req, res) => {
       return res.status(403).json({ erro: 'Você não tem permissão para editar este anúncio.' });
     }
 
-    const { titulo, descricao, status, precos } = req.body;
+    const {
+      titulo, descricao, categoria, subcategorias, especificacoes,
+      fotos, endereco, disponivel, status, precos
+    } = req.body;
     if (status !== undefined && !['rascunho', 'publicado'].includes(status)) {
       return res.status(400).json({ erro: 'Status de anúncio inválido.' });
     }
 
-    if (status === 'publicado' && anuncioExistente.status !== 'publicado'
-      && new Set((anuncioExistente.fotos || []).filter((foto) => typeof foto === 'string' && foto.trim()).map((foto) => foto.trim())).size < 3) {
+    if (fotos !== undefined && (!Array.isArray(fotos) || fotos.length > 6
+      || fotos.some((foto) => typeof foto !== 'string' || !/^https?:\/\//i.test(foto.trim())))) {
+      return res.status(400).json({ erro: 'Envie até 6 fotos com URLs válidas.' });
+    }
+
+    const statusFinal = status ?? anuncioExistente.status;
+    const fotosFinais = fotos ?? anuncioExistente.fotos;
+    if (statusFinal === 'publicado'
+      && new Set((fotosFinais || []).filter((foto) => typeof foto === 'string' && foto.trim()).map((foto) => foto.trim())).size < 3) {
       return res.status(400).json({ erro: 'Adicione pelo menos 3 fotos do item para publicar o anúncio.' });
     }
+
+    const tituloFinal = titulo ?? anuncioExistente.titulo;
+    const descricaoFinal = descricao ?? anuncioExistente.descricao;
+    const categoriaFinal = categoria ?? anuncioExistente.categoria;
+    const enderecoFinal = endereco ?? anuncioExistente.endereco;
+    if (typeof tituloFinal !== 'string' || tituloFinal.trim().length < 3
+      || typeof descricaoFinal !== 'string' || descricaoFinal.trim().length < 20
+      || !categoriaFinal || !enderecoFinal) {
+      return res.status(400).json({ erro: 'Título, descrição, categoria e endereço válidos são obrigatórios.' });
+    }
+
     const camposAtualizados = {};
     if (titulo !== undefined) camposAtualizados.titulo = titulo;
     if (descricao !== undefined) camposAtualizados.descricao = descricao;
+    if (categoria !== undefined) camposAtualizados.categoria = categoria;
+    if (subcategorias !== undefined) camposAtualizados.subcategorias = subcategorias;
+    if (especificacoes !== undefined) camposAtualizados.especificacoes = especificacoes;
+    if (fotos !== undefined) camposAtualizados.fotos = fotos;
+    if (endereco !== undefined) camposAtualizados.endereco = endereco;
+    if (disponivel !== undefined) camposAtualizados.disponivel = disponivel;
     if (status !== undefined) camposAtualizados.status = status;
     if (precos !== undefined) {
       const precoPorDia = Number(precos.precoPorDia);
@@ -149,7 +199,10 @@ app.put('/api/anuncios/:id', autenticacao, async (req, res) => {
       camposAtualizados.precos = {
         ...anuncioExistente.precos.toObject(),
         precoPorDia,
-        caucao
+        caucao,
+        exigirCaucao: Boolean(precos.exigirCaucao),
+        horarioRetirada: precos.horarioRetirada || anuncioExistente.precos.horarioRetirada,
+        horarioDevolucao: precos.horarioDevolucao || anuncioExistente.precos.horarioDevolucao
       };
     }
 
@@ -217,7 +270,7 @@ app.get('/api/usuarios', autenticacao, async (req, res) => {
 app.get('/api/usuarios/:id', autenticacaoOpcional, async (req, res) => {
   try {
     const usuario = await Usuario.findById(req.params.id).select('-senha');
-    if (!usuario) {
+    if (!usuario || (usuario.ativo === false && req.usuarioId !== req.params.id)) {
       return res.status(404).json({ erro: 'Usuário não encontrado' });
     }
     if (req.usuarioId === req.params.id && usuario.ativo !== false) {
@@ -421,7 +474,7 @@ app.post('/api/redefinir-senha', async (req, res) => {
 });
 
 // --- Upload de Fotos ---
-app.post('/api/upload', autenticacao, upload.array('fotos', 6), async (req, res) => {
+app.post('/api/upload', autenticacao, processarUploadFotos(6), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ erro: 'Nenhuma foto enviada.' });
@@ -483,25 +536,43 @@ app.post('/api/anuncios', autenticacao, async (req, res) => {
 // Listar todos os anúncios (usado em ResultadosBusca)
 app.get('/api/anuncios', async (req, res) => {
   try {
-    const { busca, dataInicio, dataFim, categoria, precoMin, precoMax } = req.query;
+    const { busca, dataInicio, dataFim, categoria, precoMin, precoMax, cidade, pagina, limite, ordenacao } = req.query;
     const filtro = { status: 'publicado' };
 
-    if (busca) {
-      const termoSeguro = String(busca).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(termoSeguro, 'i');
-      filtro.$or = [
-        { titulo: regex },
-        { descricao: regex },
-        { subcategorias: regex },
-      ];
+    const inicioFiltro = dataInicio ? normalizarData(dataInicio) : null;
+    const fimFiltro = dataFim ? normalizarData(dataFim) : null;
+    if ((dataInicio && !inicioFiltro) || (dataFim && !fimFiltro)) {
+      return res.status(400).json({ erro: 'Informe datas válidas para a busca.' });
+    }
+    if (inicioFiltro && fimFiltro && fimFiltro <= inicioFiltro) {
+      return res.status(400).json({ erro: 'A data final deve ser posterior à data inicial.' });
     }
 
-    if (dataInicio || dataFim) {
+    const minimo = precoMin !== undefined && precoMin !== '' ? Number(precoMin) : null;
+    const maximo = precoMax !== undefined && precoMax !== '' ? Number(precoMax) : null;
+    if ((minimo !== null && (!Number.isFinite(minimo) || minimo < 0))
+      || (maximo !== null && (!Number.isFinite(maximo) || maximo < 0))) {
+      return res.status(400).json({ erro: 'Informe uma faixa de preço válida.' });
+    }
+    if (minimo !== null && maximo !== null && minimo > maximo) {
+      return res.status(400).json({ erro: 'O preço mínimo não pode ser maior que o preço máximo.' });
+    }
+
+    if (busca) {
+      Object.assign(filtro, criarFiltroBusca(busca));
+    }
+
+    if (cidade?.trim()) {
+      const cidadeSegura = cidade.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filtro['endereco.cidade'] = { $regex: cidadeSegura, $options: 'i' };
+    }
+
+    if (inicioFiltro || fimFiltro) {
       const condicaoData = {};
 
-      if (dataInicio) condicaoData.$gte = new Date(dataInicio);
-      if (dataFim) condicaoData.$lte = new Date(dataFim);
-      if (!dataInicio || !dataFim) {
+      if (inicioFiltro) condicaoData.$gte = inicioFiltro;
+      if (fimFiltro) condicaoData.$lte = fimFiltro;
+      if (!inicioFiltro || !fimFiltro) {
         filtro.disponivel = { $elemMatch: condicaoData };
       }
     }
@@ -513,10 +584,10 @@ app.get('/api/anuncios', async (req, res) => {
       }
     }
 
-    if (precoMin || precoMax) {
+    if (minimo !== null || maximo !== null) {
       filtro['precos.precoPorDia'] = {};
-      if (precoMin) filtro['precos.precoPorDia'].$gte = Number(precoMin);
-      if (precoMax) filtro['precos.precoPorDia'].$lte = Number(precoMax);
+      if (minimo !== null) filtro['precos.precoPorDia'].$gte = minimo;
+      if (maximo !== null) filtro['precos.precoPorDia'].$lte = maximo;
     }
 
     let anuncios = await Anuncio.find(filtro).populate('locador', 'nome avatar verificacao.status ativo');
@@ -524,19 +595,63 @@ app.get('/api/anuncios', async (req, res) => {
     // Anúncio cujo dono foi apagado ou desativado não pode aparecer na busca.
     // Sem este filtro o populate devolve locador: null e o anúncio continua listado.
     anuncios = anuncios.filter((anuncio) => anuncio.locador && anuncio.locador.ativo !== false);
-    if (dataInicio && dataFim) {
-      const inicio = normalizarData(dataInicio);
-      const fim = normalizarData(dataFim);
-      if (!inicio || !fim || fim <= inicio) {
-        return res.status(400).json({ erro: 'Informe um período de busca válido.' });
-      }
-
-      const diasSolicitados = diasDoPeriodo(inicio, fim);
+    if (busca) {
+      anuncios.sort((a, b) => pontuarAnuncio(b, busca) - pontuarAnuncio(a, busca));
+    }
+    if (inicioFiltro && fimFiltro) {
+      const diasSolicitados = diasDoPeriodo(inicioFiltro, fimFiltro);
       anuncios = anuncios.filter((anuncio) => {
         const diasDisponiveis = new Set((anuncio.disponivel || []).map((dia) => normalizarData(dia)?.toISOString().slice(0, 10)));
         return diasSolicitados.every((dia) => diasDisponiveis.has(dia));
       });
     }
+
+    const idsAnuncios = anuncios.map((anuncio) => anuncio._id);
+    const resumoAvaliacoes = idsAnuncios.length > 0
+      ? await Avaliacao.aggregate([
+        { $match: { anuncio: { $in: idsAnuncios } } },
+        { $lookup: { from: 'anuncios', localField: 'anuncio', foreignField: '_id', as: 'anuncioRelacionado' } },
+        { $unwind: '$anuncioRelacionado' },
+        { $match: { $expr: { $eq: ['$avaliado', '$anuncioRelacionado.locador'] } } },
+        { $group: { _id: '$anuncio', media: { $avg: '$nota' }, total: { $sum: 1 } } }
+      ])
+      : [];
+    const avaliacoesPorAnuncio = new Map(
+      resumoAvaliacoes.map((resumo) => [resumo._id.toString(), resumo])
+    );
+    anuncios = anuncios.map((anuncio) => {
+      const resumo = avaliacoesPorAnuncio.get(anuncio._id.toString());
+      return {
+        ...anuncio.toObject(),
+        avaliacao: resumo ? Number(resumo.media.toFixed(1)) : null,
+        totalAvaliacoes: resumo?.total || 0
+      };
+    });
+
+    if (ordenacao === 'menor-preco') {
+      anuncios.sort((a, b) => a.precos.precoPorDia - b.precos.precoPorDia);
+    } else if (ordenacao === 'maior-preco') {
+      anuncios.sort((a, b) => b.precos.precoPorDia - a.precos.precoPorDia);
+    } else if (ordenacao === 'melhor-avaliacao') {
+      anuncios.sort((a, b) => (b.avaliacao || 0) - (a.avaliacao || 0));
+    }
+
+    if (pagina !== undefined || limite !== undefined) {
+      const limitePorPagina = Math.min(24, Math.max(1, Number.parseInt(limite, 10) || 8));
+      const totalItens = anuncios.length;
+      const totalPaginas = Math.max(1, Math.ceil(totalItens / limitePorPagina));
+      const paginaAtual = Math.min(totalPaginas, Math.max(1, Number.parseInt(pagina, 10) || 1));
+      const inicio = (paginaAtual - 1) * limitePorPagina;
+
+      return res.status(200).json({
+        itens: anuncios.slice(inicio, inicio + limitePorPagina),
+        pagina: paginaAtual,
+        limite: limitePorPagina,
+        totalItens,
+        totalPaginas
+      });
+    }
+
     res.status(200).json(anuncios);
   } catch (erro) {
     res.status(500).json({ erro: 'Erro ao buscar anúncios' });
@@ -572,9 +687,14 @@ app.get('/api/anuncios/:id/ocupacao', async (req, res) => {
   }
 });
 
-app.get('/api/anuncios/locador/:locadorId', async (req, res) => {
+app.get('/api/anuncios/locador/:locadorId', autenticacaoOpcional, async (req, res) => {
   try {
-    const anuncios = await Anuncio.find({ locador: req.params.locadorId });
+    const ehProprioLocador = req.usuarioId === req.params.locadorId;
+    const filtro = {
+      locador: req.params.locadorId,
+      ...(ehProprioLocador ? {} : { status: 'publicado' })
+    };
+    const anuncios = await Anuncio.find(filtro).sort({ createdAt: -1 });
     res.status(200).json(anuncios);
   } catch (erro) {
     res.status(500).json({ erro: 'Erro ao buscar anúncios do locador' });
@@ -807,7 +927,7 @@ app.post('/api/alugueis/:id/vistoria/:momento', autenticacao, processarUploadFot
     if (ehRetirada && aluguel.status !== 'pendente') {
       return res.status(400).json({ erro: 'A vistoria de retirada só pode ser enviada para uma solicitação pendente.' });
     }
-    if (!ehRetirada && !['aceito', 'andamento'].includes(aluguel.status)) {
+    if (!ehRetirada && aluguel.status !== 'andamento') {
       return res.status(400).json({ erro: 'A vistoria de devolução só pode ser enviada durante o aluguel.' });
     }
 
@@ -855,6 +975,9 @@ app.patch('/api/alugueis/:id/status', autenticacao, async (req, res) => {
       if (aluguel.locatario.toString() !== req.usuarioId) {
         return res.status(403).json({ erro: 'Somente o locatário pode solicitar a devolução.' });
       }
+      if (aluguel.status !== 'andamento') {
+        return res.status(400).json({ erro: 'A devolução só pode ser solicitada depois que o aluguel começar.' });
+      }
       if ((aluguel.vistoriaDevolucao?.fotos || []).length < 3) {
         return res.status(400).json({ erro: 'Registre ao menos 3 fotos da devolução antes de solicitar confirmação.' });
       }
@@ -866,6 +989,12 @@ app.patch('/api/alugueis/:id/status', autenticacao, async (req, res) => {
     // Só pode concluir se estiver em andamento ou aguardando confirmação.
     if (status === 'concluido' && aluguel.status !== 'andamento' && aluguel.status !== 'aguardando_confirmacao') {
       return res.status(400).json({ erro: 'Só é possível concluir um aluguel que está em andamento ou aguardando confirmação.' });
+    }
+    if (status === 'concluido' && normalizarData(new Date()) < normalizarData(aluguel.dataFim)) {
+      return res.status(400).json({ erro: 'Este aluguel só pode ser concluído na data prevista de devolução.' });
+    }
+    if (status === 'andamento' && normalizarData(new Date()) < normalizarData(aluguel.dataInicio)) {
+      return res.status(400).json({ erro: 'Este aluguel ainda não chegou à data de início.' });
     }
 
     // Só avança para andamento/concluído com pagamento confirmado.
@@ -879,7 +1008,7 @@ app.patch('/api/alugueis/:id/status', autenticacao, async (req, res) => {
 
     const transicoes = {
       pendente: { aceito: 'locador', recusado: 'locador', cancelado: 'locatario' },
-      aceito: { andamento: 'locador', aguardando_confirmacao: 'locatario', cancelado: 'locatario' },
+      aceito: { andamento: 'locador', cancelado: 'locatario' },
       andamento: { aguardando_confirmacao: 'locatario' },
       aguardando_confirmacao: { concluido: 'locador' }
     };
@@ -891,51 +1020,67 @@ app.patch('/api/alugueis/:id/status', autenticacao, async (req, res) => {
       return res.status(403).json({ erro: 'Você não tem permissão para esta mudança de status.' });
     }
 
-    if (status === 'cancelado') {
-      // Apaga de forma atômica: só remove se o pagamento ainda não foi cobrado
-      // nem está em cobrança. Se o checkout travar o pagamento entre a leitura e a
-      // exclusão, o filtro deixa de casar e nada é apagado.
-      const apagado = await Pagamento.findOneAndDelete({
-        aluguel: aluguel._id,
-        status: { $in: ['pendente', 'falhou'] }
-      });
-
-      if (!apagado) {
-        const pagamento = await Pagamento.findOne({ aluguel: aluguel._id });
-
-        if (pagamento?.status === 'confirmado') {
-          return res.status(400).json({ erro: 'Não é possível cancelar um aluguel com pagamento confirmado.' });
+    const statusAnterior = aluguel.status;
+    let pagamentoDisponivel = null;
+    const sessao = await mongoose.startSession();
+    try {
+      await sessao.withTransaction(async () => {
+        const aluguelAtual = await Aluguel.findOne({ _id: aluguel._id, status: statusAnterior }).session(sessao);
+        if (!aluguelAtual) {
+          throw new ErroHttp(409, 'O aluguel foi alterado por outra operação. Atualize a página e tente novamente.');
         }
-        if (pagamento) {
-          // processando (ou qualquer outro estado): a cobrança pode estar em andamento no Mercado Pago.
-          return res.status(400).json({ erro: 'O pagamento deste aluguel está em processamento. Aguarde a confirmação.' });
-        }
-        // Sem pagamento algum: pode cancelar normalmente.
-      }
-    }
 
-    aluguel.status = status;
-    await aluguel.save();
-
-    // Libera os dias reservados quando o aluguel deixa de estar ativo.
-    if (['recusado', 'cancelado', 'concluido'].includes(status)) {
-      await OcupacaoDia.deleteMany({ aluguel: aluguel._id });
-    }
-
-    if (status === 'aceito') {
-      await Pagamento.findOneAndUpdate(
-        { aluguel: aluguel._id },
-        {
-          $setOnInsert: {
-            aluguel: aluguel._id,
-            locatario: aluguel.locatario,
-            valor: aluguel.precoTotal,
-            vencimento: aluguel.dataInicio,
-            status: 'pendente'
+        if (['andamento', 'concluido'].includes(status)) {
+          const pagamentoConfirmado = await Pagamento.exists({
+            aluguel: aluguelAtual._id,
+            status: 'confirmado'
+          }).session(sessao);
+          if (!pagamentoConfirmado) {
+            throw new ErroHttp(400, 'O pagamento deste aluguel ainda não foi confirmado.');
           }
-        },
-        { upsert: true, new: true, runValidators: true }
-      );
+        }
+
+        if (status === 'cancelado') {
+          const pagamento = await Pagamento.findOne({ aluguel: aluguelAtual._id }).session(sessao);
+          if (pagamento?.status === 'confirmado') {
+            throw new ErroHttp(400, 'Não é possível cancelar um aluguel com pagamento confirmado.');
+          }
+          if (pagamento?.status === 'processando') {
+            throw new ErroHttp(400, 'O pagamento deste aluguel está em processamento. Aguarde a confirmação.');
+          }
+          if (pagamento && !['cancelado', 'atrasado'].includes(pagamento.status)) {
+            pagamento.status = 'cancelado';
+            await pagamento.save({ session: sessao });
+          }
+        }
+
+        aluguelAtual.status = status;
+        await aluguelAtual.save({ session: sessao });
+
+        if (['recusado', 'cancelado', 'concluido'].includes(status)) {
+          await OcupacaoDia.deleteMany({ aluguel: aluguelAtual._id }).session(sessao);
+        }
+
+        if (status === 'aceito') {
+          pagamentoDisponivel = await Pagamento.findOneAndUpdate(
+            { aluguel: aluguelAtual._id },
+            {
+              $setOnInsert: {
+                aluguel: aluguelAtual._id,
+                locatario: aluguelAtual.locatario,
+                valor: aluguelAtual.precoTotal,
+                vencimento: aluguelAtual.dataInicio,
+                status: 'pendente'
+              }
+            },
+            { upsert: true, new: true, runValidators: true, session: sessao }
+          );
+        }
+
+        aluguel.status = aluguelAtual.status;
+      });
+    } finally {
+      await sessao.endSession();
     }
 
     // Notifica quem NÃO fez a alteração (a outra parte da negociação)
@@ -952,14 +1097,22 @@ app.patch('/api/alugueis/:id/status', autenticacao, async (req, res) => {
     const quemAlterou = req.usuarioId;
     const outraParte = quemAlterou === String(aluguel.locador) ? aluguel.locatario : aluguel.locador;
     const outraParteEhLocador = String(outraParte) === String(aluguel.locador);
+    const notificacaoDePagamento = status === 'aceito' && !outraParteEhLocador && pagamentoDisponivel;
+    const valorPagamento = notificacaoDePagamento
+      ? Number(pagamentoDisponivel.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+      : null;
 
     await criarNotificacao({
       usuario: outraParte,
-      tipo: 'status_aluguel',
-      titulo: `Solicitação ${rotuloStatus}`,
-      texto: `O status da solicitação para "${anuncioDoAluguel?.titulo || 'seu anúncio'}" mudou para: ${rotuloStatus}.`,
+      tipo: notificacaoDePagamento ? 'pagamento' : 'status_aluguel',
+      titulo: notificacaoDePagamento ? 'Pagamento disponível' : `Solicitação ${rotuloStatus}`,
+      texto: notificacaoDePagamento
+        ? `Sua solicitação para "${anuncioDoAluguel?.titulo || 'o item'}" foi aceita. O pagamento de ${valorPagamento} já está disponível.`
+        : `O status da solicitação para "${anuncioDoAluguel?.titulo || 'seu anúncio'}" mudou para: ${rotuloStatus}.`,
       linkPainel: outraParteEhLocador ? '/painelLocador' : '/painellocatario',
-      estadoNavegacao: { abrirAba: outraParteEhLocador ? 'solicitacoes' : 'alugueis' }
+      estadoNavegacao: notificacaoDePagamento
+        ? { abrirAba: 'pagamentos', abaPagamentos: 'pendentes' }
+        : { abrirAba: outraParteEhLocador ? 'solicitacoes' : 'alugueis' }
     });
 
     res.status(200).json({
@@ -967,7 +1120,47 @@ app.patch('/api/alugueis/:id/status', autenticacao, async (req, res) => {
       aluguel
     });
   } catch (erro) {
+    if (erro.statusHttp) return res.status(erro.statusHttp).json({ erro: erro.message });
     res.status(500).json({ erro: 'Erro ao atualizar status do aluguel', detalhes: erro.message });
+  }
+});
+
+// Favoritos do locatário. A listagem devolve apenas os ids para manter a
+// página de busca leve; os detalhes dos anúncios já estão no resultado.
+app.get('/api/favoritos', autenticacao, async (req, res) => {
+  try {
+    const favoritos = await Favorito.find({ usuario: req.usuarioId }).select('anuncio -_id');
+    res.status(200).json({ anuncios: favoritos.map((favorito) => favorito.anuncio.toString()) });
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao buscar favoritos.' });
+  }
+});
+
+app.post('/api/favoritos/:anuncioId', autenticacao, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.anuncioId)) {
+      return res.status(400).json({ erro: 'Anúncio inválido.' });
+    }
+    const anuncio = await Anuncio.findOne({ _id: req.params.anuncioId, status: 'publicado' }).select('_id');
+    if (!anuncio) return res.status(404).json({ erro: 'Anúncio não encontrado.' });
+
+    await Favorito.updateOne(
+      { usuario: req.usuarioId, anuncio: anuncio._id },
+      { $setOnInsert: { usuario: req.usuarioId, anuncio: anuncio._id } },
+      { upsert: true }
+    );
+    res.status(200).json({ favorito: true });
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao favoritar anúncio.' });
+  }
+});
+
+app.delete('/api/favoritos/:anuncioId', autenticacao, async (req, res) => {
+  try {
+    await Favorito.deleteOne({ usuario: req.usuarioId, anuncio: req.params.anuncioId });
+    res.status(200).json({ favorito: false });
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao remover favorito.' });
   }
 });
 
@@ -996,22 +1189,21 @@ app.post('/api/pagamentos', autenticacao, async (req, res) => {
       return res.status(400).json({ erro: 'Método de pagamento inválido.' });
     }
 
-    const pagamentoExistente = await Pagamento.findOne({ aluguel: aluguelEncontrado._id });
-    if (pagamentoExistente) {
-      return res.status(409).json({ erro: 'Já existe um pagamento para este aluguel.', pagamento: pagamentoExistente });
-    }
+    const novoPagamento = await Pagamento.findOneAndUpdate(
+      { aluguel: aluguelEncontrado._id },
+      {
+        $setOnInsert: {
+          aluguel: aluguelEncontrado._id,
+          locatario: req.usuarioId,
+          valor: aluguelEncontrado.precoTotal,
+          vencimento: aluguelEncontrado.dataInicio,
+          ...(metodo ? { metodo } : {})
+        }
+      },
+      { upsert: true, new: true, runValidators: true }
+    );
 
-    const novoPagamento = new Pagamento({
-      aluguel: aluguelEncontrado._id,
-      locatario: req.usuarioId,
-      valor: aluguelEncontrado.precoTotal,
-      vencimento: aluguelEncontrado.dataInicio,
-      metodo
-    });
-
-    await novoPagamento.save();
-
-    res.status(201).json({
+    res.status(200).json({
       mensagem: 'Pagamento criado com sucesso!',
       pagamento: novoPagamento
     });
@@ -1020,33 +1212,41 @@ app.post('/api/pagamentos', autenticacao, async (req, res) => {
   }
 });
 
-// Status da Order no Mercado Pago -> status do Pagamento no LendLoop.
-const STATUS_POR_ORDER = {
-  processed: 'confirmado',
-  failed: 'falhou',
-  canceled: 'falhou',
-  cancelled: 'falhou',
-  expired: 'falhou',
-  created: 'processando',
-  processing: 'processando',
-  action_required: 'processando',
-};
-
 const MENSAGENS_RECUSA = {
   invalid_users_involved: 'O pagador não é aceito por esta conta do Mercado Pago. Em testes, use o e-mail de um comprador de teste.',
+  no_payment_method_for_provided_bin: 'Não foi possível identificar a bandeira do cartão. Confira o número ou tente outro cartão.',
+  cc_rejected_bad_filled_card_number: 'Confira o número do cartão e tente novamente.',
+  cc_rejected_bad_filled_date: 'Confira a data de validade do cartão e tente novamente.',
+  cc_rejected_bad_filled_security_code: 'Confira o código de segurança do cartão e tente novamente.',
+  cc_rejected_bad_filled_other: 'Confira os dados do cartão e tente novamente.',
+  cc_rejected_insufficient_amount: 'O cartão não possui limite disponível para este pagamento. Tente outro cartão.',
+  cc_rejected_card_disabled: 'Este cartão está desabilitado para a compra. Entre em contato com o banco ou tente outro cartão.',
+  cc_rejected_call_for_authorize: 'O banco precisa autorizar esta compra. Entre em contato com o banco e tente novamente.',
+  cc_rejected_high_risk: 'O pagamento não foi autorizado por segurança. Tente outro cartão.',
+  cc_rejected_max_attempts: 'O limite de tentativas com este cartão foi atingido. Tente outro cartão.',
+  cc_rejected_duplicated_payment: 'Um pagamento igual já foi realizado. Confira seus pagamentos antes de tentar novamente.',
 };
 
 function mensagemRecusa(statusDetail) {
   return MENSAGENS_RECUSA[statusDetail]
-    || `O pagamento foi recusado pelo Mercado Pago${statusDetail ? ` (${statusDetail})` : ''}. Tente outro cartão.`;
+    || 'O pagamento não foi autorizado. Confira os dados ou tente outro cartão.';
+}
+
+function mensagemErroMercadoPago(erro) {
+  const detalhes = JSON.stringify(erro?.corpo || {}) + ' ' + String(erro?.message || '');
+  const codigo = Object.keys(MENSAGENS_RECUSA).find((chave) => detalhes.includes(chave));
+  return codigo
+    ? MENSAGENS_RECUSA[codigo]
+    : 'Não foi possível validar os dados do pagamento. Confira as informações e tente novamente.';
 }
 
 async function aoConfirmarPagamento(pagamento) {
   const aluguelId = pagamento.aluguel?._id || pagamento.aluguel;
-  await Aluguel.updateOne({ _id: aluguelId, status: 'aceito' }, { status: 'andamento' });
-
-  const aluguel = await Aluguel.findById(aluguelId).select('anuncio locador');
+  const aluguel = await Aluguel.findById(aluguelId).select('anuncio locador dataInicio status');
   if (!aluguel) return;
+  if (aluguel.status === 'aceito' && aluguelPodeIniciar(aluguel.dataInicio)) {
+    await Aluguel.updateOne({ _id: aluguelId, status: 'aceito' }, { status: 'andamento' });
+  }
 
   const anuncio = await Anuncio.findById(aluguel.anuncio).select('titulo');
   await criarNotificacao({
@@ -1059,6 +1259,48 @@ async function aoConfirmarPagamento(pagamento) {
   });
 }
 
+async function aoReverterPagamento(pagamento) {
+  const aluguelId = pagamento.aluguel?._id || pagamento.aluguel;
+  const sessao = await mongoose.startSession();
+  let aluguel = null;
+  try {
+    await sessao.withTransaction(async () => {
+      aluguel = null;
+      aluguel = await Aluguel.findOne({
+        _id: aluguelId,
+        status: { $in: ['aceito', 'andamento'] }
+      }).session(sessao);
+      if (!aluguel) return;
+      aluguel.status = 'cancelado';
+      await aluguel.save({ session: sessao });
+      await OcupacaoDia.deleteMany({ aluguel: aluguel._id }).session(sessao);
+    });
+  } finally {
+    await sessao.endSession();
+  }
+  if (!aluguel) return;
+
+  const anuncio = await Anuncio.findById(aluguel.anuncio).select('titulo');
+  await Promise.all([
+    criarNotificacao({
+      usuario: aluguel.locatario,
+      tipo: 'pagamento',
+      titulo: 'Pagamento revertido',
+      texto: `O pagamento do aluguel de "${anuncio?.titulo || 'o item'}" foi revertido e o aluguel foi cancelado.`,
+      linkPainel: '/painellocatario',
+      estadoNavegacao: { abrirAba: 'pagamentos', abaPagamentos: 'confirmados' }
+    }),
+    criarNotificacao({
+      usuario: aluguel.locador,
+      tipo: 'status_aluguel',
+      titulo: 'Pagamento revertido',
+      texto: `O pagamento do aluguel de "${anuncio?.titulo || 'seu anúncio'}" foi revertido e o aluguel foi cancelado.`,
+      linkPainel: '/painelLocador',
+      estadoNavegacao: { abrirAba: 'solicitacoes' }
+    })
+  ]);
+}
+
 // Aplica ao pagamento o estado de uma Order consultada na API do Mercado Pago.
 // É a única fonte do status: o corpo do webhook nunca é usado para isso.
 async function aplicarOrderNoPagamento(pagamento, order) {
@@ -1067,22 +1309,26 @@ async function aplicarOrderNoPagamento(pagamento, order) {
     return pagamento;
   }
 
-  const novoStatus = STATUS_POR_ORDER[order.status];
-  if (!novoStatus) return pagamento;
+  const novoStatus = statusPagamentoDaOrder(order);
 
   // Só a Order atual pode mudar o status. A exceção é uma confirmação: se
   // qualquer Order deste pagamento foi paga, o dinheiro foi cobrado.
-  if (order.id !== pagamento.mpOrderId && novoStatus !== 'confirmado') return pagamento;
+  if (order.id !== pagamento.mpOrderId && !['confirmado', 'reembolsado', 'contestado'].includes(novoStatus)) return pagamento;
 
   const statusAnterior = pagamento.status;
-  // Um pagamento confirmado nunca volta atrás por uma notificação fora de ordem.
-  if (statusAnterior === 'confirmado') return pagamento;
+  // Uma confirmação só pode voltar atrás quando o provedor informa uma
+  // reversão financeira real (reembolso ou chargeback).
+  if (statusAnterior === 'confirmado' && !['reembolsado', 'contestado'].includes(novoStatus)) return pagamento;
 
   const pagamentoMp = order.transactions?.payments?.[0];
-  pagamento.status = novoStatus;
   pagamento.mpOrderId = order.id;
   if (pagamentoMp?.id) pagamento.mpPaymentId = String(pagamentoMp.id);
   pagamento.mpStatusDetail = pagamentoMp?.status_detail || order.status_detail || '';
+  if (!novoStatus) {
+    await pagamento.save();
+    return pagamento;
+  }
+  pagamento.status = novoStatus;
   // Uma recusa definitiva libera uma nova chave de idempotência para a próxima tentativa.
   if (novoStatus === 'falhou' && statusAnterior !== 'falhou') pagamento.tentativas += 1;
   await pagamento.save();
@@ -1092,6 +1338,8 @@ async function aplicarOrderNoPagamento(pagamento, order) {
     await aoConfirmarPagamento(pagamento).catch((erro) => {
       console.error('Pagamento confirmado, mas houve erro ao atualizar o aluguel:', String(pagamento._id), erro.message);
     });
+  } else if (['reembolsado', 'contestado'].includes(novoStatus)) {
+    await aoReverterPagamento(pagamento);
   }
   return pagamento;
 }
@@ -1123,6 +1371,10 @@ app.post('/api/pagamentos/:id/checkout', autenticacao, async (req, res) => {
     if (!['aceito', 'andamento'].includes(pagamento.aluguel?.status)) {
       return res.status(400).json({ erro: 'Este aluguel não está disponível para pagamento.' });
     }
+    if (pagamentoVencido(pagamento.vencimento)) {
+      await expirarPagamento(pagamento);
+      return res.status(400).json({ erro: 'O prazo para pagar este aluguel encerrou.' });
+    }
 
     // Uma tentativa anterior ficou sem resposta final: consulta o Mercado Pago antes de cobrar de novo.
     if (pagamento.status === 'processando' && pagamento.mpOrderId) {
@@ -1146,7 +1398,7 @@ app.post('/api/pagamentos/:id/checkout', autenticacao, async (req, res) => {
     statusAntesDoCheckout = pagamento.status;
     pagamentoTravado = await Pagamento.findOneAndUpdate(
       { _id: pagamento._id, status: statusAntesDoCheckout },
-      { $set: { status: 'processando' }, $unset: { mpOrderId: 1, mpPaymentId: 1, mpStatusDetail: 1 } },
+      { $set: { status: 'processando', metodo: 'cartao' }, $unset: { mpOrderId: 1, mpPaymentId: 1, mpStatusDetail: 1 } },
       { new: true }
     );
     if (!pagamentoTravado) {
@@ -1209,7 +1461,7 @@ app.post('/api/pagamentos/:id/checkout', autenticacao, async (req, res) => {
     // 401/403 do Mercado Pago são problemas de credencial do servidor, não da
     // sessão do usuário: repassá-los faria o front deslogar o locatário.
     if (erro instanceof ErroMercadoPago && erro.status >= 400 && erro.status < 500 && ![401, 403].includes(erro.status)) {
-      return res.status(400).json({ erro: `O Mercado Pago recusou os dados do pagamento: ${erro.message}` });
+      return res.status(400).json({ erro: mensagemErroMercadoPago(erro) });
     }
     res.status(502).json({ erro: 'Não foi possível falar com o Mercado Pago agora. Tente novamente em instantes.' });
   }
@@ -1282,6 +1534,79 @@ async function reconciliarPagamentosPendentes() {
   }
 }
 
+async function iniciarAlugueisPagos() {
+  const pagamentos = await Pagamento.find({ status: 'confirmado' }).select('aluguel');
+  if (!pagamentos.length) return;
+  await Aluguel.updateMany(
+    {
+      _id: { $in: pagamentos.map((pagamento) => pagamento.aluguel) },
+      status: 'aceito',
+      dataInicio: { $lte: normalizarData(new Date()) }
+    },
+    { status: 'andamento' }
+  );
+}
+
+async function aplicarReversoesPendentes() {
+  const pagamentos = await Pagamento.find({ status: { $in: ['reembolsado', 'contestado'] } }).limit(50);
+  for (const pagamento of pagamentos) {
+    await aoReverterPagamento(pagamento);
+  }
+}
+
+async function expirarPagamento(pagamento) {
+  const sessao = await mongoose.startSession();
+  let aluguelExpirado = null;
+  try {
+    await sessao.withTransaction(async () => {
+      aluguelExpirado = null;
+      const pagamentoAtual = await Pagamento.findOne({
+        _id: pagamento._id,
+        status: { $in: ['pendente', 'falhou'] }
+      }).session(sessao);
+      if (!pagamentoAtual) return;
+
+      const aluguelAtual = await Aluguel.findOne({
+        _id: pagamentoAtual.aluguel,
+        status: 'aceito'
+      }).session(sessao);
+      if (!aluguelAtual) return;
+
+      pagamentoAtual.status = 'atrasado';
+      aluguelAtual.status = 'cancelado';
+      await pagamentoAtual.save({ session: sessao });
+      await aluguelAtual.save({ session: sessao });
+      await OcupacaoDia.deleteMany({ aluguel: aluguelAtual._id }).session(sessao);
+      aluguelExpirado = aluguelAtual;
+    });
+  } finally {
+    await sessao.endSession();
+  }
+
+  if (aluguelExpirado) {
+    await criarNotificacao({
+      usuario: aluguelExpirado.locatario,
+      tipo: 'pagamento',
+      titulo: 'Prazo de pagamento encerrado',
+      texto: 'O prazo para pagar este aluguel terminou e a reserva foi cancelada.',
+      linkPainel: '/painellocatario',
+      estadoNavegacao: { abrirAba: 'pagamentos', abaPagamentos: 'pendentes' }
+    });
+  }
+}
+
+async function expirarPagamentosVencidos() {
+  const hoje = normalizarData(new Date());
+  const pagamentos = await Pagamento.find({
+    status: { $in: ['pendente', 'falhou'] },
+    vencimento: { $lt: hoje }
+  }).limit(50);
+
+  for (const pagamento of pagamentos) {
+    await expirarPagamento(pagamento);
+  }
+}
+
 // Listar pagamentos de um locatário (usado em PainelLocatario)
 app.get('/api/pagamentos/locatario/:locatarioId', autenticacao, async (req, res) => {
   try {
@@ -1289,7 +1614,11 @@ app.get('/api/pagamentos/locatario/:locatarioId', autenticacao, async (req, res)
       return res.status(403).json({ erro: 'Você não tem permissão para ver estes pagamentos.' });
     }
 
-    const pagamentos = await Pagamento.find({ locatario: req.params.locatarioId }).populate('aluguel');
+    await Promise.all([iniciarAlugueisPagos(), expirarPagamentosVencidos()]);
+    const pagamentos = await Pagamento.find({ locatario: req.params.locatarioId }).populate({
+      path: 'aluguel',
+      populate: { path: 'anuncio', select: 'titulo fotos' }
+    });
 
     // Pagamentos sem resposta final são conferidos no Mercado Pago antes de listar.
     await Promise.allSettled(
@@ -1909,6 +2238,12 @@ connectDB().then(() => {
 
   setInterval(() => {
     reconciliarPagamentosPendentes().catch((erro) => console.error('Erro na reconciliação de pagamentos:', erro));
+    iniciarAlugueisPagos().catch((erro) => console.error('Erro ao iniciar aluguéis pagos:', erro));
+    aplicarReversoesPendentes().catch((erro) => console.error('Erro ao aplicar reversões de pagamento:', erro));
+    expirarPagamentosVencidos().catch((erro) => console.error('Erro ao expirar pagamentos:', erro));
   }, 5 * 60 * 1000);
   reconciliarPagamentosPendentes().catch((erro) => console.error('Erro na reconciliação de pagamentos:', erro));
+  iniciarAlugueisPagos().catch((erro) => console.error('Erro ao iniciar aluguéis pagos:', erro));
+  aplicarReversoesPendentes().catch((erro) => console.error('Erro ao aplicar reversões de pagamento:', erro));
+  expirarPagamentosVencidos().catch((erro) => console.error('Erro ao expirar pagamentos:', erro));
 });

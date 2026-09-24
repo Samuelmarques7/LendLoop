@@ -32,7 +32,8 @@ import {
   LuUser,
   LuHistory,
   LuStar,
-  LuCamera
+  LuCamera,
+  LuArrowRight
 } from "react-icons/lu";
 
 const DESCRICOES_SECOES = {
@@ -188,10 +189,10 @@ export default function PainelLocador() {
   const totalAcoesPendentes = solicitacoesPendentes.length + devolucoesPendentes.length;
 
   const stats = [
-    { id: 1, titulo: "Ganhos este mês", valor: `R$ ${ganhosDoMes.toFixed(2)}`, icon: LuDollarSign, tone: 'success' },
-    { id: 2, titulo: "Anúncios ativos", valor: String(meusAnuncios.length), icon: LuPackage, tone: 'neutral' },
-    { id: 3, titulo: "Ações pendentes", valor: String(totalAcoesPendentes), icon: LuMailWarning, tone: 'warning' },
-    { id: 4, titulo: "Mensagens não lidas", valor: String(mensagensNaoLidas), icon: LuMessageSquare, tone: 'accent' }
+    { id: 1, titulo: "Ganhos este mês", valor: `R$ ${ganhosDoMes.toFixed(2)}`, descricao: 'Acompanhe o resultado dos seus aluguéis.', icon: LuDollarSign, tone: 'success' },
+    { id: 2, titulo: "Anúncios ativos", valor: String(meusAnuncios.length), descricao: 'Seus itens visíveis no marketplace.', icon: LuPackage, tone: 'neutral' },
+    { id: 3, titulo: "Ações pendentes", valor: String(totalAcoesPendentes), descricao: totalAcoesPendentes ? 'Há solicitações esperando por você.' : 'Nenhuma ação precisa da sua atenção.', icon: LuMailWarning, tone: 'warning' },
+    { id: 4, titulo: "Mensagens não lidas", valor: String(mensagensNaoLidas), descricao: mensagensNaoLidas ? 'Novas conversas aguardam resposta.' : 'Você está em dia com as conversas.', icon: LuMessageSquare, tone: 'accent' }
   ];
 
   const toneClasses = {
@@ -371,15 +372,18 @@ export default function PainelLocador() {
           onConfirmarDevolucao={marcarComoDevolvido}
           onNovoAnuncio={() => navigate('/criar-anuncio')}
           onAbrirAnuncio={(id) => navigate(`/produto/${id}`)}
-          onEditarAnuncio={(anuncio) => setAnuncioParaEditar(anuncio)}
+          onEditarAnuncio={(anuncio) => navigate('/criar-anuncio', { state: { anuncioParaEditar: anuncio, step: 7 } })}
           onPedirExcluirAnuncio={(anuncio) => setAnuncioParaExcluir(anuncio)}
+          onVerAnuncios={() => setActiveTab('anuncios')}
+          onVerPendencias={() => setActiveTab('solicitacoes')}
+          usuarioNome={dadosLocador?.nome || usuarioLogado?.nome}
         />;
       case 'anuncios':
         return <SecaoAnuncios
           meusAnuncios={meusAnuncios}
           onNovoAnuncio={() => navigate('/criar-anuncio')}
           onAbrirAnuncio={(id) => navigate(`/produto/${id}`)}
-          onEditarAnuncio={(anuncio) => setAnuncioParaEditar(anuncio)}
+          onEditarAnuncio={(anuncio) => navigate('/criar-anuncio', { state: { anuncioParaEditar: anuncio, step: 7 } })}
           onPedirExcluirAnuncio={(anuncio) => setAnuncioParaExcluir(anuncio)}
         />;
       case 'solicitacoes':
@@ -438,7 +442,7 @@ export default function PainelLocador() {
   const descricaoAtual = DESCRICOES_SECOES[activeTab] || 'Acompanhe os detalhes da sua atividade como locador.';
 
   return (
-    <div className="min-h-screen bg-[#f6fcf8] font-sans text-grafite">
+    <div className="min-h-screen bg-[#f7f9fb] font-sans text-grafite">
       <DashboardHeader
         variante="locador"
         menuItems={menuItems}
@@ -450,11 +454,13 @@ export default function PainelLocador() {
         usuario={dadosLocador}
       />
 
-      <main className="mx-auto w-full max-w-[1600px] space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
-        <div className="rounded-r-2xl border-l-4 border-verde-agua bg-verde-agua/[0.07] py-2 pl-4">
-          <h1 className="text-xl font-semibold text-grafite">{tituloAtual}</h1>
-          <p className="mt-1 text-sm text-gray-500">{descricaoAtual}</p>
-        </div>
+      <main className="mx-auto w-full max-w-[1920px] space-y-5 px-3 py-5 sm:space-y-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10 2xl:space-y-8 2xl:px-12 2xl:py-12">
+        {activeTab !== 'painel' && (
+          <div className="border-l-4 border-verde-agua py-1 pl-4">
+            <h1 className="text-2xl font-bold tracking-tight text-[#031f3b]">{tituloAtual}</h1>
+            <p className="mt-1 text-sm text-gray-500">{descricaoAtual}</p>
+          </div>
+        )}
         {renderConteudo()}
       </main>
 
@@ -513,7 +519,7 @@ function ModalVistoriaRetirada({ aluguel, onClose, onEnviar, enviando }) {
 
 function CardAnuncio({ anuncio, onAbrirAnuncio, onEditarAnuncio, onPedirExcluirAnuncio }) {
   return (
-    <div className="flex items-center justify-between px-4 py-3.5 hover:bg-verde-agua/[0.035] rounded-xl transition-colors border-b border-verde-agua/[0.1] last:border-0 group">
+    <div className="group flex flex-col gap-3 border-b border-verde-agua/[0.1] px-3 py-3.5 transition-colors last:border-0 hover:bg-verde-agua/[0.035] sm:flex-row sm:items-center sm:justify-between sm:px-4">
       <div
         onClick={() => onAbrirAnuncio(anuncio._id)}
         className="flex items-center gap-3.5 flex-1 min-w-0 cursor-pointer"
@@ -530,7 +536,7 @@ function CardAnuncio({ anuncio, onAbrirAnuncio, onEditarAnuncio, onPedirExcluirA
           <p className="text-xs text-gray-400 mt-0.5">R$ {anuncio.precos?.precoPorDia}/dia</p>
         </div>
       </div>
-      <div className="flex items-center gap-2 flex-shrink-0">
+      <div className="flex w-full flex-shrink-0 items-center justify-end gap-1.5 sm:w-auto sm:gap-2">
         <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full ${
           anuncio.status === 'publicado' ? 'bg-verde-escuro/[0.08] text-verde-escuro' : 'bg-gray-100 text-gray-600'
         }`}>
@@ -562,39 +568,80 @@ function CardAnuncio({ anuncio, onAbrirAnuncio, onEditarAnuncio, onPedirExcluirA
   );
 }
 
-function SecaoPainel({ stats, toneClasses, meusAnuncios, solicitacoes, devolucoes, onAceitar, onAbrirVistoria, onRecusar, onConfirmarDevolucao, onNovoAnuncio, onAbrirAnuncio, onEditarAnuncio, onPedirExcluirAnuncio }) {
+function SecaoPainel({ stats, toneClasses, meusAnuncios, solicitacoes, devolucoes, onAceitar, onAbrirVistoria, onRecusar, onConfirmarDevolucao, onNovoAnuncio, onAbrirAnuncio, onEditarAnuncio, onPedirExcluirAnuncio, onVerAnuncios, onVerPendencias, usuarioNome }) {
+  const totalPendencias = solicitacoes.length + devolucoes.length;
+  const primeiroNome = usuarioNome?.trim().split(/\s+/)[0] || 'por aqui';
+
   return (
-    <div className="space-y-6">
-      <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+    <div className="space-y-5 sm:space-y-6">
+      <section className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)] lg:items-stretch">
+        <div className="flex flex-col items-start justify-center rounded-3xl bg-[#031f3b] px-5 py-7 text-white shadow-[0_18px_45px_rgba(3,31,59,0.14)] sm:px-8 sm:py-9 lg:min-h-[220px] lg:px-10 2xl:min-h-[250px] 2xl:px-12">
+          <h1 className="max-w-3xl text-3xl font-bold leading-[1.08] tracking-[-0.035em] sm:text-4xl lg:text-[2.65rem] 2xl:text-5xl">
+            Olá, {primeiroNome}. Vamos movimentar seus itens?
+          </h1>
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/68 sm:text-base">
+            Veja o que precisa da sua atenção hoje e mantenha seus anúncios prontos para novas oportunidades.
+          </p>
+          <button
+            type="button"
+            onClick={onNovoAnuncio}
+            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-verde-agua px-5 py-3 text-sm font-bold text-[#031f3b] shadow-lg shadow-black/10 transition-all hover:-translate-y-0.5 hover:bg-[#37d158] hover:shadow-xl active:translate-y-0"
+          >
+            <LuPlus size={18} /> Criar novo anúncio
+          </button>
+        </div>
+
+        <button
+          type="button"
+          onClick={totalPendencias ? onVerPendencias : onVerAnuncios}
+          className={`group flex min-h-[170px] items-center gap-5 rounded-3xl border p-6 text-left transition-all hover:-translate-y-0.5 hover:shadow-lg lg:min-h-[220px] 2xl:min-h-[250px] 2xl:p-8 ${totalPendencias ? 'border-amber-200 bg-amber-50/70 hover:border-amber-300' : 'border-emerald-200 bg-emerald-50/70 hover:border-emerald-300'}`}
+        >
+          <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-white shadow-sm ${totalPendencias ? 'bg-amber-500' : 'bg-[#087a3a]'}`}>
+            {totalPendencias ? <LuMailWarning size={25} /> : <LuCheck size={27} strokeWidth={2.5} />}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-xl font-bold tracking-tight text-[#031f3b]">
+              {totalPendencias ? `${totalPendencias} ${totalPendencias === 1 ? 'pendência' : 'pendências'}` : 'Tudo em ordem'}
+            </span>
+            <span className="mt-1.5 block text-sm leading-relaxed text-gray-600">
+              {totalPendencias ? 'Existem solicitações que precisam da sua resposta.' : 'Seus anúncios estão ativos e não há ações pendentes.'}
+            </span>
+          </span>
+          <LuArrowRight size={20} className="shrink-0 text-gray-400 transition-transform group-hover:translate-x-1 group-hover:text-[#031f3b]" />
+        </button>
+      </section>
+
+      <section className="grid overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/30 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
           const tone = toneClasses[stat.tone];
           return (
-            <div key={stat.id} className={`bg-white p-5 rounded-2xl border border-verde-agua/25 border-l-4 ${tone.border} flex items-center gap-4`}>
-              <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${tone.bg} ${tone.text} flex-shrink-0`}>
+            <div key={stat.id} className="flex min-w-0 gap-4 border-b border-slate-100 p-5 last:border-b-0 sm:[&:nth-child(odd)]:border-r sm:[&:nth-last-child(-n+2)]:border-b-0 xl:border-b-0 xl:border-r xl:last:border-r-0 xl:p-6">
+              <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${tone.bg} ${tone.text}`}>
                 <Icon size={20} />
               </div>
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5 truncate">{stat.titulo}</p>
-                <p className="text-xl font-semibold text-grafite tabular-nums">{stat.valor}</p>
+                <p className="truncate text-xs font-semibold text-gray-500">{stat.titulo}</p>
+                <p className="mt-0.5 text-2xl font-bold tracking-tight text-[#031f3b] tabular-nums">{stat.valor}</p>
+                <p className="mt-1 hidden text-xs leading-relaxed text-gray-400 2xl:block">{stat.descricao}</p>
               </div>
             </div>
           );
         })}
       </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <section className="bg-white rounded-2xl border border-verde-agua/25 overflow-hidden flex flex-col">
-          <div className="px-6 py-4.5 border-b border-verde-agua/15 bg-verde-agua/[0.025] flex justify-between items-center">
-            <h2 className="text-[15px] font-semibold text-grafite">Anúncios recentes</h2>
-            <button
-              onClick={onNovoAnuncio}
-              className="flex items-center gap-1.5 rounded-lg bg-verde-agua px-3.5 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-verde-escuro cursor-pointer"
-            >
-              <LuPlus size={14} /> Novo anúncio
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(380px,0.65fr)]">
+        <section className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/25">
+          <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <div>
+              <h2 className="text-lg font-bold tracking-tight text-[#031f3b]">Anúncios recentes</h2>
+              <p className="mt-1 text-xs leading-relaxed text-gray-500">Mantenha seus itens atualizados para atrair mais pessoas.</p>
+            </div>
+            <button onClick={onVerAnuncios} className="group inline-flex items-center gap-1.5 self-start text-xs font-bold text-[#087a3a] transition-colors hover:text-[#031f3b] sm:self-auto">
+              Ver todos <LuArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
             </button>
           </div>
-          <div className="p-2 flex-grow">
+          <div className="flex-grow p-2">
             {meusAnuncios.length === 0 ? (
               <div className="py-12 text-center text-gray-400">
                 <LuPackage size={28} className="mx-auto mb-2.5 opacity-40" />
@@ -602,7 +649,7 @@ function SecaoPainel({ stats, toneClasses, meusAnuncios, solicitacoes, devolucoe
                 <p className="text-xs mt-1 text-gray-400">Clique em "Novo anúncio" para começar.</p>
               </div>
             ) : (
-              meusAnuncios.map((anuncio) => (
+              meusAnuncios.slice(0, 3).map((anuncio) => (
                 <CardAnuncio
                   key={anuncio._id}
                   anuncio={anuncio}
@@ -615,7 +662,7 @@ function SecaoPainel({ stats, toneClasses, meusAnuncios, solicitacoes, devolucoe
           </div>
         </section>
 
-        <SecaoSolicitacoes 
+        <SecaoSolicitacoes
           solicitacoes={solicitacoes} 
           devolucoes={devolucoes} 
           titulo="Pendências para revisar"
@@ -623,6 +670,7 @@ function SecaoPainel({ stats, toneClasses, meusAnuncios, solicitacoes, devolucoe
           onAbrirVistoria={onAbrirVistoria}
           onRecusar={onRecusar} 
           onConfirmarDevolucao={onConfirmarDevolucao} 
+          onVerTodas={onVerPendencias}
         />
       </div>
     </div>
@@ -632,7 +680,7 @@ function SecaoPainel({ stats, toneClasses, meusAnuncios, solicitacoes, devolucoe
 function SecaoAnuncios({ meusAnuncios, onNovoAnuncio, onAbrirAnuncio, onEditarAnuncio, onPedirExcluirAnuncio }) {
   return (
     <section className="bg-white rounded-2xl border border-verde-agua/25 overflow-hidden flex flex-col">
-      <div className="px-6 py-4.5 border-b border-verde-agua/15 bg-verde-agua/[0.025] flex justify-between items-center">
+      <div className="flex flex-col gap-3 border-b border-verde-agua/15 bg-verde-agua/[0.025] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4.5">
         <h2 className="text-[15px] font-semibold text-grafite">Meus anúncios</h2>
         <button
           onClick={onNovoAnuncio}
@@ -664,15 +712,25 @@ function SecaoAnuncios({ meusAnuncios, onNovoAnuncio, onAbrirAnuncio, onEditarAn
   );
 }
 
-function SecaoSolicitacoes({ solicitacoes, devolucoes, titulo = 'Solicitações recebidas', onAbrirVistoria, onRecusar, onConfirmarDevolucao }) {
+function SecaoSolicitacoes({ solicitacoes, devolucoes, titulo = 'Solicitações recebidas', onAbrirVistoria, onRecusar, onConfirmarDevolucao, onVerTodas }) {
   const total = solicitacoes.length + (devolucoes?.length || 0);
 
   return (
-    <section className="bg-white rounded-2xl border border-verde-agua/25 overflow-hidden flex flex-col">
-      <div className="px-6 py-4.5 border-b border-verde-agua/15 bg-verde-agua/[0.025] flex justify-between items-center">
-        <h2 className="text-[15px] font-semibold text-grafite">{titulo}</h2>
-        {total > 0 && (
-          <span className="bg-grafite text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{total}</span>
+    <section className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/25">
+      <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-5 sm:px-6">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-bold tracking-tight text-[#031f3b]">{titulo}</h2>
+            {total > 0 && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-bold text-white">{total}</span>
+            )}
+          </div>
+          <p className="mt-1 text-xs leading-relaxed text-gray-500">Responda às solicitações para não perder oportunidades.</p>
+        </div>
+        {onVerTodas && (
+          <button onClick={onVerTodas} className="group inline-flex shrink-0 items-center gap-1.5 text-xs font-bold text-[#087a3a] transition-colors hover:text-[#031f3b]">
+            Ver todas <LuArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
+          </button>
         )}
       </div>
       <div className="p-2 flex-grow overflow-y-auto max-h-[600px]">
@@ -686,7 +744,7 @@ function SecaoSolicitacoes({ solicitacoes, devolucoes, titulo = 'Solicitações 
             {/* 1. DEVOLUÇÕES (Têm prioridade alta de visualização) */}
             {devolucoes?.map((req) => (
               <div key={req._id} className="p-4 bg-verde-agua/[0.035] border border-verde-agua/25 rounded-xl mb-2 last:mb-0">
-                <div className="flex justify-between items-start mb-3 gap-3">
+                <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                   <div className="min-w-0">
                     <h3 className="font-semibold text-grafite text-sm truncate">{req.anuncio?.titulo || 'Anúncio'}</h3>
                     <p className="text-xs text-gray-500 mt-1">
@@ -724,7 +782,7 @@ function SecaoSolicitacoes({ solicitacoes, devolucoes, titulo = 'Solicitações 
             {/* 2. NOVAS SOLICITAÇÕES DE ALUGUEL */}
             {solicitacoes.map((req) => (
               <div key={req._id} className="p-4 hover:bg-gray-50 rounded-xl transition-colors border border-gray-100 mb-2 last:mb-0">
-                <div className="flex justify-between items-start mb-3 gap-3">
+                <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                   <div className="min-w-0">
                     <h3 className="font-semibold text-grafite text-sm truncate">{req.anuncio?.titulo || 'Anúncio'}</h3>
                     <p className="text-xs text-gray-500 mt-1">
@@ -739,7 +797,7 @@ function SecaoSolicitacoes({ solicitacoes, devolucoes, titulo = 'Solicitações 
                     Novo pedido
                   </span>
                 </div>
-                <div className="flex gap-2 mt-3">
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
                   <button
                     onClick={() => onAbrirVistoria(req)}
                     className="flex-1 flex items-center justify-center gap-2 bg-grafite text-white text-xs font-semibold py-2.5 rounded-lg hover:bg-verde-escuro transition-colors cursor-pointer"
@@ -946,8 +1004,8 @@ function ModalDetalhesReserva({ reserva, onClose, onAbrirChat }) {
   const primeiroNome = locatario?.nome?.split(' ')[0] || 'locatário';
 
   const statusLabel = {
-    aceito: 'Aceito',
     andamento: 'Em andamento',
+    aceito: 'Confirmado — aguardando início',
     aguardando_confirmacao: 'Aguardando devolução',
     concluido: 'Concluído',
   }[reserva.status] || reserva.status;
@@ -1089,7 +1147,7 @@ function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, 
               const aguardandoConfirmacao = a.status === 'aguardando_confirmacao';
 
               return (
-                <div key={a._id} className="flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-100 last:border-0">
+                <div key={a._id} className="flex flex-col gap-3 border-b border-gray-100 px-3 py-3.5 transition-colors last:border-0 hover:bg-gray-50 sm:flex-row sm:items-center sm:justify-between sm:px-4">
                   <div className="min-w-0">
                     <h3 className="font-semibold text-grafite text-sm truncate">{a.anuncio?.titulo}</h3>
                     <p className="text-xs text-gray-400 mt-0.5">
@@ -1124,7 +1182,7 @@ function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, 
 
       {/* 3. HISTÓRICO DE ALUGUÉIS CONCLUÍDOS (EMBAIXO) */}
       <section className="bg-white rounded-2xl border border-verde-agua/25 overflow-hidden flex flex-col">
-        <div className="px-6 py-4.5 border-b border-verde-agua/15 bg-verde-agua/[0.025] flex items-center justify-between gap-3">
+        <div className="flex flex-col gap-2 border-b border-verde-agua/15 bg-verde-agua/[0.025] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4.5">
           <div className="flex items-center gap-2">
             <h2 className="text-[15px] font-semibold text-grafite">
               {verHistoricoCompleto ? 'Histórico de aluguéis concluídos' : 'Pendentes de avaliação'}
@@ -1160,7 +1218,7 @@ function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, 
             </div>
           ) : (
             listaExibida.map((a) => (
-              <div key={a._id} className="flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-100 last:border-0">
+              <div key={a._id} className="flex flex-col gap-3 border-b border-gray-100 px-3 py-3.5 transition-colors last:border-0 hover:bg-gray-50 sm:flex-row sm:items-center sm:justify-between sm:px-4">
                 <div className="min-w-0">
                   <h3 className="font-semibold text-grafite text-sm truncate">{a.anuncio?.titulo}</h3>
                   <p className="text-xs text-gray-400 mt-0.5">
@@ -1417,7 +1475,7 @@ function SecaoConfiguracoes({ onSalvarPainelPadrao, onExcluirConta, objetivoAtua
         <div className="px-6 py-4.5 border-b border-red-100">
           <h2 className="text-[15px] font-semibold text-[#A32D2D]">Zona de perigo</h2>
         </div>
-        <div className="p-6 flex items-center justify-between gap-4">
+        <div className="flex flex-col items-start gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
           <div>
             <p className="text-sm font-semibold text-grafite">Excluir minha conta</p>
             <p className="text-xs text-gray-500 mt-1">Essa ação é permanente e remove seus anúncios.</p>

@@ -157,7 +157,7 @@ export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#0073F3', conv
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex h-[calc(100vh-220px)] min-h-[500px]">
+    <div className="flex h-[calc(100dvh-13.5rem)] min-h-[28rem] overflow-hidden rounded-2xl border border-gray-200 bg-white sm:h-[calc(100dvh-220px)] sm:min-h-[500px]">
 
       <div className={`w-full sm:w-80 border-r border-gray-200 flex flex-col ${conversaAtivaId ? 'hidden sm:flex' : 'flex'}`}>
         <div className="p-4 border-b border-gray-100">
@@ -237,7 +237,7 @@ export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#0073F3', conv
           </div>
         ) : (
           <>
-            <div className="h-16 border-b border-gray-200 flex items-center gap-3 px-5 flex-shrink-0">
+            <div className="flex h-16 flex-shrink-0 items-center gap-3 border-b border-gray-200 px-3 sm:px-5">
               <button
                 onClick={() => setConversaAtivaId(null)}
                 className="sm:hidden text-gray-400 hover:text-grafite cursor-pointer"
@@ -271,7 +271,7 @@ export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#0073F3', conv
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-5 space-y-3 bg-white">
+            <div className="flex-1 space-y-3 overflow-y-auto bg-white p-3 sm:p-5">
               {mensagens.length === 0 ? (
                 <p className="text-center text-xs text-gray-400 mt-4">Nenhuma mensagem ainda. Diga olá.</p>
               ) : (
@@ -308,7 +308,7 @@ export function PainelMensagens({ usuarioLogadoId, corPrimaria = '#0073F3', conv
               <div ref={fimDaListaRef} />
             </div>
 
-            <form onSubmit={handleEnviarMensagem} className="p-4 border-t border-gray-200 flex items-center gap-3 flex-shrink-0">
+            <form onSubmit={handleEnviarMensagem} className="flex flex-shrink-0 items-center gap-2 border-t border-gray-200 p-3 sm:gap-3 sm:p-4">
               <input
                 value={textoNovaMensagem}
                 onChange={(e) => setTextoNovaMensagem(e.target.value)}
