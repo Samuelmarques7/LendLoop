@@ -7,7 +7,7 @@ const storage = new CloudinaryStorage({
     params: {
         folder: 'lendloop',
         allowed_formats: ['jpg', 'jpeg', 'png'],
-        transformation: [{ width: 1200, height: 1200, crop: 'limit' }],
+        transformation: [{ width: 2400, height: 2400, crop: 'limit' }],
     },
 });
 

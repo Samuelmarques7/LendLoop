@@ -198,8 +198,8 @@ function CriarAnuncio ()
     function handleFotosSubmit (e)
     {
         e.preventDefault()
-        if (fotos.length < 1) {
-            setMensagem({ tipo: 'erro', texto: 'Adicione pelo menos uma foto do item antes de continuar.' })
+        if (fotos.length < 3) {
+            setMensagem({ tipo: 'erro', texto: 'Adicione pelo menos 3 fotos do item antes de continuar.' })
             return
         }
         setStep(4)
@@ -264,6 +264,11 @@ function CriarAnuncio ()
 
     async function handlePublicar()
     {
+        if (fotos.length < 3 || fotos.length > 6) {
+            setMensagem({ tipo: 'erro', texto: 'Adicione de 3 a 6 fotos do item para publicar.' })
+            setStep(3)
+            return
+        }
         try {
             const urlsFotos = await handleUploadFotos()
 
@@ -570,7 +575,8 @@ function CriarAnuncio ()
                     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mt-6">
                         <div className='mb-6'>
                             <h2 className = 'text-xl font-bold text-grafite'>Fotos do Anúncio</h2>
-                            <p className='text-gray-400 text-sm mt-1'>Fotos claras aumentam suas chances de locação</p>
+                            <p className='text-gray-500 text-sm mt-1'>Adicione de 3 a 6 fotos: mostre o item inteiro, outro ângulo e os detalhes.</p>
+                            <p className='text-gray-500 text-xs mt-2'>Prefira fotos nítidas, com boa iluminação e pelo menos 1200 pixels no lado maior.</p>
                         </div>
 
                         <form onSubmit = {handleFotosSubmit}>
@@ -578,10 +584,22 @@ function CriarAnuncio ()
                             <input 
                                 type='file' 
                                 multiple
+                                accept="image/jpeg,image/png"
                                 ref={inputFotoRef}
                                 className='hidden'
                                 onChange={(e) => {
-                                    setFotos(fotosAnteriores => [...fotosAnteriores, ...Array.from(e.target.files)])
+                                    const novas = Array.from(e.target.files || [])
+                                    e.target.value = ''
+                                    if (fotos.length + novas.length > 6) {
+                                        setMensagem({ tipo: 'erro', texto: 'Você pode adicionar no máximo 6 fotos.' })
+                                        return
+                                    }
+                                    if (novas.some(foto => !['image/jpeg', 'image/png'].includes(foto.type) || foto.size > 5 * 1024 * 1024)) {
+                                        setMensagem({ tipo: 'erro', texto: 'Use fotos JPG ou PNG de até 5 MB cada.' })
+                                        return
+                                    }
+                                    setMensagem(null)
+                                    setFotos(fotosAnteriores => [...fotosAnteriores, ...novas])
                                 }}
                             />
 
@@ -638,7 +656,7 @@ function CriarAnuncio ()
                                     <p className="text-verde-escuro font-semibold text-sm">
                                         {fotos.length > 0 ? '+ Adicionar mais fotos' : 'Clique em qualquer quadro para adicionar fotos'}
                                     </p>
-                                    <p className="text-gray-400 text-xs mt-1">PNG, JPG até 5MB</p>
+                                    <p className="text-gray-400 text-xs mt-1">{fotos.length}/6 fotos · Mínimo de 3 · PNG ou JPG de até 5 MB cada</p>
                                 </div>
                             </div>
                             

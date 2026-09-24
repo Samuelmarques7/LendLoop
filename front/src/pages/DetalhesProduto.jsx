@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom"; // <-- ADICIONADO useNavigate
 import { apiRequest } from "../services/api";
 import { MediaAvaliacao } from "../components/MediaAvaliacao";
+import { GaleriaFotos } from "../components/GaleriaFotos";
 import { PainelAvaliacoes } from "../components/PainelAvaliacoes";
 import { CalendarioReserva, LegendaCalendario } from "../components/CalendarioReserva";
 import { chaveDaApi, chaveDoDia, diasDoPeriodo, diasOcupados as calcularDiasOcupados, formatarChave } from "../utils/datasReserva";
@@ -319,31 +320,7 @@ export function DetalhesProduto() {
           )}
         </div>
 
-        <div className="mb-8 grid h-[280px] grid-cols-1 gap-4 overflow-hidden rounded-3xl sm:mb-12 sm:h-[400px] sm:grid-cols-4 sm:grid-rows-2">
-          <div className="relative col-span-1 bg-gray-200 group cursor-pointer sm:col-span-2 sm:row-span-2">
-            {anuncio.fotos?.[0] ? (
-              <img src={anuncio.fotos[0]} alt={anuncio.titulo} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-            ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-300 text-sm font-bold">Sem foto</div>
-            )}
-          </div>
-
-        {[1, 2, 3, 4].map((indice) => (
-          <div key={indice} className="relative hidden overflow-hidden bg-gray-200 group cursor-pointer sm:block">
-            {anuncio.fotos?.[indice] ? (
-              <img src={anuncio.fotos[indice]} alt={`${anuncio.titulo} ${indice + 1}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-            ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs font-bold">Sem foto</div>
-          )}
-
-        {indice === 4 && anuncio.fotos?.length > 5 && (
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white font-bold text-lg hover:bg-black/50 transition-colors">
-            +{anuncio.fotos.length - 5} mais
-          </div>
-        )}
-        </div>
-        ))}
-      </div>
+        <GaleriaFotos key={id} fotos={anuncio.fotos} titulo={anuncio.titulo} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 relative">
           
