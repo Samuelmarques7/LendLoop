@@ -77,8 +77,7 @@ button:not(:disabled),
 }
 
 .hero-search:focus-within {
-  outline: 3px solid color-mix(in srgb, var(--color-azul-oceano) 68%, transparent);
-  outline-offset: 3px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
 }
 
 .hero-search-input:focus-visible {
@@ -134,7 +133,9 @@ button:not(:disabled),
 }
 @layer components {
   .page-shell {
-    background: linear-gradient(180deg, #f7fafc 0, #ffffff 30rem);
+    background:
+      radial-gradient(circle at 100% 0, color-mix(in srgb, var(--color-ciano) 8%, transparent) 0, transparent 26rem),
+      linear-gradient(180deg, #f7fafc 0, #ffffff 30rem);
   }
 
   .btn-next {

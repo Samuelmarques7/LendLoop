@@ -9,14 +9,16 @@ function PaginaInstitucional({ etiqueta, titulo, descricao, children }) {
     <div className="page-shell flex min-h-screen flex-col text-grafite">
       <Header />
       <main className="flex-1">
-        <section className="bg-verde-escuro px-6 py-14 sm:px-8 lg:py-16">
+        <section className="border-b border-verde-agua/25 bg-[#effaf3] px-6 py-14 sm:px-8 lg:py-16">
           <div className="mx-auto max-w-5xl">
-            <p className="text-xs font-bold uppercase tracking-[0.17em] text-verde-agua">{etiqueta}</p>
-            <h1 className="mt-3 max-w-3xl text-4xl font-black tracking-tight text-white sm:text-5xl">{titulo}</h1>
-            <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/75 sm:text-lg">{descricao}</p>
+            <div className="border-l-4 border-verde-agua pl-5 sm:pl-7">
+              <p className="text-xs font-bold uppercase tracking-[0.17em] text-verde-agua">{etiqueta}</p>
+              <h1 className="mt-3 max-w-3xl text-4xl font-black tracking-tight text-verde-escuro sm:text-5xl">{titulo}</h1>
+              <p className="mt-5 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">{descricao}</p>
+            </div>
           </div>
         </section>
-        <section className="px-6 py-12 sm:px-8 lg:py-16"><div className="mx-auto max-w-5xl">{children}</div></section>
+          <section className="bg-white px-6 py-12 sm:px-8 lg:py-16"><div className="mx-auto max-w-5xl">{children}</div></section>
       </main>
       <Footer />
     </div>

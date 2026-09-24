@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { LuMail, LuShieldCheck } from 'react-icons/lu';
-import logo from '../assets/logocompleta.png';
+import logoMarcaPainel from '../assets/logo-painel-transparente.png';
 
 const linksInstitucionais = [
   { to: '/sobre', label: 'Sobre nós' },
@@ -16,11 +16,12 @@ const linksLegais = [
 export function Footer() {
   return (
     <footer className="mt-auto bg-verde-escuro text-white">
-      <div className="mx-auto max-w-6xl px-6 sm:px-8">
-        <div className="grid gap-10 py-10 sm:grid-cols-2 lg:grid-cols-[1.5fr_.7fr_.9fr] lg:gap-16 lg:py-12">
+      <div className="mx-auto max-w-7xl px-6 sm:px-8 2xl:max-w-[1440px] 2xl:px-10">
+        <div className="grid gap-10 py-10 sm:grid-cols-2 lg:grid-cols-[1.5fr_.7fr_.9fr] lg:gap-16 lg:py-12 2xl:gap-24 2xl:py-14">
           <div className="max-w-sm">
-            <Link to="/" aria-label="LendLoop — voltar para a página inicial" className="inline-block">
-              <img src={logo} alt="LendLoop" className="h-auto w-44" />
+            <Link to="/" aria-label="LendLoop — voltar para a página inicial" className="inline-flex items-center gap-2">
+              <img src={logoMarcaPainel} alt="" className="h-11 w-11 shrink-0 scale-[1.2] object-contain" />
+              <span className="text-[25px] font-semibold leading-none tracking-[-0.06em] text-white" aria-hidden="true">LendLoop</span>
             </Link>
             <p className="mt-5 text-sm leading-relaxed text-white/65">Alugue o que precisa perto de você. Mais acesso, menos acúmulo e mais possibilidades para o dia a dia.</p>
             <span className="mt-5 inline-flex items-center gap-2 text-xs font-semibold text-white/80"><LuShieldCheck size={16} className="text-verde-agua" /> Uma experiência feita para a sua região</span>
