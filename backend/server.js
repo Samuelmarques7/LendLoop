@@ -23,6 +23,7 @@ const app = express();
 const path = require('path');
 const { WebhookSignatureValidator } = require('mercadopago');
 const { ErroMercadoPago, criarOrder, buscarOrder } = require('./config/mercadopago');
+const OcupacaoDia = require('./models/OcupacaoDia');
 
 const origensPermitidas = (process.env.FRONTEND_URL || 'http://localhost:5173')
   .split(',')
@@ -679,7 +680,29 @@ const precoTotal = Number(
       caucao: caucaoCalculada
     });
 
-    await novoAluguel.save();
+        // Reserva cada dia no banco. O índice único (anuncio + dia) garante que duas
+    // requisições simultâneas não consigam ocupar o mesmo dia: a segunda falha.
+    try {
+      await OcupacaoDia.insertMany(
+        diasReservados.map((dia) => ({ anuncio: anuncioEncontrado._id, dia, aluguel: novoAluguel._id })),
+        { ordered: true }
+      );
+    } catch (erroOcupacao) {
+      // Desfaz o que a própria requisição inseriu (e só isso) antes de responder.
+      await OcupacaoDia.deleteMany({ aluguel: novoAluguel._id });
+      if (erroOcupacao.code === 11000 || erroOcupacao.writeErrors?.some((e) => e.code === 11000)) {
+        return res.status(409).json({ erro: 'Já existe uma solicitação ativa para esse período.' });
+      }
+      throw erroOcupacao;
+    }
+
+    try {
+      await novoAluguel.save();
+    } catch (erroSalvar) {
+      // Não deixa os dias presos se o aluguel não chegou a ser salvo.
+      await OcupacaoDia.deleteMany({ aluguel: novoAluguel._id });
+      throw erroSalvar;
+    }
 
     await criarNotificacao({
       usuario: anuncioEncontrado.locador,
@@ -835,21 +858,36 @@ app.patch('/api/alugueis/:id/status', autenticacao, async (req, res) => {
       return res.status(403).json({ erro: 'Você não tem permissão para esta mudança de status.' });
     }
 
-    if (status === 'cancelado') {
-      const pagamento = await Pagamento.findOne({ aluguel: aluguel._id });
-      if (pagamento?.status === 'confirmado') {
-        return res.status(400).json({ erro: 'Não é possível cancelar um aluguel com pagamento confirmado.' });
+        if (status === 'cancelado') {
+      // Apaga de forma atômica: só remove se o pagamento ainda não foi cobrado
+      // nem está em cobrança. Se o checkout travar o pagamento entre a leitura e a
+      // exclusão, o filtro deixa de casar e nada é apagado.
+      const apagado = await Pagamento.findOneAndDelete({
+        aluguel: aluguel._id,
+        status: { $in: ['pendente', 'falhou'] }
+      });
+
+      if (!apagado) {
+        const pagamento = await Pagamento.findOne({ aluguel: aluguel._id });
+
+        if (pagamento?.status === 'confirmado') {
+          return res.status(400).json({ erro: 'Não é possível cancelar um aluguel com pagamento confirmado.' });
+        }
+        if (pagamento) {
+          // processando (ou qualquer outro estado): a cobrança pode estar em andamento no Mercado Pago.
+          return res.status(400).json({ erro: 'O pagamento deste aluguel está em processamento. Aguarde a confirmação.' });
+        }
+        // Sem pagamento algum: pode cancelar normalmente.
       }
-      // A cobrança pode estar em andamento no Mercado Pago: apagar o pagamento
-      // agora deixaria uma aprovação posterior sem registro.
-      if (pagamento?.status === 'processando') {
-        return res.status(400).json({ erro: 'O pagamento deste aluguel está em processamento. Aguarde a confirmação.' });
-      }
-      if (pagamento) await pagamento.deleteOne();
     }
 
     aluguel.status = status;
     await aluguel.save();
+
+    // Libera os dias reservados quando o aluguel deixa de estar ativo.
+    if (['recusado', 'cancelado', 'concluido'].includes(status)) {
+      await OcupacaoDia.deleteMany({ aluguel: aluguel._id });
+    }
 
     if (status === 'aceito') {
       await Pagamento.findOneAndUpdate(
