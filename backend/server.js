@@ -807,14 +807,18 @@ app.patch('/api/alugueis/:id/status', autenticacao, async (req, res) => {
     // Regra específica: só pode marcar como concluído se já estava aceito
     // e se a data de devolução já passou. Evita chamadas diretas à API
     // "concluindo" um aluguel que ainda nem começou.
-    if (status === 'concluido') {
-      if (status === 'concluido' && aluguel.status !== 'andamento' && aluguel.status !== 'aguardando_confirmacao') {
-        return res.status(400).json({ erro: 'Só é possível concluir um aluguel que está em andamento ou aguardando confirmação.' });
-      }
+        // Só pode concluir se estiver em andamento ou aguardando confirmação.
+    if (status === 'concluido' && aluguel.status !== 'andamento' && aluguel.status !== 'aguardando_confirmacao') {
+      return res.status(400).json({ erro: 'Só é possível concluir um aluguel que está em andamento ou aguardando confirmação.' });
+    }
 
-      //if (new Date() < new Date(aluguel.dataFim)) {
-        //return res.status(400).json({ erro: 'Ainda não é possível concluir: o período do aluguel não terminou.' });
-      //}
+    // Só avança para andamento/concluído com pagamento confirmado.
+    // Exceção: aoConfirmarPagamento move aceito -> andamento por updateOne, sem passar por esta rota.
+    if (status === 'andamento' || status === 'concluido') {
+      const pagamentoConfirmado = await Pagamento.exists({ aluguel: aluguel._id, status: 'confirmado' });
+      if (!pagamentoConfirmado) {
+        return res.status(400).json({ erro: 'O pagamento deste aluguel ainda não foi confirmado.' });
+      }
     }
 
     const transicoes = {
