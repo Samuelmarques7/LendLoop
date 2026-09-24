@@ -94,6 +94,14 @@ function usuarioPublico(usuario) {
   };
 }
 
+// Remove o que fica pendurado em anúncios já apagados. Não apaga Aluguel,
+// Pagamento nem Avaliacao: são histórico financeiro e de reputação de terceiros.
+async function removerDependenciasDeAnuncios(idsAnuncios) {
+  if (!idsAnuncios.length) return;
+  await OcupacaoDia.deleteMany({ anuncio: { $in: idsAnuncios } });
+  await Conversa.updateMany({ anuncio: { $in: idsAnuncios } }, { $set: { anuncio: null } });
+}
+
 function autenticacaoOpcional(req, res, next) {
   const [, token] = (req.headers.authorization || '').split(' ');
   if (token) {
@@ -120,6 +128,10 @@ app.put('/api/anuncios/:id', autenticacao, async (req, res) => {
     }
 
     const { titulo, descricao, status, precos } = req.body;
+    if (status !== undefined && !['rascunho', 'publicado'].includes(status)) {
+      return res.status(400).json({ erro: 'Status de anúncio inválido.' });
+    }
+
     if (status === 'publicado' && anuncioExistente.status !== 'publicado'
       && new Set((anuncioExistente.fotos || []).filter((foto) => typeof foto === 'string' && foto.trim()).map((foto) => foto.trim())).size < 3) {
       return res.status(400).json({ erro: 'Adicione pelo menos 3 fotos do item para publicar o anúncio.' });
@@ -168,12 +180,11 @@ app.post('/api/usuarios', async (req, res) => {
     });
 
     await novoUsuario.save();
-    const token = jwt.sign({ id: novoUsuario._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
     res.status(201).json({
-        mensagem: 'Usuário criado com sucesso no LendLoop!',
-        token: criarTokenDeSessao(novoUsuario._id),
-        usuario: {
+      mensagem: 'Usuário criado com sucesso no LendLoop!',
+      token: criarTokenDeSessao(novoUsuario._id),
+      usuario: {
         id: novoUsuario._id,
         nome: novoUsuario.nome,
         email: novoUsuario.email,
@@ -266,8 +277,19 @@ app.delete('/api/usuarios/:id', autenticacao, async (req, res) => {
       return res.status(404).json({ erro: 'Usuário não encontrado' });
     }
 
-    // Apaga de fato os anúncios do usuário (só afetam o próprio dono)
+    // Não deixa excluir a conta com aluguel em andamento (o outro lado ficaria sem resposta)
+    const aluguelAberto = await Aluguel.exists({
+      $or: [{ locador: usuario._id }, { locatario: usuario._id }],
+      status: { $in: ['pendente', 'aceito', 'andamento', 'aguardando_confirmacao'] }
+    });
+    if (aluguelAberto) {
+      return res.status(409).json({ erro: 'Você tem aluguéis em aberto. Conclua ou cancele antes de excluir a conta.' });
+    }
+
+    // Apaga de fato os anúncios do usuário (só afetam o próprio dono) e o que dependia deles
+    const anunciosDoUsuario = await Anuncio.find({ locador: usuario._id }).select('_id');
     await Anuncio.deleteMany({ locador: usuario._id });
+    await removerDependenciasDeAnuncios(anunciosDoUsuario.map((a) => a._id));
 
     // Anonimiza o usuário em vez de apagar, preservando histórico de terceiros
     usuario.nome = 'Usuário removido';
@@ -295,14 +317,13 @@ app.post('/api/login', async (req, res) => {
     }
     const usuario = await Usuario.findOne({ email });
 
-    if (!usuario) {
-      return res.status(404).json({ erro: 'Usuário não encontrado. Verifique seu e-mail.' });
-    }
+    // Mesma resposta para e-mail inexistente e senha errada: evita enumerar contas.
+    // O bcrypt.compare roda mesmo sem usuário para o tempo de resposta não denunciar.
+    const hashParaComparar = usuario?.senha || '$2b$10$3PinCMm4k4BwJFApBS2eG.OlVdaokntkj333FhqgcG0H72O71HHQ6';
+    const senhaCorreta = await bcrypt.compare(senha, hashParaComparar);
 
-    const senhaCorreta = await bcrypt.compare(senha, usuario.senha);
-
-    if (!senhaCorreta) {
-      return res.status(401).json({ erro: 'Senha incorreta.' });
+    if (!usuario || !senhaCorreta) {
+      return res.status(401).json({ erro: 'E-mail ou senha incorretos.' });
     }
 
     if (usuario.ativo === false) {
@@ -341,7 +362,7 @@ app.post('/api/esqueceu-senha', async (req, res) => {
     const usuario = await Usuario.findOne({ email: email?.trim().toLowerCase() });
 
     // Não revela se o e-mail existe ou não, por segurança
-    if (!usuario) {
+    if (!usuario || usuario.ativo === false) {
       return res.status(200).json({
         mensagem: 'Se este e-mail estiver cadastrado, você receberá um link com as instruções de recuperação em breve.'
       });
@@ -498,8 +519,11 @@ app.get('/api/anuncios', async (req, res) => {
       if (precoMax) filtro['precos.precoPorDia'].$lte = Number(precoMax);
     }
 
-    let anuncios = await Anuncio.find(filtro).populate('locador', 'nome avatar verificacao.status');
+    let anuncios = await Anuncio.find(filtro).populate('locador', 'nome avatar verificacao.status ativo');
 
+    // Anúncio cujo dono foi apagado ou desativado não pode aparecer na busca.
+    // Sem este filtro o populate devolve locador: null e o anúncio continua listado.
+    anuncios = anuncios.filter((anuncio) => anuncio.locador && anuncio.locador.ativo !== false);
     if (dataInicio && dataFim) {
       const inicio = normalizarData(dataInicio);
       const fim = normalizarData(dataFim);
@@ -522,8 +546,8 @@ app.get('/api/anuncios', async (req, res) => {
 // Buscar um anúncio específico (usado em DetalhesProduto)
 app.get('/api/anuncios/:id', async (req, res) => {
   try {
-    const anuncio = await Anuncio.findById(req.params.id).populate('locador', 'nome bio avatar createdAt verificacao.status');
-    if (!anuncio) {
+    const anuncio = await Anuncio.findById(req.params.id).populate('locador', 'nome bio avatar createdAt verificacao.status ativo');
+    if (!anuncio || !anuncio.locador || anuncio.locador.ativo === false) {
       return res.status(404).json({ erro: 'Anúncio não encontrado' });
     }
     res.status(200).json(anuncio);
@@ -570,7 +594,16 @@ app.delete('/api/anuncios/:id', autenticacao, async (req, res) => {
       return res.status(403).json({ erro: 'Você não tem permissão para excluir este anúncio.' });
     }
 
+    const temAluguelAtivo = await Aluguel.exists({
+      anuncio: anuncio._id,
+      status: { $in: ['pendente', 'aceito', 'andamento', 'aguardando_confirmacao'] }
+    });
+    if (temAluguelAtivo) {
+      return res.status(409).json({ erro: 'Este anúncio tem aluguéis em aberto. Conclua ou cancele antes de excluir.' });
+    }
+
     await Anuncio.findByIdAndDelete(req.params.id);
+    await removerDependenciasDeAnuncios([anuncio._id]);
 
     res.status(200).json({ mensagem: 'Anúncio excluído com sucesso.' });
   } catch (erro) {
@@ -603,37 +636,37 @@ app.post('/api/alugueis', autenticacao, async (req, res) => {
       return res.status(400).json({ erro: 'Você não pode alugar seu próprio anúncio.' });
     }
 
-if (anuncioEncontrado.status !== 'publicado') {
-  return res.status(400).json({
-    erro: 'Este anúncio não está disponível para aluguel.'
-  });
-}
+    if (anuncioEncontrado.status !== 'publicado') {
+      return res.status(400).json({
+        erro: 'Este anúncio não está disponível para aluguel.'
+      });
+    }
 
-const inicio = normalizarData(dataInicio);
-const fim = normalizarData(dataFim);
+    const inicio = normalizarData(dataInicio);
+    const fim = normalizarData(dataFim);
 
-if (!inicio || !fim || fim <= inicio) {
-  return res.status(400).json({
-    erro: 'Informe um período de aluguel válido.'
-  });
-}
+    if (!inicio || !fim || fim <= inicio) {
+      return res.status(400).json({
+        erro: 'Informe um período de aluguel válido.'
+      });
+    }
 
-const diasReservados = diasDoPeriodo(inicio, fim);
+    const diasReservados = diasDoPeriodo(inicio, fim);
 
-const diasDisponiveis = new Set(
-  (anuncioEncontrado.disponivel || []).map(
-    (dia) => normalizarData(dia)?.toISOString().slice(0, 10)
-  )
-);
+    const diasDisponiveis = new Set(
+      (anuncioEncontrado.disponivel || []).map(
+        (dia) => normalizarData(dia)?.toISOString().slice(0, 10)
+      )
+    );
 
-if (
-  !diasReservados.length ||
-  !diasReservados.every((dia) => diasDisponiveis.has(dia))
-) {
-  return res.status(409).json({
-    erro: 'O anúncio não está disponível durante todo o período escolhido.'
-  });
-}
+    if (
+      !diasReservados.length ||
+      !diasReservados.every((dia) => diasDisponiveis.has(dia))
+    ) {
+      return res.status(409).json({
+        erro: 'O anúncio não está disponível durante todo o período escolhido.'
+      });
+    }
     const conflito = await Aluguel.exists({
       anuncio: anuncioEncontrado._id,
       status: { $in: ['pendente', 'aceito', 'andamento', 'aguardando_confirmacao'] },
@@ -641,32 +674,32 @@ if (
       dataFim: { $gt: inicio }
     });
     if (conflito) {
-return res.status(409).json({
-  erro: 'Já existe uma solicitação ativa para esse período.'
-});
-}
+      return res.status(409).json({
+        erro: 'Já existe uma solicitação ativa para esse período.'
+      });
+    }
 
-const precoPorDia = Number(anuncioEncontrado.precos?.precoPorDia);
+    const precoPorDia = Number(anuncioEncontrado.precos?.precoPorDia);
 
-if (!Number.isFinite(precoPorDia) || precoPorDia < 0) {
-  return res.status(400).json({
-    erro: 'O anúncio possui um preço inválido.'
-  });
-}
+    if (!Number.isFinite(precoPorDia) || precoPorDia < 0) {
+      return res.status(400).json({
+        erro: 'O anúncio possui um preço inválido.'
+      });
+    }
 
-const subtotal = precoPorDia * diasReservados.length;
+    const subtotal = precoPorDia * diasReservados.length;
 
-const taxaCalculada = Number(
-  (subtotal * 0.03).toFixed(2)
-);
+    const taxaCalculada = Number(
+      (subtotal * 0.03).toFixed(2)
+    );
 
-const caucaoCalculada = anuncioEncontrado.precos?.exigirCaucao
-  ? Number(anuncioEncontrado.precos?.caucao || 0)
-  : 0;
+    const caucaoCalculada = anuncioEncontrado.precos?.exigirCaucao
+      ? Number(anuncioEncontrado.precos?.caucao || 0)
+      : 0;
 
-const precoTotal = Number(
-  (subtotal + taxaCalculada + caucaoCalculada).toFixed(2)
-);
+    const precoTotal = Number(
+      (subtotal + taxaCalculada + caucaoCalculada).toFixed(2)
+    );
 
     const novoAluguel = new Aluguel({
       anuncio,
@@ -680,7 +713,7 @@ const precoTotal = Number(
       caucao: caucaoCalculada
     });
 
-        // Reserva cada dia no banco. O índice único (anuncio + dia) garante que duas
+    // Reserva cada dia no banco. O índice único (anuncio + dia) garante que duas
     // requisições simultâneas não consigam ocupar o mesmo dia: a segunda falha.
     try {
       await OcupacaoDia.insertMany(
@@ -830,7 +863,7 @@ app.patch('/api/alugueis/:id/status', autenticacao, async (req, res) => {
     // Regra específica: só pode marcar como concluído se já estava aceito
     // e se a data de devolução já passou. Evita chamadas diretas à API
     // "concluindo" um aluguel que ainda nem começou.
-        // Só pode concluir se estiver em andamento ou aguardando confirmação.
+    // Só pode concluir se estiver em andamento ou aguardando confirmação.
     if (status === 'concluido' && aluguel.status !== 'andamento' && aluguel.status !== 'aguardando_confirmacao') {
       return res.status(400).json({ erro: 'Só é possível concluir um aluguel que está em andamento ou aguardando confirmação.' });
     }
@@ -858,7 +891,7 @@ app.patch('/api/alugueis/:id/status', autenticacao, async (req, res) => {
       return res.status(403).json({ erro: 'Você não tem permissão para esta mudança de status.' });
     }
 
-        if (status === 'cancelado') {
+    if (status === 'cancelado') {
       // Apaga de forma atômica: só remove se o pagamento ainda não foi cobrado
       // nem está em cobrança. Se o checkout travar o pagamento entre a leitura e a
       // exclusão, o filtro deixa de casar e nada é apagado.
@@ -1516,17 +1549,17 @@ app.post('/api/mensagens', autenticacao, async (req, res) => {
       return res.status(403).json({ erro: 'Você não faz parte desta conversa.' });
     }
 
-const destinatarioEhOutroParticipante = conversaExistente.participantes.some(
-  (participante) =>
-    participante.toString() === destinatario &&
-    participante.toString() !== remetente
-);
+    const destinatarioEhOutroParticipante = conversaExistente.participantes.some(
+      (participante) =>
+        participante.toString() === destinatario &&
+        participante.toString() !== remetente
+    );
 
-if (!destinatarioEhOutroParticipante) {
-  return res.status(400).json({
-    erro: 'O destinatário deve ser a outra pessoa da conversa.'
-  });
-}
+    if (!destinatarioEhOutroParticipante) {
+      return res.status(400).json({
+        erro: 'O destinatário deve ser a outra pessoa da conversa.'
+      });
+    }
 
     const novaMensagem = new Mensagem({ conversa, remetente, destinatario, texto: texto.trim() });
     await novaMensagem.save();
