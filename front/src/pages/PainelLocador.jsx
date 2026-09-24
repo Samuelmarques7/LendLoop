@@ -1,10 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { apiRequest } from '../services/api';
-import logo from '../assets/logo.png';
 import { BotaoAvaliar } from '../components/BotaoAvaliar';
 import { PainelMensagens } from '../components/PainelMensagens';
-import { NotificacaoSino } from '../components/NotificacaoSino';
+import { DashboardHeader } from '../components/DashboardHeader';
 import {useNotificacao} from '../context/NotificacaoContext';
 import { useConfirmacao } from '../context/ConfirmacaoContext';
 import { VistoriaFotos } from '../components/VistoriaFotos';
@@ -196,11 +195,11 @@ export default function PainelLocador() {
   ];
 
   const toneClasses = {
-    accent: { bg: 'bg-azul-oceano/[0.08]', text: 'text-azul-oceano', border: 'border-l-azul-oceano' },
+    accent: { bg: 'bg-verde-agua/[0.12]', text: 'text-[#087a3a]', border: 'border-l-verde-agua' },
     warning: { bg: 'bg-amber-500/[0.1]', text: 'text-amber-600', border: 'border-l-amber-500' },
-    success: { bg: 'bg-verde-escuro/[0.08]', text: 'text-verde-escuro', border: 'border-l-verde-escuro' },
+    success: { bg: 'bg-[#087a3a]/[0.09]', text: 'text-[#087a3a]', border: 'border-l-[#087a3a]' },
     danger: { bg: 'bg-[#A32D2D]/[0.08]', text: 'text-[#A32D2D]', border: 'border-l-[#A32D2D]' },
-    neutral: { bg: 'bg-gray-900/[0.05]', text: 'text-gray-700', border: 'border-l-gray-300' },
+    neutral: { bg: 'bg-verde-agua/[0.07]', text: 'text-[#087a3a]', border: 'border-l-verde-agua/55' },
   };
 
   const menuItems = [
@@ -439,68 +438,20 @@ export default function PainelLocador() {
   const descricaoAtual = DESCRICOES_SECOES[activeTab] || 'Acompanhe os detalhes da sua atividade como locador.';
 
   return (
-    <div className="page-shell min-h-screen font-sans text-grafite">
-      <header className="sticky top-0 z-10 border-b border-gray-200 bg-white">
-        <div className="flex min-h-16 w-full items-center gap-2 px-3 sm:h-19 sm:gap-6 sm:px-6 lg:px-8">
-          <button onClick={() => navigate('/')} className="flex-shrink-0 cursor-pointer">
-            <img src={logo} alt="LendLoop" className="h-10 w-auto sm:h-[4.125rem]" />
-          </button>
-
-          <nav className="flex h-full flex-1 items-center gap-1 overflow-x-auto overscroll-x-contain [scrollbar-width:thin]">
-            {menuItems.map((item) => {
-              const isActive = activeTab === item.id;
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleMenuClick(item)}
-                  className={`flex h-full items-center gap-1 whitespace-nowrap border-b-2 px-3 text-sm font-medium transition-colors cursor-pointer sm:gap-2 sm:px-4 sm:text-[15px] ${
-                    isActive
-                      ? 'border-grafite text-grafite'
-                      : 'border-transparent text-gray-500 hover:text-grafite'
-                  }`}
-                >
-                  <Icon size={20} className={isActive ? 'text-verde-agua' : 'text-gray-400'} />
-                  {item.label}
-                </button>
-              );
-            })}
-          </nav>
-
-          <div className="flex flex-shrink-0 items-center gap-1 sm:gap-2">
-            <NotificacaoSino />
-            <button
-              onClick={() => navigate('/configuracoes')}
-              title="Configurações"
-              className="cursor-pointer rounded-full bg-gray-50 p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-verde-agua sm:p-2.5"
-            >
-              <LuSettings size={18} />
-            </button>
-
-            <button
-              onClick={() => navigate('/meu-perfil')}
-              className="group ml-0.5 flex cursor-pointer items-center gap-2.5 border-l border-gray-200 pl-2 sm:ml-1 sm:pl-3"
-            >
-              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-verde-escuro text-sm font-semibold text-white sm:h-9 sm:w-9">
-                {dadosLocador?.avatar ? (
-                  <img src={dadosLocador.avatar} alt={dadosLocador.nome} className="h-full w-full object-cover" />
-                ) : (
-                  dadosLocador?.nome?.charAt(0).toUpperCase() || 'U'
-                )}
-              </div>
-              <div className="hidden min-w-0 text-left lg:block">
-                <p className="whitespace-nowrap text-[14px] font-semibold leading-tight text-verde-escuro transition-colors group-hover:text-verde-agua">
-                  {dadosLocador?.nome ? dadosLocador.nome.split(' ').slice(0, 2).join(' ') : 'Carregando...'}
-                </p>
-                <p className="text-[12px] leading-tight text-gray-400">Ver perfil</p>
-              </div>
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#f6fcf8] font-sans text-grafite">
+      <DashboardHeader
+        variante="locador"
+        menuItems={menuItems}
+        activeTab={activeTab}
+        onSelecionarAba={handleMenuClick}
+        onInicio={() => navigate('/')}
+        onConfiguracoes={() => navigate('/configuracoes')}
+        onPerfil={() => navigate('/meu-perfil')}
+        usuario={dadosLocador}
+      />
 
       <main className="mx-auto w-full max-w-[1600px] space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
-        <div>
+        <div className="rounded-r-2xl border-l-4 border-verde-agua bg-verde-agua/[0.07] py-2 pl-4">
           <h1 className="text-xl font-semibold text-grafite">{tituloAtual}</h1>
           <p className="mt-1 text-sm text-gray-500">{descricaoAtual}</p>
         </div>
@@ -562,7 +513,7 @@ function ModalVistoriaRetirada({ aluguel, onClose, onEnviar, enviando }) {
 
 function CardAnuncio({ anuncio, onAbrirAnuncio, onEditarAnuncio, onPedirExcluirAnuncio }) {
   return (
-    <div className="flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-100 last:border-0 group">
+    <div className="flex items-center justify-between px-4 py-3.5 hover:bg-verde-agua/[0.035] rounded-xl transition-colors border-b border-verde-agua/[0.1] last:border-0 group">
       <div
         onClick={() => onAbrirAnuncio(anuncio._id)}
         className="flex items-center gap-3.5 flex-1 min-w-0 cursor-pointer"
@@ -575,7 +526,7 @@ function CardAnuncio({ anuncio, onAbrirAnuncio, onEditarAnuncio, onPedirExcluirA
           </div>
         )}
         <div className="min-w-0">
-          <h3 className="font-semibold text-grafite text-sm truncate group-hover:text-azul-oceano transition-colors">{anuncio.titulo}</h3>
+          <h3 className="font-semibold text-grafite text-sm truncate group-hover:text-[#087a3a] transition-colors">{anuncio.titulo}</h3>
           <p className="text-xs text-gray-400 mt-0.5">R$ {anuncio.precos?.precoPorDia}/dia</p>
         </div>
       </div>
@@ -619,7 +570,7 @@ function SecaoPainel({ stats, toneClasses, meusAnuncios, solicitacoes, devolucoe
           const Icon = stat.icon;
           const tone = toneClasses[stat.tone];
           return (
-            <div key={stat.id} className={`bg-white p-5 rounded-2xl border border-gray-200 border-l-4 ${tone.border} flex items-center gap-4`}>
+            <div key={stat.id} className={`bg-white p-5 rounded-2xl border border-verde-agua/25 border-l-4 ${tone.border} flex items-center gap-4`}>
               <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${tone.bg} ${tone.text} flex-shrink-0`}>
                 <Icon size={20} />
               </div>
@@ -633,12 +584,12 @@ function SecaoPainel({ stats, toneClasses, meusAnuncios, solicitacoes, devolucoe
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <section className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col">
-          <div className="px-6 py-4.5 border-b border-gray-100 flex justify-between items-center">
+        <section className="bg-white rounded-2xl border border-verde-agua/25 overflow-hidden flex flex-col">
+          <div className="px-6 py-4.5 border-b border-verde-agua/15 bg-verde-agua/[0.025] flex justify-between items-center">
             <h2 className="text-[15px] font-semibold text-grafite">Anúncios recentes</h2>
             <button
               onClick={onNovoAnuncio}
-              className="flex items-center gap-1.5 text-[12px] font-semibold text-white bg-grafite px-3.5 py-2 rounded-lg hover:bg-azul-oceano transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 rounded-lg bg-verde-agua px-3.5 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-verde-escuro cursor-pointer"
             >
               <LuPlus size={14} /> Novo anúncio
             </button>
@@ -680,12 +631,12 @@ function SecaoPainel({ stats, toneClasses, meusAnuncios, solicitacoes, devolucoe
 
 function SecaoAnuncios({ meusAnuncios, onNovoAnuncio, onAbrirAnuncio, onEditarAnuncio, onPedirExcluirAnuncio }) {
   return (
-    <section className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col">
-      <div className="px-6 py-4.5 border-b border-gray-100 flex justify-between items-center">
+    <section className="bg-white rounded-2xl border border-verde-agua/25 overflow-hidden flex flex-col">
+      <div className="px-6 py-4.5 border-b border-verde-agua/15 bg-verde-agua/[0.025] flex justify-between items-center">
         <h2 className="text-[15px] font-semibold text-grafite">Meus anúncios</h2>
         <button
           onClick={onNovoAnuncio}
-          className="flex items-center gap-1.5 text-[12px] font-semibold text-white bg-grafite px-3.5 py-2 rounded-lg hover:bg-azul-oceano transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 rounded-lg bg-verde-agua px-3.5 py-2 text-[12px] font-semibold text-white transition-colors hover:bg-verde-escuro cursor-pointer"
         >
           <LuPlus size={14} /> Novo anúncio
         </button>
@@ -717,8 +668,8 @@ function SecaoSolicitacoes({ solicitacoes, devolucoes, titulo = 'Solicitações 
   const total = solicitacoes.length + (devolucoes?.length || 0);
 
   return (
-    <section className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col">
-      <div className="px-6 py-4.5 border-b border-gray-100 flex justify-between items-center">
+    <section className="bg-white rounded-2xl border border-verde-agua/25 overflow-hidden flex flex-col">
+      <div className="px-6 py-4.5 border-b border-verde-agua/15 bg-verde-agua/[0.025] flex justify-between items-center">
         <h2 className="text-[15px] font-semibold text-grafite">{titulo}</h2>
         {total > 0 && (
           <span className="bg-grafite text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{total}</span>
@@ -734,7 +685,7 @@ function SecaoSolicitacoes({ solicitacoes, devolucoes, titulo = 'Solicitações 
           <>
             {/* 1. DEVOLUÇÕES (Têm prioridade alta de visualização) */}
             {devolucoes?.map((req) => (
-              <div key={req._id} className="p-4 bg-azul-oceano/[0.03] border border-azul-oceano/20 rounded-xl mb-2 last:mb-0">
+              <div key={req._id} className="p-4 bg-verde-agua/[0.035] border border-verde-agua/25 rounded-xl mb-2 last:mb-0">
                 <div className="flex justify-between items-start mb-3 gap-3">
                   <div className="min-w-0">
                     <h3 className="font-semibold text-grafite text-sm truncate">{req.anuncio?.titulo || 'Anúncio'}</h3>
@@ -745,8 +696,8 @@ function SecaoSolicitacoes({ solicitacoes, devolucoes, titulo = 'Solicitações 
                       Fim do aluguel: {new Date(req.dataFim).toLocaleDateString('pt-BR')}
                     </p>
                   </div>
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-azul-oceano/10 text-azul-oceano flex-shrink-0">
-                    <span className="w-1.5 h-1.5 rounded-full bg-azul-oceano animate-pulse"></span>
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-verde-agua/[0.14] text-[#087a3a] flex-shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-verde-agua animate-pulse"></span>
                     Aguardando confirmação
                   </span>
                 </div>
@@ -1093,7 +1044,7 @@ function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, 
   return (
     <div className="space-y-6">
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-gray-200 border-l-4 border-l-verde-escuro flex items-center gap-4">
+        <div className="bg-white p-5 rounded-2xl border border-verde-agua/25 border-l-4 border-l-[#087a3a] flex items-center gap-4">
           <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-verde-escuro/[0.08] text-verde-escuro flex-shrink-0">
             <LuWallet size={20} />
           </div>
@@ -1102,8 +1053,8 @@ function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, 
             <p className="text-xl font-semibold text-grafite tabular-nums">R$ {ganhosDoMes.toFixed(2)}</p>
           </div>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-gray-200 border-l-4 border-l-gray-300 flex items-center gap-4">
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-gray-900/[0.05] text-gray-700 flex-shrink-0">
+        <div className="bg-white p-5 rounded-2xl border border-verde-agua/25 border-l-4 border-l-verde-agua/55 flex items-center gap-4">
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-verde-agua/[0.07] text-[#087a3a] flex-shrink-0">
             <LuDollarSign size={20} />
           </div>
           <div className="min-w-0">
@@ -1111,7 +1062,7 @@ function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, 
             <p className="text-xl font-semibold text-grafite tabular-nums">R$ {ganhosTotais.toFixed(2)}</p>
           </div>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-gray-200 border-l-4 border-l-amber-500 flex items-center gap-4">
+        <div className="bg-white p-5 rounded-2xl border border-verde-agua/25 border-l-4 border-l-amber-500 flex items-center gap-4">
           <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-amber-500/[0.1] text-amber-600 flex-shrink-0">
             <LuClock size={20} />
           </div>
@@ -1123,8 +1074,8 @@ function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, 
       </section>
 
       {/* 2. ALUGUÉIS EM ANDAMENTO (NO TOPO) */}
-      <section className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col">
-        <div className="px-6 py-4.5 border-b border-gray-100">
+      <section className="bg-white rounded-2xl border border-verde-agua/25 overflow-hidden flex flex-col">
+        <div className="px-6 py-4.5 border-b border-verde-agua/15 bg-verde-agua/[0.025]">
           <h2 className="text-[15px] font-semibold text-grafite">Aluguéis em andamento</h2>
         </div>
         <div className="p-2 flex-grow">
@@ -1172,8 +1123,8 @@ function SecaoGanhos({ ganhosTotais, ganhosDoMes, aReceber, alugueisConcluidos, 
       </section>
 
       {/* 3. HISTÓRICO DE ALUGUÉIS CONCLUÍDOS (EMBAIXO) */}
-      <section className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col">
-        <div className="px-6 py-4.5 border-b border-gray-100 flex items-center justify-between gap-3">
+      <section className="bg-white rounded-2xl border border-verde-agua/25 overflow-hidden flex flex-col">
+        <div className="px-6 py-4.5 border-b border-verde-agua/15 bg-verde-agua/[0.025] flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <h2 className="text-[15px] font-semibold text-grafite">
               {verHistoricoCompleto ? 'Histórico de aluguéis concluídos' : 'Pendentes de avaliação'}

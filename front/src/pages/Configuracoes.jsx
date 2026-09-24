@@ -148,7 +148,7 @@ export default function Configuracoes() {
       <Header />
 
       <main className="flex-grow w-full pb-16">
-        <div className="max-w-3xl mx-auto px-6 sm:px-8 pt-8">
+          <div className="max-w-3xl mx-auto px-6 sm:px-8 pt-8">
           <button
             onClick={() => navigate(-1)}
             className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-grafite transition-colors cursor-pointer"

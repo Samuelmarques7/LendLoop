@@ -21,7 +21,7 @@ function tempoRelativo(data) {
   return `${dias}d`;
 }
 
-export function NotificacaoSino() {
+export function NotificacaoSino({ variant = 'standard' }) {
   const navigate = useNavigate();
   const dadosUsuario = JSON.parse(localStorage.getItem('dadosUsuario') || 'null');
   const usuarioId = dadosUsuario?.id;
@@ -122,12 +122,19 @@ export function NotificacaoSino() {
 
   if (!usuarioId) return null;
 
+  const estilosBotao = {
+    hero: 'border border-verde-agua/75 bg-verde-agua/15 text-white shadow-[0_0_0_3px_rgba(46,195,77,0.12)] hover:bg-verde-agua hover:text-white',
+    locatario: 'border border-white/25 bg-white/10 text-white hover:bg-white/20',
+    locador: 'border border-white/25 bg-white/10 text-white hover:bg-white/20',
+    standard: 'bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-verde-agua',
+  };
+
   return (
     <div className="relative" ref={containerRef}>
       <button
         onClick={() => setAberto((v) => !v)}
         title="Notificações"
-        className="relative p-2.5 rounded-full bg-gray-50 text-gray-500 hover:text-verde-agua hover:bg-gray-100 transition-colors cursor-pointer"
+        className={`relative rounded-full p-2.5 transition-colors cursor-pointer ${estilosBotao[variant] || estilosBotao.standard}`}
       >
         <LuBell size={18} />
         {naoLidas > 0 && (

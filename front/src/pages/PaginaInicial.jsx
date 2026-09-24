@@ -16,7 +16,8 @@ import {
 } from 'react-icons/lu';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
-import heroEscuro from '../assets/hero/lendloop-hero-dark-v10.png';
+import heroEscuro from '../assets/hero/lendloop-hero-dark-v11.png';
+import heroEscuroWide from '../assets/hero/lendloop-hero-dark-v12-wide.png';
 import { useBuscasRecentes } from '../hooks/useBuscasRecentes';
 import { SUGESTOES_POPULARES, BANCO_DE_PALAVRAS } from '../constants/buscasPopulares';
 import { CATEGORIAS } from '../constants/categorias';
@@ -92,20 +93,23 @@ export function PaginaInicial() {
 
   return (
     <div className="min-h-screen bg-white text-grafite">
-      <Header />
+      <Header variant="hero" />
 
       <main>
-        <section className="relative z-10 isolate overflow-visible bg-[#031f3b] px-5 py-16 sm:px-8 sm:py-20 lg:min-h-[590px] lg:px-10 lg:py-24">
-          <img src={heroEscuro} alt="Itens disponíveis para alugar, como câmera, furadeira, carrinho de bebê, piscina inflável, caixa de som, controle de videogame e livros" className="absolute inset-0 -z-10 h-full w-full object-cover object-[66%_center] sm:object-center" />
+        <section className="relative z-10 isolate overflow-visible bg-[#031f3b] px-5 pb-16 pt-28 sm:px-8 sm:pb-20 sm:pt-32 lg:min-h-[590px] lg:px-10 lg:pb-24 lg:pt-32 2xl:min-h-[680px] 2xl:pb-28 2xl:pt-36">
+          <picture className="absolute inset-0 -z-10 block h-full w-full">
+            <source media="(min-width: 1536px)" srcSet={heroEscuroWide} />
+            <img src={heroEscuro} alt="Itens disponíveis para alugar, como câmera, furadeira, carrinho de bebê, piscina inflável, caixa de som, controle de videogame e livros" className="h-full w-full object-cover object-left sm:object-center 2xl:object-bottom" />
+          </picture>
 
-          <div className="mx-auto w-full max-w-6xl">
-            <div className="max-w-2xl">
+          <div className="relative z-10 mx-auto w-full max-w-7xl 2xl:max-w-[1540px]">
+            <div className="max-w-[39rem]">
               <p className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-white/75"><span className="h-2 w-2 rounded-full bg-verde-agua" /> Itens úteis, pessoas por perto.</p>
-              <h1 className="max-w-xl text-5xl font-semibold leading-[1.02] tracking-[-0.045em] text-white sm:text-6xl lg:text-7xl">O que você precisa, <span className="text-verde-agua">por perto.</span></h1>
-              <p className="mt-6 max-w-xl text-base leading-relaxed text-white/75 sm:text-lg">Alugue itens para o momento certo — sem comprar, acumular ou ir longe.</p>
+              <h1 className="max-w-[39rem] text-[3.2rem] font-semibold leading-[1.02] tracking-[-0.045em] text-white sm:text-[4rem] lg:text-[4.75rem]">O que você precisa, <span className="text-verde-agua">por perto.</span></h1>
+              <p className="mt-6 max-w-2xl text-[1.05rem] leading-relaxed text-white/75 sm:text-[1.125rem]">Alugue itens para o momento certo — sem comprar, acumular ou ir longe.</p>
             </div>
 
-            <div ref={buscaRef} className="relative mt-9 w-full max-w-2xl">
+            <div ref={buscaRef} className="relative mt-9 w-full max-w-[34rem]">
               <form onSubmit={(evento) => { evento.preventDefault(); executarBusca(); }} onClick={() => setMostrarSugestoes(true)} className="hero-search flex min-h-[72px] w-full items-center rounded-2xl bg-white p-2 shadow-[0_22px_55px_rgba(0,0,0,.28)]">
                 <LuSearch size={22} className="mx-3 shrink-0 text-azul-oceano" />
                 <input
@@ -158,7 +162,7 @@ export function PaginaInicial() {
               )}
             </div>
 
-            <div className="mt-6 flex max-w-2xl flex-wrap gap-x-5 gap-y-3 border-t border-white/15 pt-5 text-xs font-medium text-white/75 sm:text-sm">
+            <div className="mt-6 flex max-w-[34rem] flex-wrap gap-x-5 gap-y-3 border-t border-white/15 pt-5 text-xs font-medium text-white/75 sm:text-sm">
               <span className="inline-flex items-center gap-2"><LuShieldCheck size={16} className="text-verde-agua" /> Perfis verificados</span>
               <span className="inline-flex items-center gap-2"><LuMapPin size={16} className="text-verde-agua" /> Retirada combinada</span>
               <span className="inline-flex items-center gap-2"><LuCheck size={16} className="text-verde-agua" /> Vistoria registrada</span>
@@ -167,7 +171,7 @@ export function PaginaInicial() {
         </section>
 
         <section className="bg-white px-6 py-11 sm:px-8 lg:py-14">
-          <div className="mx-auto max-w-6xl">
+          <div className="mx-auto max-w-7xl 2xl:max-w-[1440px]">
             <div className="mb-7 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
               <div><p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-ciano">Explore por categoria</p><h2 className="text-3xl font-black tracking-tight text-verde-escuro">Encontre o item certo.</h2><p className="mt-2 max-w-xl text-sm leading-relaxed text-gray-500">Do projeto de fim de semana à sua próxima comemoração.</p></div>
               <button onClick={() => navigate('/busca')} className="inline-flex items-center gap-2 text-sm font-bold text-azul-oceano transition-colors hover:text-verde-escuro focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-azul-oceano">Ver todos os itens <LuArrowRight size={17} /></button>
@@ -188,7 +192,7 @@ export function PaginaInicial() {
         </section>
 
         <section className="overflow-hidden bg-verde-escuro px-6 py-12 sm:px-8 lg:py-16">
-          <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[.82fr_1.18fr] lg:items-center">
+          <div className="mx-auto grid max-w-7xl gap-10 2xl:max-w-[1440px] lg:grid-cols-[.82fr_1.18fr] lg:items-center">
             <div>
               <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-verde-agua">Simples do começo ao fim</p>
               <h2 className="max-w-md text-3xl font-black tracking-tight text-white sm:text-4xl">Alugar deveria caber na sua rotina.</h2>
@@ -210,7 +214,7 @@ export function PaginaInicial() {
         </section>
 
         <section className="bg-gray-50 px-6 py-11 sm:px-8 lg:py-14">
-          <div className="mx-auto max-w-6xl">
+          <div className="mx-auto max-w-7xl 2xl:max-w-[1440px]">
             <div className="mb-6 max-w-xl"><p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-ciano">Feito para a vida real</p><h2 className="text-3xl font-black tracking-tight text-verde-escuro">Mais acesso. Menos acúmulo.</h2></div>
             <div className="grid gap-4 md:grid-cols-3">
               {beneficios.map(({ icone, titulo, descricao }) => (
@@ -224,7 +228,7 @@ export function PaginaInicial() {
         </section>
 
         <section className="bg-white px-6 py-11 sm:px-8 lg:py-14">
-          <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-2">
+          <div className="mx-auto grid max-w-7xl gap-5 2xl:max-w-[1440px] lg:grid-cols-2">
             <article className="rounded-3xl bg-verde-escuro p-6 text-white sm:p-8">
               <span className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-verde-agua"><LuSearch size={23} /></span>
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-verde-agua">Quero alugar</p><h2 className="mt-3 text-3xl font-black tracking-tight">Use o que precisa, pelo tempo que precisar.</h2>

@@ -1,10 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { apiRequest } from '../services/api';
-import logo from '../assets/logo.png';
 import { BotaoAvaliar } from '../components/BotaoAvaliar';
 import { PainelMensagens } from '../components/PainelMensagens';
-import { NotificacaoSino } from '../components/NotificacaoSino';
+import { DashboardHeader } from '../components/DashboardHeader';
 import { useNotificacao } from '../context/NotificacaoContext';
 import { useConfirmacao } from '../context/ConfirmacaoContext';
 import { VistoriaFotos } from '../components/VistoriaFotos';
@@ -190,9 +189,9 @@ export default function PainelLocatario() {
 const toneClasses = {
   accent: { bg: 'bg-azul-oceano/[0.08]', text: 'text-azul-oceano', border: 'border-l-azul-oceano' },
   warning: { bg: 'bg-amber-500/[0.1]', text: 'text-amber-600', border: 'border-l-amber-500' },
-  success: { bg: 'bg-verde-escuro/[0.08]', text: 'text-verde-escuro', border: 'border-l-verde-escuro' },
+  success: { bg: 'bg-azul-oceano/[0.08]', text: 'text-azul-oceano', border: 'border-l-azul-oceano' },
   danger: { bg: 'bg-[#A32D2D]/[0.08]', text: 'text-[#A32D2D]', border: 'border-l-[#A32D2D]' },
-  neutral: { bg: 'bg-gray-900/[0.05]', text: 'text-gray-700', border: 'border-l-gray-300' },
+  neutral: { bg: 'bg-azul-oceano/[0.05]', text: 'text-azul-oceano', border: 'border-l-azul-oceano/45' },
 };
 
   const menuItems = [
@@ -401,68 +400,20 @@ const toneClasses = {
   const descricaoAtual = DESCRICOES_SECOES[activeTab] || 'Acompanhe os detalhes da sua atividade como locatário.';
 
   return (
-    <div className="page-shell min-h-screen font-sans text-grafite">
-      <header className="sticky top-0 z-10 border-b border-gray-200 bg-white">
-        <div className="flex min-h-16 w-full items-center gap-2 px-3 sm:h-19 sm:gap-6 sm:px-6 lg:px-8">
-          <button onClick={() => navigate('/')} className="flex-shrink-0 cursor-pointer">
-            <img src={logo} alt="LendLoop" className="h-10 w-auto sm:h-[4.125rem]" />
-          </button>
-
-          <nav className="flex h-full flex-1 items-center gap-1 overflow-x-auto overscroll-x-contain [scrollbar-width:thin]">
-            {menuItems.map((item) => {
-              const isActive = activeTab === item.id;
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleMenuClick(item)}
-                  className={`flex h-full items-center gap-1 whitespace-nowrap border-b-2 px-3 text-sm font-medium transition-colors cursor-pointer sm:gap-2 sm:px-4 sm:text-[15px] ${
-                    isActive
-                      ? 'border-grafite text-grafite'
-                      : 'border-transparent text-gray-500 hover:text-grafite'
-                  }`}
-                >
-                  <Icon size={20} className={isActive ? 'text-azul-oceano' : 'text-gray-400'} />
-                  {item.label}
-                </button>
-              );
-            })}
-          </nav>
-
-          <div className="flex flex-shrink-0 items-center gap-1 sm:gap-2">
-            <NotificacaoSino />
-            <button
-              onClick={() => navigate('/configuracoes')}
-              title="Configurações"
-              className="cursor-pointer rounded-full bg-gray-50 p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-verde-agua sm:p-2.5"
-            >
-              <LuSettings size={18} />
-            </button>
-
-            <button
-              onClick={() => navigate('/meu-perfil')}
-              className="group ml-0.5 flex cursor-pointer items-center gap-2.5 border-l border-gray-200 pl-2 sm:ml-1 sm:pl-3"
-            >
-              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-verde-escuro text-sm font-semibold text-white sm:h-9 sm:w-9">
-                {dadosLocatario?.avatar ? (
-                  <img src={dadosLocatario.avatar} alt={dadosLocatario.nome} className="h-full w-full object-cover" />
-                ) : (
-                  dadosLocatario?.nome?.charAt(0).toUpperCase() || 'U'
-                )}
-              </div>
-              <div className="hidden min-w-0 text-left lg:block">
-                <p className="whitespace-nowrap text-[14px] font-semibold leading-tight text-verde-escuro transition-colors group-hover:text-verde-agua">
-                  {dadosLocatario?.nome ? dadosLocatario.nome.split(' ').slice(0, 2).join(' ') : 'Carregando...'}
-                </p>
-                <p className="text-[12px] leading-tight text-gray-400">Ver perfil</p>
-              </div>
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#f7fbff] font-sans text-grafite">
+      <DashboardHeader
+        variante="locatario"
+        menuItems={menuItems}
+        activeTab={activeTab}
+        onSelecionarAba={handleMenuClick}
+        onInicio={() => navigate('/')}
+        onConfiguracoes={() => navigate('/configuracoes')}
+        onPerfil={() => navigate('/meu-perfil')}
+        usuario={dadosLocatario}
+      />
 
       <main className="mx-auto w-full max-w-[1600px] space-y-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
-        <div>
+        <div className="rounded-r-2xl border-l-4 border-azul-oceano bg-azul-oceano/[0.05] py-2 pl-4">
           <h1 className="text-xl font-semibold text-grafite">{tituloAtual}</h1>
           <p className="mt-1 text-sm text-gray-500">{descricaoAtual}</p>
         </div>
@@ -545,15 +496,15 @@ function StatusPill({ status }) {
 
 function AbaFiltro({ abas, atual, onChange }) {
   return (
-    <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+    <div className="flex items-center gap-1 rounded-lg bg-azul-oceano/[0.08] p-1">
       {abas.map((aba) => (
         <button
           key={aba.key}
           onClick={() => onChange(aba.key)}
           className={`relative px-3 py-1.5 rounded-md text-[12px] font-semibold transition-all cursor-pointer ${
             atual === aba.key
-              ? 'bg-white text-grafite shadow-sm'
-              : 'text-gray-500 hover:text-grafite'
+              ? 'bg-azul-oceano text-white shadow-sm shadow-azul-oceano/20'
+              : 'text-slate-500 hover:bg-white/70 hover:text-azul-oceano'
           }`}
         >
           {aba.label}
@@ -622,8 +573,8 @@ function ListaAlugueis({ alugueis, aba, usuarioLogadoId, onAbrirDetalhes, onStat
 
 function CardSecao({ titulo, acao, children }) {
   return (
-    <section className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col">
-      <div className="px-6 py-4.5 border-b border-gray-100 flex justify-between items-center">
+    <section className="flex flex-col overflow-hidden rounded-2xl border border-azul-oceano/[0.16] bg-white">
+      <div className="flex items-center justify-between border-b border-azul-oceano/[0.1] bg-azul-oceano/[0.018] px-6 py-4.5">
         <h2 className="text-[15px] font-semibold text-grafite">{titulo}</h2>
         {acao}
       </div>
@@ -724,7 +675,7 @@ function LinhaPagamento({ pagamento, abaPagamentos, onPagarAgora }) {
         {abaPagamentos === 'pendentes' && pagamento.status !== 'processando' && (
           <button
             onClick={() => onPagarAgora(pagamento)}
-            className="bg-grafite text-white text-[11px] font-semibold px-3.5 py-2 rounded-lg hover:bg-azul-oceano transition-colors cursor-pointer"
+            className="rounded-lg bg-azul-oceano px-3.5 py-2 text-[11px] font-semibold text-white transition-colors hover:bg-verde-escuro cursor-pointer"
           >
             Pagar agora
           </button>
@@ -768,7 +719,7 @@ function SecaoPainel({ stats, toneClasses, alugueis, pagamentos, solicitacoesEnv
           const Icon = stat.icon;
           const tone = toneClasses[stat.tone];
           return (
-            <div key={stat.id} className={`bg-white p-5 rounded-2xl border border-gray-200 border-l-4 ${tone.border} flex items-center gap-4`}>
+            <div key={stat.id} className={`flex items-center gap-4 rounded-2xl border border-azul-oceano/[0.14] border-l-4 bg-white p-5 ${tone.border}`}>
               <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${tone.bg} ${tone.text} flex-shrink-0`}>
                 <Icon size={20} />
               </div>
@@ -892,7 +843,7 @@ function ModalDetalhesAluguel({ aluguel, onClose, onSolicitarDevolucao, enviando
         {podeSolicitarDevolucao && (
           <button
             onClick={() => setMostrarVistoria(true)}
-            className="w-full bg-grafite text-white text-sm font-semibold py-3 rounded-lg hover:bg-azul-oceano transition-colors cursor-pointer"
+            className="w-full rounded-lg bg-azul-oceano py-3 text-sm font-semibold text-white transition-colors hover:bg-verde-escuro cursor-pointer"
           >
             Registrar devolução com fotos
           </button>
