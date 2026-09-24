@@ -1,8 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom"; // <-- ADICIONADO useNavigate
 import { apiRequest } from "../services/api";
 import { MediaAvaliacao } from "../components/MediaAvaliacao";
+import { GaleriaFotos } from "../components/GaleriaFotos";
 import { PainelAvaliacoes } from "../components/PainelAvaliacoes";
+import { CalendarioReserva, LegendaCalendario } from "../components/CalendarioReserva";
+import { chaveDaApi, chaveDoDia, diasDoPeriodo, diasOcupados as calcularDiasOcupados, formatarChave } from "../utils/datasReserva";
 
 import { 
   LuStar, 
@@ -12,7 +15,9 @@ import {
   LuCheck, 
   LuMessageCircle,
   LuCalendar,
-  LuClock
+  LuClock,
+  LuSparkles,
+  LuWallet
 } from "react-icons/lu";
 
 const mesesPtBr = [
@@ -24,6 +29,32 @@ function formatarMembroDesde(data) {
   if (!data) return null;
   const d = new Date(data);
   return `Membro desde ${mesesPtBr[d.getMonth()]} de ${d.getFullYear()}`;
+}
+
+const DATA_CURTA = { day: 'numeric', month: 'short' };
+
+function ItemDiretriz({ icone, titulo, children }) {
+  const Icone = icone;
+  return (
+    <li className="flex items-start gap-3">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-gray-100 bg-white text-verde-agua">
+        <Icone size={18} />
+      </span>
+      <span>
+        <span className="block text-[11px] font-bold uppercase tracking-wider text-gray-400">{titulo}</span>
+        <span className="block text-sm font-medium text-gray-600">{children}</span>
+      </span>
+    </li>
+  );
+}
+
+async function buscarOcupacao(anuncioId) {
+  try {
+    return await apiRequest(`/api/anuncios/${anuncioId}/ocupacao`);
+  } catch {
+    // Sem a ocupação, o calendário mostra só a disponibilidade; a API ainda recusa conflitos.
+    return [];
+  }
 }
 
 import { Header } from "../components/Header";
@@ -46,6 +77,38 @@ export function DetalhesProduto() {
   const [enviando, setEnviando] = useState(false);
   const [mensagem, setMensagem] = useState(null);
   const [avaliacoesLocador, setAvaliacoesLocador] = useState(null);
+  const [ocupacoes, setOcupacoes] = useState([]);
+  const [calendarioAberto, setCalendarioAberto] = useState(false);
+  const seletorDatasRef = useRef(null);
+
+  // Dias que podem ser reservados: liberados pelo anunciante, sem reserva e a partir de hoje.
+  const diasOcupados = useMemo(() => calcularDiasOcupados(ocupacoes), [ocupacoes]);
+  const diasLivres = useMemo(() => {
+    const hoje = chaveDoDia(new Date());
+    return new Set(
+      (anuncio?.disponivel || [])
+        .map(chaveDaApi)
+        .filter((dia) => dia >= hoje && !diasOcupados.has(dia))
+    );
+  }, [anuncio, diasOcupados]);
+
+  useEffect(() => {
+    if (!calendarioAberto) return;
+
+    function fecharAoClicarFora(evento) {
+      if (!seletorDatasRef.current?.contains(evento.target)) setCalendarioAberto(false);
+    }
+    function fecharComEsc(evento) {
+      if (evento.key === 'Escape') setCalendarioAberto(false);
+    }
+
+    document.addEventListener('mousedown', fecharAoClicarFora);
+    document.addEventListener('keydown', fecharComEsc);
+    return () => {
+      document.removeEventListener('mousedown', fecharAoClicarFora);
+      document.removeEventListener('keydown', fecharComEsc);
+    };
+  }, [calendarioAberto]);
 
   useEffect(() => {
     async function buscarAnuncio() {
@@ -53,6 +116,7 @@ export function DetalhesProduto() {
         setCarregando(true);
         const dados = await apiRequest(`/api/anuncios/${id}`);
         setAnuncio(dados);
+        setOcupacoes(await buscarOcupacao(id));
 
         // Conecta o horário padrão do formulário de reserva com o que o
         // locador definiu ao anunciar o item, em vez de usar um valor fixo.
@@ -98,11 +162,7 @@ export function DetalhesProduto() {
     );
   }
   
-  const dias = dataInicio && dataFim 
-    ? Math.ceil((new Date(dataFim) - new Date(dataInicio)) / (1000 * 60 * 60 * 24)) : 0;
-
-  const diasValidos = dias > 0 ? dias : 0;
-  const datasDisponiveis = new Set((anuncio.disponivel || []).map((data) => new Date(data).toISOString().slice(0, 10)));
+  const diasValidos = dataInicio && dataFim ? diasDoPeriodo(dataInicio, dataFim).length : 0;
   const subtotal = diasValidos * anuncio.precos.precoPorDia;
   const taxaServico = subtotal * 0.03;
   const caucao = anuncio.precos.caucao || 0;
@@ -128,16 +188,9 @@ export function DetalhesProduto() {
       return;
     }
 
-    if (datasDisponiveis.size > 0) {
-      const inicio = new Date(`${dataInicio}T00:00:00.000Z`);
-      for (let indice = 0; indice < diasValidos; indice += 1) {
-        const dia = new Date(inicio);
-        dia.setUTCDate(dia.getUTCDate() + indice);
-        if (!datasDisponiveis.has(dia.toISOString().slice(0, 10))) {
-          setMensagem({tipo: 'erro', texto: 'O anúncio não está disponível durante todo o período escolhido.'});
-          return;
-        }
-      }
+    if (!diasDoPeriodo(dataInicio, dataFim).every((dia) => diasLivres.has(dia))) {
+      setMensagem({tipo: 'erro', texto: 'O anúncio não está disponível durante todo o período escolhido.'});
+      return;
     }
 
     const usuarioLogado = JSON.parse(dadosUsuarioRaw);
@@ -162,6 +215,9 @@ export function DetalhesProduto() {
       });
 
       setMensagem({tipo: 'sucesso', texto: 'Solicitação de aluguel enviada com sucesso!'});
+      setDataInicio("");
+      setDataFim("");
+      setOcupacoes(await buscarOcupacao(anuncio._id));
     } catch (e) {
       setMensagem({
         tipo: 'erro',
@@ -172,6 +228,29 @@ export function DetalhesProduto() {
       setEnviando(false);
     }
   }
+
+  function alterarPeriodo({ inicio, fim }) {
+    setDataInicio(inicio);
+    setDataFim(fim);
+    setMensagem(null);
+    if (inicio && fim) setCalendarioAberto(false);
+  }
+
+  const semDatasLivres = diasLivres.size === 0;
+  const tituloCalendario = !dataInicio
+    ? 'Escolha o dia da retirada'
+    : !dataFim
+      ? 'Agora escolha a devolução'
+      : `${diasValidos} ${diasValidos === 1 ? 'diária' : 'diárias'}`;
+  const subtituloCalendario = semDatasLivres
+    ? 'Este item não tem datas disponíveis no momento.'
+    : !dataInicio
+      ? 'Os dias em verde estão disponíveis para aluguel.'
+      : !dataFim
+        ? `Retirada em ${formatarChave(dataInicio, { day: 'numeric', month: 'long' })}. A devolução pode ser até o primeiro dia indisponível.`
+        : `${formatarChave(dataInicio, DATA_CURTA)} – ${formatarChave(dataFim, DATA_CURTA)}`;
+
+  const propsCalendario = { diasLivres, diasOcupados, inicio: dataInicio, fim: dataFim, onChange: alterarPeriodo };
 
   // --- NOVA FUNÇÃO ADICIONADA AQUI ---
   function handleMensagemAnfitriao() {
@@ -241,31 +320,7 @@ export function DetalhesProduto() {
           )}
         </div>
 
-        <div className="mb-8 grid h-[280px] grid-cols-1 gap-4 overflow-hidden rounded-3xl sm:mb-12 sm:h-[400px] sm:grid-cols-4 sm:grid-rows-2">
-          <div className="relative col-span-1 bg-gray-200 group cursor-pointer sm:col-span-2 sm:row-span-2">
-            {anuncio.fotos?.[0] ? (
-              <img src={anuncio.fotos[0]} alt={anuncio.titulo} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-            ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-300 text-sm font-bold">Sem foto</div>
-            )}
-          </div>
-
-        {[1, 2, 3, 4].map((indice) => (
-          <div key={indice} className="relative hidden overflow-hidden bg-gray-200 group cursor-pointer sm:block">
-            {anuncio.fotos?.[indice] ? (
-              <img src={anuncio.fotos[indice]} alt={`${anuncio.titulo} ${indice + 1}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-            ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs font-bold">Sem foto</div>
-          )}
-
-        {indice === 4 && anuncio.fotos?.length > 5 && (
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white font-bold text-lg hover:bg-black/50 transition-colors">
-            +{anuncio.fotos.length - 5} mais
-          </div>
-        )}
-        </div>
-        ))}
-      </div>
+        <GaleriaFotos key={id} fotos={anuncio.fotos} titulo={anuncio.titulo} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 relative">
           
@@ -297,23 +352,53 @@ export function DetalhesProduto() {
               </section>
             )}
 
-            <section className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
-              <h2 className="text-lg font-bold text-grafite mb-4">Diretrizes de Aluguel</h2>
-              <ul className="space-y-3 text-sm text-gray-600 font-medium">
-                <li className="flex items-start gap-2">
-                  <span>📍</span> Retirada e devolução em {anuncio.endereco.bairro}, {anuncio.endereco.cidade} - {anuncio.endereco.estado}
-                </li>
-                {anuncio.precos.exigirCaucao && (
-                  <li className="flex items-start gap-2">
-                    <span>💰</span> Depósito caução de R$ {anuncio.precos.caucao} necessário
-                  </li>
-                )}
-                <li className="flex items-start gap-2"><span>✨</span> Favor devolver limpo e nas mesmas condições</li>
-                <li className="flex items-start gap-2">
-                  <span>🕒</span> Retirada às {anuncio.precos.horarioRetirada} e devolução até {anuncio.precos.horarioDevolucao}
-                </li>
-              </ul>
-            </section>
+            {/* Diretrizes e disponibilidade lado a lado. Entre lg e xl o card de reserva
+                estreita a coluna e o calendário não cabe na metade, então eles empilham. */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+              <section className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                <h2 className="text-lg font-bold text-grafite mb-5">Diretrizes de Aluguel</h2>
+                <ul className="space-y-5">
+                  <ItemDiretriz icone={LuMapPin} titulo="Retirada e devolução">
+                    {anuncio.endereco.bairro}, {anuncio.endereco.cidade} - {anuncio.endereco.estado}
+                  </ItemDiretriz>
+                  <ItemDiretriz icone={LuClock} titulo="Horários">
+                    Retirada às {anuncio.precos.horarioRetirada} e devolução até {anuncio.precos.horarioDevolucao}
+                  </ItemDiretriz>
+                  {anuncio.precos.exigirCaucao && (
+                    <ItemDiretriz icone={LuWallet} titulo="Depósito caução">
+                      R$ {anuncio.precos.caucao}, necessário para alugar
+                    </ItemDiretriz>
+                  )}
+                  <ItemDiretriz icone={LuSparkles} titulo="Cuidados">
+                    Devolva o item limpo e nas mesmas condições
+                  </ItemDiretriz>
+                </ul>
+              </section>
+
+              <section className="flex flex-col bg-white p-6 rounded-2xl border border-gray-100">
+                <div className="flex items-start justify-between gap-3">
+                  <h2 className="text-lg font-bold text-grafite">Disponibilidade</h2>
+                  {dataInicio && (
+                    <button
+                      type="button"
+                      onClick={() => alterarPeriodo({ inicio: '', fim: '' })}
+                      className="shrink-0 pt-1 text-xs font-bold text-grafite underline underline-offset-2 cursor-pointer"
+                    >
+                      Limpar datas
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-1 mb-3">
+                  {dataInicio ? `${tituloCalendario} · ${subtituloCalendario}` : subtituloCalendario}
+                </p>
+                <div className="flex flex-1 justify-center overflow-x-auto">
+                  <CalendarioReserva {...propsCalendario} />
+                </div>
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <LegendaCalendario />
+                </div>
+              </section>
+            </div>
 
             <section className="border-t border-gray-200 pt-10">
               <div className="flex items-center justify-between mb-6">
@@ -382,24 +467,78 @@ export function DetalhesProduto() {
               </div>
 
               <div className="space-y-3 mb-6">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="border border-gray-200 rounded-xl p-3 relative">
-                    <label className="block text-[9px] font-bold text-gray-400 uppercase mb-1">Data de Início</label>
-                    <input 
-                      type="date"
-                      value={dataInicio}
-                      onChange={(e) => setDataInicio(e.target.value)} 
-                      className="w-full text-sm font-bold outline-none bg-transparent cursor-pointer" />
-                  </div>
-                  <div className="border border-gray-200 rounded-xl p-3 relative">
-                    <label className="block text-[9px] font-bold text-gray-400 uppercase mb-1">Data de Término</label>
-                    <input
-                      type = 'date'
-                      value={dataFim}
-                      onChange={(e) => setDataFim(e.target.value)}
-                      className="w-full text-sm font-bold outline-none bg-transparent cursor-pointer"
+                <div className="relative" ref={seletorDatasRef}>
+                  <button
+                    type="button"
+                    onClick={() => setCalendarioAberto((aberto) => !aberto)}
+                    aria-expanded={calendarioAberto}
+                    aria-haspopup="dialog"
+                    className={`w-full grid grid-cols-2 text-left border rounded-xl transition-colors cursor-pointer ${calendarioAberto ? 'border-grafite ring-1 ring-grafite' : 'border-gray-200 hover:border-gray-400'}`}
+                  >
+                    <span className="p-3 border-r border-gray-200">
+                      <span className="flex items-center gap-1 text-[9px] font-bold text-gray-400 uppercase mb-1">
+                        <LuCalendar size={11} /> Retirada
+                      </span>
+                      <span className={`block text-sm font-bold ${dataInicio ? 'text-grafite' : 'text-gray-400'}`}>
+                        {dataInicio ? formatarChave(dataInicio) : 'Adicionar data'}
+                      </span>
+                    </span>
+                    <span className="p-3">
+                      <span className="flex items-center gap-1 text-[9px] font-bold text-gray-400 uppercase mb-1">
+                        <LuCalendar size={11} /> Devolução
+                      </span>
+                      <span className={`block text-sm font-bold ${dataFim ? 'text-grafite' : 'text-gray-400'}`}>
+                        {dataFim ? formatarChave(dataFim) : 'Adicionar data'}
+                      </span>
+                    </span>
+                  </button>
+
+                  {calendarioAberto && (
+                    <div
+                      className="fixed inset-0 z-40 bg-black/30 sm:hidden"
+                      onClick={() => setCalendarioAberto(false)}
+                      aria-hidden="true"
                     />
-                  </div>
+                  )}
+
+                  {calendarioAberto && (
+                    // No celular abre como gaveta na parte de baixo da tela; a partir de sm, como painel sob os campos.
+                    <div
+                      role="dialog"
+                      aria-label="Escolher datas do aluguel"
+                      className="fixed inset-x-0 bottom-0 z-50 max-h-[90vh] overflow-y-auto bg-white rounded-t-3xl shadow-2xl p-5 sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-0 sm:top-full sm:mt-2 sm:z-30 sm:max-h-none sm:overflow-visible sm:w-[21rem] sm:rounded-2xl sm:border sm:border-gray-100 sm:p-4"
+                    >
+                      <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-gray-200 sm:hidden" aria-hidden="true" />
+                      <p className="text-sm font-bold text-grafite">{tituloCalendario}</p>
+                      <p className="text-xs text-gray-400 mb-3">{subtituloCalendario}</p>
+
+                      <div className="flex justify-center">
+                        <CalendarioReserva {...propsCalendario} />
+                      </div>
+
+                      <div className="mt-3">
+                        <LegendaCalendario />
+                      </div>
+
+                      <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
+                        <button
+                          type="button"
+                          onClick={() => alterarPeriodo({ inicio: '', fim: '' })}
+                          disabled={!dataInicio}
+                          className="text-xs font-bold text-grafite underline underline-offset-2 disabled:text-gray-300 disabled:no-underline"
+                        >
+                          Limpar datas
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCalendarioAberto(false)}
+                          className="bg-grafite text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-black transition-colors cursor-pointer"
+                        >
+                          Fechar
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="border border-gray-200 rounded-xl p-3 relative">
@@ -423,7 +562,7 @@ export function DetalhesProduto() {
 
               <div className="space-y-4 text-sm font-medium text-gray-600 mb-6">
                 <div className="flex justify-between">
-                  <span>R$ {anuncio.precos.precoPorDia} x {diasValidos} dias</span>
+                  <span>R$ {anuncio.precos.precoPorDia} x {diasValidos} {diasValidos === 1 ? 'diária' : 'diárias'}</span>
                   <span className="text-grafite font-bold">R$ {subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">

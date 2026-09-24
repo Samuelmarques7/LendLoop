@@ -119,6 +119,10 @@ app.put('/api/anuncios/:id', autenticacao, async (req, res) => {
     }
 
     const { titulo, descricao, status, precos } = req.body;
+    if (status === 'publicado' && anuncioExistente.status !== 'publicado'
+      && new Set((anuncioExistente.fotos || []).filter((foto) => typeof foto === 'string' && foto.trim()).map((foto) => foto.trim())).size < 3) {
+      return res.status(400).json({ erro: 'Adicione pelo menos 3 fotos do item para publicar o anúncio.' });
+    }
     const camposAtualizados = {};
     if (titulo !== undefined) camposAtualizados.titulo = titulo;
     if (descricao !== undefined) camposAtualizados.descricao = descricao;
@@ -423,6 +427,13 @@ app.post('/api/anuncios', autenticacao, async (req, res) => {
     }
 
     const { titulo, descricao, categoria, subcategorias, especificacoes, fotos, endereco, disponivel, precos, status } = req.body;
+    if (fotos !== undefined && (!Array.isArray(fotos) || fotos.length > 6
+      || fotos.some((foto) => typeof foto !== 'string' || !/^https?:\/\//i.test(foto.trim())))) {
+      return res.status(400).json({ erro: 'Envie até 6 fotos com URLs válidas.' });
+    }
+    if (status === 'publicado' && (!Array.isArray(fotos) || new Set(fotos.map((foto) => foto.trim())).size < 3)) {
+      return res.status(400).json({ erro: 'Adicione pelo menos 3 fotos diferentes do item para publicar o anúncio.' });
+    }
     if (typeof titulo !== 'string' || titulo.trim().length < 3 || typeof descricao !== 'string' || descricao.trim().length < 20 || !categoria || !endereco || !precos) {
       return res.status(400).json({ erro: 'Título, descrição, categoria, endereço e preços válidos são obrigatórios.' });
     }
@@ -517,6 +528,22 @@ app.get('/api/anuncios/:id', async (req, res) => {
     res.status(200).json(anuncio);
   } catch (erro) {
     res.status(500).json({ erro: 'Erro ao buscar anúncio' });
+  }
+});
+
+// Períodos já reservados de um anúncio, usados pelo calendário de reserva.
+// Expõe só as datas, sem nenhum dado de quem reservou.
+app.get('/api/anuncios/:id/ocupacao', async (req, res) => {
+  try {
+    const reservas = await Aluguel.find({
+      anuncio: req.params.id,
+      status: { $in: ['pendente', 'aceito', 'andamento', 'aguardando_confirmacao'] },
+      dataFim: { $gt: new Date() }
+    }).select('dataInicio dataFim -_id');
+
+    res.status(200).json(reservas);
+  } catch (erro) {
+    res.status(500).json({ erro: 'Erro ao buscar a ocupação do anúncio' });
   }
 });
 
