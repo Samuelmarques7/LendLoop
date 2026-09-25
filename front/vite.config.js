@@ -1,6 +1,7 @@
 import { copyFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { defineConfig } from 'vite'
+import { cwd } from 'node:process'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
@@ -22,7 +23,15 @@ function fallbackSpaGithubPages() {
 }
 
 // https://vite.dev/config/
-export default defineConfig(({ command }) => ({
-  base: command === 'build' ? '/LendLoop/' : '/',
-  plugins: [react(), tailwindcss(), fallbackSpaGithubPages()],
-}))
+export default defineConfig(({ command, mode }) => {
+  const env = loadEnv(mode, cwd(), '')
+
+  if (command === 'build' && !env.VITE_MP_PUBLIC_KEY?.trim()) {
+    throw new Error('VITE_MP_PUBLIC_KEY precisa estar configurada para gerar o checkout de produção.')
+  }
+
+  return {
+    base: command === 'build' ? '/LendLoop/' : '/',
+    plugins: [react(), tailwindcss(), fallbackSpaGithubPages()],
+  }
+})
