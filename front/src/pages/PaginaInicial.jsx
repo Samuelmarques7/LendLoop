@@ -105,12 +105,12 @@ export function PaginaInicial() {
 
           <div className="relative z-10 mx-auto w-full max-w-7xl 2xl:max-w-[1540px]">
             <div className="max-w-[39rem]">
-              <p className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-white/75"><span className="h-2 w-2 rounded-full bg-verde-agua" /> Itens úteis, pessoas por perto.</p>
-              <h1 className="max-w-[39rem] text-[3.2rem] font-semibold leading-[1.02] tracking-[-0.045em] text-white sm:text-[4rem] lg:text-[4.75rem]">O que você precisa, <span className="text-verde-agua">por perto.</span></h1>
-              <p className="mt-6 max-w-2xl text-[1.05rem] leading-relaxed text-white/75 sm:text-[1.125rem]">Alugue itens para o momento certo — sem comprar, acumular ou ir longe.</p>
+              <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.07] px-3 py-1.5 text-xs font-semibold tracking-[0.01em] text-white/80 sm:text-sm"><span className="h-2 w-2 rounded-full bg-verde-agua" /> Itens úteis, pessoas por perto.</p>
+              <h1 className="max-w-[39rem] text-[2.9rem] font-semibold leading-[1.02] tracking-[-0.045em] text-white sm:text-[4rem] lg:text-[4.75rem]">O que você precisa, <span className="text-verde-agua">por perto.</span></h1>
+              <p className="mt-4 max-w-2xl text-[1.05rem] leading-relaxed text-white/75 sm:mt-5 sm:text-[1.125rem]">Alugue itens para o momento certo — sem comprar, acumular ou ir longe.</p>
             </div>
 
-            <div ref={buscaRef} className="relative mt-9 w-full max-w-[34rem]">
+            <div ref={buscaRef} className="relative mt-7 w-full max-w-[34rem] sm:mt-8">
               <form onSubmit={(evento) => { evento.preventDefault(); executarBusca(); }} onClick={() => setMostrarSugestoes(true)} className="hero-search flex min-h-[72px] w-full items-center rounded-2xl bg-white p-2 shadow-[0_22px_55px_rgba(0,0,0,.28)]">
                 <LuSearch size={22} className="mx-3 shrink-0 text-azul-oceano" />
                 <input
@@ -163,7 +163,7 @@ export function PaginaInicial() {
               )}
             </div>
 
-            <div className="mt-6 flex max-w-[34rem] flex-wrap gap-x-5 gap-y-3 border-t border-white/15 pt-5 text-xs font-medium text-white/75 sm:text-sm">
+            <div className="mt-3 flex max-w-[34rem] flex-wrap gap-x-5 gap-y-2 text-xs font-medium text-white/75 sm:text-sm">
               <span className="inline-flex items-center gap-2"><LuShieldCheck size={16} className="text-verde-agua" /> Perfis verificados</span>
               <span className="inline-flex items-center gap-2"><LuMapPin size={16} className="text-verde-agua" /> Retirada combinada</span>
               <span className="inline-flex items-center gap-2"><LuCheck size={16} className="text-verde-agua" /> Vistoria registrada</span>

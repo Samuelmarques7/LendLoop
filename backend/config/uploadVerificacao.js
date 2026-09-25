@@ -2,7 +2,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-const dir = './uploads/documentos';
+const dir = path.resolve(__dirname, '../uploads/documentos');
 if (!fs.existsSync(dir)){
     fs.mkdirSync(dir, { recursive: true });
 }
@@ -13,15 +13,16 @@ const storage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    const extensoes = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' };
+    cb(null, file.fieldname + '-' + uniqueSuffix + extensoes[file.mimetype]);
   }
 });
 
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith('image/')) {
+  if (['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Apenas imagens são permitidas!'), false);
+    cb(new Error('Envie imagens JPG, PNG ou WebP.'), false);
   }
 };
 
@@ -32,3 +33,4 @@ const upload = multer({
 });
 
 module.exports = upload;
+module.exports.diretorio = dir;

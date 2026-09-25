@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { DayPicker } from 'react-day-picker'
+import { ptBR } from 'react-day-picker/locale'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { LuCheck, LuFilePenLine, LuPencil, LuX } from 'react-icons/lu'
+import { LuCalendarDays, LuCamera, LuCheck, LuChevronRight, LuCircleDollarSign, LuCircleHelp, LuClock3, LuFilePenLine, LuListChecks, LuMapPin, LuPencil, LuRocket, LuTag, LuX } from 'react-icons/lu'
 import 'react-day-picker/dist/style.css'
 import { apiRequest } from '../services/api'
 import { Header } from '../components/Header'
@@ -10,16 +11,30 @@ import { SeletorLocalizacao } from '../components/SeletorLocalizao'
 import { CampoHorario } from '../components/CampoHorario'
 import { CATEGORIAS as categoriasDisponiveis, ESPECIFICACOES_SUGERIDAS as especificacoesSugeridas } from '../constants/categorias'
 
-function BotaoEditarResumo({ onClick, label }) {
+const SOMENTE_NUMEROS = /\D/g
+
+function formatarCep(valor = '') {
+    const digitos = String(valor).replace(SOMENTE_NUMEROS, '').slice(0, 8)
+    return digitos.length > 5 ? `${digitos.slice(0, 5)}-${digitos.slice(5)}` : digitos
+}
+
+function inicioDoDia(data = new Date()) {
+    return new Date(data.getFullYear(), data.getMonth(), data.getDate())
+}
+
+function BotaoEditarResumo({ onClick, label, compacto = false }) {
     return (
         <button
             type="button"
             onClick={onClick}
             title={label}
             aria-label={label}
-            className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition-colors hover:border-azul-oceano hover:text-azul-oceano"
+            className={compacto
+                ? 'absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-white/90 text-slate-600 shadow-md backdrop-blur-sm transition-all hover:scale-105 hover:text-azul-oceano'
+                : 'inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-500 transition-colors hover:border-azul-oceano hover:text-azul-oceano'}
         >
             <LuPencil size={14} />
+            {!compacto && <span>Editar</span>}
         </button>
     )
 }
@@ -99,11 +114,98 @@ function ModalResultadoAnuncio({ resultado, onFechar, onVerAnuncios, onVerAnunci
     )
 }
 
+function FotoPrincipal({ foto, alt, className = '' }) {
+    const [src, setSrc] = useState(typeof foto === 'string' ? foto : '')
+
+    useEffect(() => {
+        if (!foto) {
+            setSrc('')
+            return undefined
+        }
+        if (typeof foto === 'string') {
+            setSrc(foto)
+            return undefined
+        }
+
+        const url = URL.createObjectURL(foto)
+        setSrc(url)
+        return () => URL.revokeObjectURL(url)
+    }, [foto])
+
+    if (!src) return null
+    return <img src={src} alt={alt} className={className} />
+}
+
+function PreviewAnuncio({ titulo, categoria, fotos, precos, endereco }) {
+    const categoriaLabel = categoriasDisponiveis.find((item) => item.value === categoria)?.label || categoria
+    const preco = Number(precos.precoPorDia)
+    const precoFormatado = Number.isFinite(preco) && preco > 0
+        ? preco.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : '0,00'
+
+    return (
+        <aside className="hidden lg:block">
+            <div className="sticky top-24 space-y-4">
+                <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_45px_-32px_rgba(3,31,59,0.4)]">
+                    <div className="border-b border-slate-100 px-5 py-4">
+                        <div className="flex items-center justify-between gap-3">
+                            <h2 className="font-extrabold text-grafite">Prévia do anúncio</h2>
+                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[0.16em] text-slate-500">Rascunho</span>
+                        </div>
+                        <p className="mt-1 text-xs leading-relaxed text-slate-500">Ela ganha vida conforme você preenche.</p>
+                    </div>
+                    <div className="relative aspect-[4/3] bg-slate-100">
+                        <FotoPrincipal foto={fotos[0]} alt={titulo || 'Prévia do item'} className="h-full w-full object-cover" />
+                        {!fotos[0] && (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
+                                <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm"><LuCamera size={23} /></span>
+                                <span className="text-xs font-bold">Sua foto principal</span>
+                            </div>
+                        )}
+                    </div>
+                    <div className="p-5">
+                        <div className="mb-3 flex flex-wrap gap-2">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-verde-agua/10 px-2.5 py-1 text-[10px] font-bold text-verde-escuro"><LuTag size={11} /> {categoriaLabel || 'Categoria'}</span>
+                            {endereco.cidade && <span className="inline-flex items-center gap-1 rounded-full bg-azul-oceano/10 px-2.5 py-1 text-[10px] font-bold text-azul-oceano"><LuMapPin size={11} /> {endereco.cidade}</span>}
+                        </div>
+                        <h3 className={`line-clamp-2 text-base font-extrabold leading-snug ${titulo ? 'text-grafite' : 'text-slate-300'}`}>{titulo || 'Seu item aparece aqui'}</h3>
+                        <div className="mt-4 flex items-end gap-1 border-t border-slate-100 pt-4">
+                            <span className="text-xl font-black text-grafite">R$ {precoFormatado}</span>
+                            <span className="pb-0.5 text-[11px] font-semibold text-slate-400">/ dia</span>
+                        </div>
+                    </div>
+                </section>
+                <section className="rounded-2xl border border-azul-oceano/15 bg-azul-oceano/[0.06] p-4">
+                    <div className="flex gap-3">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-azul-oceano shadow-sm"><LuCircleHelp size={19} /></span>
+                        <div><h3 className="text-xs font-extrabold text-grafite">Dica da LendLoop</h3><p className="mt-1 text-xs leading-relaxed text-slate-500">Detalhes claros, boas fotos e um preço justo ajudam a receber solicitações mais qualificadas.</p></div>
+                    </div>
+                </section>
+            </div>
+        </aside>
+    )
+}
+
+function ResumoDetalhe({ icone, titulo, onEditar, children }) {
+    return (
+        <section className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 sm:p-6">
+            <div className="mb-5 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-ciano shadow-sm">{icone({ size: 18 })}</span>
+                    <h4 className="text-sm font-black text-slate-800">{titulo}</h4>
+                </div>
+                <BotaoEditarResumo onClick={onEditar} label={`Editar ${titulo.toLowerCase()}`} />
+            </div>
+            {children}
+        </section>
+    )
+}
+
 function CriarAnuncio ()
 {
     const navigate = useNavigate()
     const location = useLocation()
-    const usuarioLogado = JSON.parse(localStorage.getItem('dadosUsuario'))
+    const [usuarioLogado] = useState(() => JSON.parse(localStorage.getItem('dadosUsuario')))
     const anuncioInicial = location.state?.anuncioParaEditar || null
 
     const [statusVerificacao, setStatusVerificacao] = useState(null)
@@ -119,7 +221,7 @@ function CriarAnuncio ()
             .then((dados) => setStatusVerificacao(dados.status))
             .catch(() => setStatusVerificacao('nao_enviado'))
             .finally(() => setCarregandoVerificacao(false))
-    }, [])
+    }, [navigate, usuarioLogado])
 
     const [step, setStep] = useState(location.state?.step || (anuncioInicial ? 7 : 1))
     const [editandoDoResumo, setEditandoDoResumo] = useState(false)
@@ -168,19 +270,60 @@ function CriarAnuncio ()
     })
 
     const [buscandoCoordenadas, setBuscandoCoordenadas] = useState(false)
+    const [buscandoCep, setBuscandoCep] = useState(false)
+    const [erroCep, setErroCep] = useState('')
+    const [avisoMapa, setAvisoMapa] = useState('')
+
+    useEffect(() => {
+        const cep = endereco.cep.replace(SOMENTE_NUMEROS, '')
+        if (cep.length !== 8) {
+            setBuscandoCep(false)
+            setErroCep('')
+            return undefined
+        }
+
+        const controller = new AbortController()
+        const timeoutId = setTimeout(async () => {
+            setBuscandoCep(true)
+            setErroCep('')
+            try {
+                const resposta = await fetch(`https://brasilapi.com.br/api/cep/v1/${cep}`, { signal: controller.signal })
+                if (!resposta.ok) throw new Error('CEP não encontrado')
+                const dados = await resposta.json()
+                setEndereco((atual) => ({
+                    ...atual,
+                    cep: formatarCep(cep),
+                    rua: dados.street || atual.rua,
+                    bairro: dados.neighborhood || atual.bairro,
+                    cidade: dados.city || atual.cidade,
+                    estado: dados.state || atual.estado,
+                }))
+            } catch (error) {
+                if (error.name !== 'AbortError') setErroCep('Não encontramos esse CEP. Confira os números ou preencha o endereço manualmente.')
+            } finally {
+                if (!controller.signal.aborted) setBuscandoCep(false)
+            }
+        }, 250)
+
+        return () => {
+            clearTimeout(timeoutId)
+            controller.abort()
+        }
+    }, [endereco.cep])
+
+    const { rua: ruaEndereco, numero: numeroEndereco, cidade: cidadeEndereco, estado: estadoEndereco } = endereco
 
     // Geocoding automático: sempre que rua, número, cidade e estado estiverem preenchidos,
     // busca as coordenadas via Nominatim (OpenStreetMap) para posicionar o pin no mapa.
     // Debounce de 800ms para não disparar uma request a cada tecla digitada.
     useEffect(() => {
-        const { rua, numero, cidade, estado } = endereco
-
-        if (!rua.trim() || !numero.trim() || !cidade.trim() || !estado.trim() || estado === 'SELECIONE') {
+        if (!ruaEndereco.trim() || !numeroEndereco.trim() || !cidadeEndereco.trim() || !estadoEndereco.trim() || estadoEndereco === 'SELECIONE') {
             return
         }
 
-        const enderecoCompleto = `${rua}, ${numero}, ${cidade}, ${estado}, Brasil`
+        const enderecoCompleto = `${ruaEndereco}, ${numeroEndereco}, ${cidadeEndereco}, ${estadoEndereco}, Brasil`
 
+        const controller = new AbortController()
         const timeoutId = setTimeout(() => {
             setBuscandoCoordenadas(true)
 
@@ -191,7 +334,7 @@ function CriarAnuncio ()
                 countrycodes: 'br'
             })
 
-            fetch(`https://nominatim.openstreetmap.org/search?${params}`)
+            fetch(`https://nominatim.openstreetmap.org/search?${params}`, { signal: controller.signal })
                 .then(resposta => resposta.json())
                 .then(resultados => {
                     if (resultados.length > 0) {
@@ -202,17 +345,60 @@ function CriarAnuncio ()
                         }))
                     }
                 })
-                .catch(() => {
-                    // Falha silenciosa: o usuário ainda pode marcar o ponto manualmente no mapa
+                .catch((error) => {
+                    if (error.name !== 'AbortError') setAvisoMapa('Não foi possível posicionar o endereço automaticamente. Você ainda pode marcar o local no mapa.')
                 })
-                .finally(() => setBuscandoCoordenadas(false))
+                .finally(() => {
+                    if (!controller.signal.aborted) setBuscandoCoordenadas(false)
+                })
         }, 800)
 
-        return () => clearTimeout(timeoutId)
-    }, [endereco.rua, endereco.numero, endereco.cidade, endereco.estado])
+        return () => {
+            clearTimeout(timeoutId)
+            controller.abort()
+        }
+    }, [ruaEndereco, numeroEndereco, cidadeEndereco, estadoEndereco])
 
-    function handleMudarPosicaoMapa(latitude, longitude) {
+    async function handleMudarPosicaoMapa(latitude, longitude) {
         setEndereco(atual => ({ ...atual, latitude, longitude }))
+        setBuscandoCoordenadas(true)
+        setAvisoMapa('')
+
+        const params = new URLSearchParams({
+            lat: String(latitude),
+            lon: String(longitude),
+            format: 'json',
+            addressdetails: '1',
+            zoom: '18',
+            'accept-language': 'pt-BR',
+        })
+
+        try {
+            const resposta = await fetch(`https://nominatim.openstreetmap.org/reverse?${params}`)
+            if (!resposta.ok) throw new Error('Endereço não encontrado')
+            const dados = await resposta.json()
+            const local = dados.address || {}
+            const estado = local['ISO3166-2-lvl4']?.split('-')[1]
+
+            setEndereco((atual) => ({
+                ...atual,
+                latitude,
+                longitude,
+                cep: local.postcode ? formatarCep(local.postcode) : atual.cep,
+                rua: local.road || local.pedestrian || local.residential || atual.rua,
+                numero: local.house_number || atual.numero,
+                bairro: local.suburb || local.neighbourhood || local.city_district || atual.bairro,
+                cidade: local.city || local.town || local.village || local.municipality || atual.cidade,
+                estado: estado || atual.estado,
+            }))
+            setAvisoMapa(local.house_number
+                ? `Endereço atualizado pelo mapa: número ${local.house_number}.`
+                : 'Local ajustado. O mapa não identificou outro número para esse ponto.')
+        } catch {
+            setAvisoMapa('O ponto foi salvo, mas não foi possível identificar o endereço desse local.')
+        } finally {
+            setBuscandoCoordenadas(false)
+        }
     }
 
     const estados = ['SELECIONE','AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO']
@@ -305,12 +491,6 @@ function CriarAnuncio ()
             return
         }
         concluirEtapa(2)
-
-        console.log('Dados do formulário:')
-        console.log('Título:', titulo)
-        console.log('Descrição:', descricao)
-        console.log('Categoria:', categoria)
-        console.log('Subcategorias:', subcategorias)
     }
 
     function handleEspecificacoesSubmit (e)
@@ -321,8 +501,6 @@ function CriarAnuncio ()
             return
         }
         concluirEtapa(3)
-
-        console.log('Especificações:', especificacoes)
     }
 
     function handleFotosSubmit (e)
@@ -333,8 +511,6 @@ function CriarAnuncio ()
             return
         }
         concluirEtapa(4)
-
-        console.log('Fotos:', fotos)
     }
 
     function handleLocalizacaoSubmit (e)
@@ -346,8 +522,6 @@ function CriarAnuncio ()
             return
         }
         concluirEtapa(5)
-
-        console.log('Endereço:', endereco)
     }
 
     function handleDisponibilidadeSubmit()
@@ -357,8 +531,6 @@ function CriarAnuncio ()
             return
         }
         concluirEtapa(6)
-
-        console.log('Disponibilidade:', disponivel)
     }
 
     function handlePrecosSubmit(e)
@@ -371,8 +543,6 @@ function CriarAnuncio ()
             return
         }
         concluirEtapa(7)
-
-        console.log('Preços e Condições:', precos)
     }
 
     async function handleUploadFotos()
@@ -501,52 +671,63 @@ function CriarAnuncio ()
     return (
         <div className="page-shell min-h-screen flex flex-col">
             <Header />
-            <div className={`mx-auto w-full flex-1 px-3 pb-12 pt-6 transition-all sm:px-6 sm:pb-16 sm:pt-10 ${step === 7 ? 'max-w-6xl' : 'max-w-4xl'}`}>
+            <div className={`mx-auto grid w-full max-w-[1536px] flex-1 gap-6 px-4 pb-12 pt-5 sm:px-6 sm:pb-16 sm:pt-8 2xl:gap-8 2xl:px-8 ${step === 7 ? 'xl:grid-cols-[230px_minmax(0,1fr)]' : 'lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[230px_minmax(0,1fr)_300px]'}`}>
+                <aside className="hidden xl:block">
+                    <div className="sticky top-24 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_18px_45px_-34px_rgba(3,31,59,0.45)]">
+                        <h1 className="text-xl font-black text-grafite">Criar anúncio</h1>
+                        <p className="mt-1.5 text-xs leading-relaxed text-slate-500">Deixe seu item pronto para ser encontrado e alugado.</p>
+                        <ol className="mt-6 space-y-0">
+                            {steps.map((nome, index) => {
+                                const complete = index + 1 < step
+                                const active = index + 1 === step
+                                return (
+                                    <li key={nome} className="relative flex min-h-[52px] gap-3 pb-3 last:min-h-0 last:pb-0">
+                                        {index < steps.length - 1 && <span className={`absolute left-[15px] top-8 h-[calc(100%-1.4rem)] w-px ${complete ? 'bg-verde-agua' : 'bg-slate-200'}`} />}
+                                        <span className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-black transition-colors ${active ? 'bg-verde-agua text-white shadow-[0_5px_14px_rgba(46,195,77,0.3)]' : complete ? 'bg-grafite text-white' : 'bg-slate-100 text-slate-400'}`}>
+                                            {complete ? <LuCheck size={14} strokeWidth={3} /> : index + 1}
+                                        </span>
+                                        <div className="pt-1.5">
+                                            <span className={`block text-xs font-bold ${active ? 'text-grafite' : complete ? 'text-slate-600' : 'text-slate-400'}`}>{nome}</span>
+                                            {active && <span className="mt-0.5 block text-[10px] font-semibold text-verde-escuro">Etapa atual</span>}
+                                        </div>
+                                    </li>
+                                )
+                            })}
+                        </ol>
+                        <div className="mt-6 rounded-xl bg-slate-50 p-3.5">
+                            <div className="flex items-center justify-between text-[10px] font-bold text-slate-500"><span>Progresso</span><span>{step} de {steps.length}</span></div>
+                            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200"><span className="block h-full rounded-full bg-verde-agua transition-all" style={{ width: `${(step / steps.length) * 100}%` }} /></div>
+                        </div>
+                    </div>
+                </aside>
 
-                <div className='-mx-3 mb-4 flex items-center justify-start overflow-x-auto px-3 pb-2 [scrollbar-width:none] sm:mx-0 sm:justify-center sm:px-0'>
-                    {steps.map((nome, index) => {
-                        const complete = index + 1 < step
-                        const active = index + 1 === step
-
-                        return (
-                            <div key={index} className='flex items-start'>
-                                <div className='flex min-w-14 flex-col items-center sm:min-w-16'>
-                                
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold transition-all ${active ? 'bg-verde-agua' : complete ? 'bg-grafite' : 'bg-gray-200'}`}>
-                                        {index + 1}
-                                    </div>
-
-                                    <span className={`text-[10px] font-bold uppercase tracking-wider mt-1.5 ${active ? 'text-verde-agua' : complete ? 'text-grafite' : 'text-gray-300'}`}>
-                                        {nome}
-                                    </span>
-                                </div>
-
-                                {index < steps.length - 1 && <div className={`mt-4 h-0.5 w-6 transition-all sm:w-12 ${complete ? 'bg-grafite' : 'bg-gray-200'}`}></div>}
-                            </div>
-                        )
-                    })}
-                </div>
-
-                <div className='mb-2'>
-                    <h1 className='text-2xl font-bold text-grafite'>Criar Novo Anúncio</h1> 
-                    <p className='text-gray-400 text-sm mt-1'>Preencha as informações para anunciar seu item</p>
-                </div>
+                <main className="min-w-0">
+                    <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 xl:hidden">
+                        <div className="flex items-start justify-between gap-4">
+                            <div><span className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-verde-escuro">Etapa {step} de {steps.length}</span><h1 className="mt-1 text-xl font-black text-grafite">{steps[step - 1]}</h1></div>
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-grafite text-sm font-black text-white">{step}</span>
+                        </div>
+                        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-100"><span className="block h-full rounded-full bg-verde-agua transition-all" style={{ width: `${(step / steps.length) * 100}%` }} /></div>
+                    </div>
+                    <div className="mb-5 hidden xl:block">
+                        <div className="flex items-center gap-2 text-xs font-bold text-slate-400"><span>Etapa {step} de {steps.length}</span><LuChevronRight size={13} /><span className="text-verde-escuro">{steps[step - 1]}</span></div>
+                    </div>
 
                 {mensagem && (
-                    <div className={`mt-4 rounded-xl border px-4 py-3 text-sm font-medium ${mensagem.tipo === 'erro' ? 'border-red-200 bg-red-50 text-red-700' : 'border-green-200 bg-green-50 text-green-700'}`}>
+                    <div className={`mb-4 rounded-xl border px-4 py-3 text-sm font-medium ${mensagem.tipo === 'erro' ? 'border-red-200 bg-red-50 text-red-700' : 'border-green-200 bg-green-50 text-green-700'}`}>
                         {mensagem.texto}
                     </div>
                 )}
 
                 {editandoDoResumo && step !== 7 && (
-                    <div className="mt-4 flex flex-col gap-3 rounded-xl border border-azul-oceano/20 bg-azul-oceano/5 px-4 py-3 text-sm text-azul-oceano sm:flex-row sm:items-center sm:justify-between">
+                    <div className="mb-4 flex flex-col gap-3 rounded-xl border border-azul-oceano/20 bg-azul-oceano/5 px-4 py-3 text-sm text-azul-oceano sm:flex-row sm:items-center sm:justify-between">
                         <span className="font-semibold">Você está ajustando uma parte do rascunho. Ao avançar, voltará ao resumo.</span>
                         <button type="button" onClick={voltarEtapa} className="shrink-0 font-bold underline underline-offset-2">Voltar ao resumo</button>
                     </div>
                 )}
                     
                 {step === 1 && 
-                    <div className="mt-6 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm sm:p-8">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_18px_45px_-34px_rgba(3,31,59,0.45)] sm:p-7">
                         <div className='mb-6'>
                             <h2 className = 'text-xl font-bold text-grafite'>Detalhes do Anúncio</h2> 
                             <p className='text-gray-400 text-sm mt-1'>Conte para os locatários o que você está oferecendo</p>
@@ -554,8 +735,9 @@ function CriarAnuncio ()
 
                         <form onSubmit = {handleDetalhesSubmit}>
                             <div className = 'mb-4'>
-                                <label className = 'label-field'>Título</label> 
+                                <label htmlFor="titulo-anuncio" className = 'label-field'>Título</label>
                                 <input
+                                    id="titulo-anuncio"
                                     className='input-default'
                                     placeholder="ex: Batedeira Arno" 
                                     value = {titulo}
@@ -564,8 +746,9 @@ function CriarAnuncio ()
                             </div>
 
                             <div className = 'mb-4'>
-                                <label className = 'label-field'>Descrição</label>
+                                <label htmlFor="descricao-anuncio" className = 'label-field'>Descrição</label>
                                 <textarea 
+                                    id="descricao-anuncio"
                                     className='input-default'
                                     placeholder="Descreva seu item em detalhes...." 
                                     value = {descricao}
@@ -575,8 +758,9 @@ function CriarAnuncio ()
 
                             <div className = 'flex flex-col gap-4 sm:flex-row'>
                                 <div className='flex-1 mb-4'>
-                                    <label className = 'label-field'>Categoria</label>
+                                    <label htmlFor="categoria-anuncio" className = 'label-field'>Categoria</label>
                                     <select
+                                        id="categoria-anuncio"
                                         className='input-default'
                                         value = {categoria}
                                         onChange = {(e) => setCategoria(e.target.value)}
@@ -588,9 +772,10 @@ function CriarAnuncio ()
                                     </select>
                                 </div>
                                 <div className='flex-1 mb-4'>
-                                    <label className = 'label-field'>Subcategorias</label>
+                                    <label htmlFor="subcategoria-anuncio" className = 'label-field'>Subcategorias</label>
                                     <div className='flex gap-2'>
                                         <input
+                                            id="subcategoria-anuncio"
                                             className='input-default'
                                             placeholder='ex: Furadeira de impacto'
                                             value={novaSubcategoria}
@@ -639,7 +824,7 @@ function CriarAnuncio ()
                     </div>
                 }
                 {step === 2 &&
-                    <div className="mt-6 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm sm:p-8">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_18px_45px_-34px_rgba(3,31,59,0.45)] sm:p-7">
                         <div className='mb-6'>
                             <h2 className='text-xl font-bold text-grafite'>Especificações do Item</h2>
                             <p className='text-gray-400 text-sm mt-1'>Adicione detalhes técnicos que ajudam o locatário a entender o item (voltagem, marca, tamanho, etc.)</p>
@@ -695,7 +880,7 @@ function CriarAnuncio ()
                     </div>
                 }
                 {step === 3 && 
-                    <div className="mt-6 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm sm:p-8">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_18px_45px_-34px_rgba(3,31,59,0.45)] sm:p-7">
                         <div className='mb-6'>
                             <h2 className = 'text-xl font-bold text-grafite'>Fotos do Anúncio</h2>
                             <p className='text-gray-500 text-sm mt-1'>Adicione de 3 a 6 fotos: mostre o item inteiro, outro ângulo e os detalhes.</p>
@@ -732,10 +917,7 @@ function CriarAnuncio ()
                                     <div className="grid grid-cols-2 gap-3 mb-4 sm:grid-cols-3">
                                         {fotos.map((foto, indice) => (
                                             <div key={indice} className="relative">
-                                                <img 
-                                                    src={typeof foto === 'string' ? foto : URL.createObjectURL(foto)}
-                                                    className="w-full h-32 object-cover rounded-xl"
-                                                />
+                                                <FotoPrincipal foto={foto} alt={`Foto ${indice + 1} do anúncio`} className="w-full h-32 object-cover rounded-xl" />
                                                 <button 
                                                     onClick={(e) => {
                                                         e.preventDefault()
@@ -791,7 +973,7 @@ function CriarAnuncio ()
                     </div>
                 }
                 {step === 4 &&
-                    <div className="mt-6 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm sm:p-8">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_18px_45px_-34px_rgba(3,31,59,0.45)] sm:p-7">
                         <div className='mb-6'>
                             <h2 className = 'text-xl font-bold text-grafite'>Localização</h2>
                             <p className='text-gray-400 text-sm mt-1'>Onde o locatário poderá retirar o item</p>
@@ -799,39 +981,30 @@ function CriarAnuncio ()
 
                         <form onSubmit={handleLocalizacaoSubmit}>
                             <div className = 'mb-4 max-w-sm'>
-                                <label className = 'label-field'>CEP</label>
-                                <input
-                                    className='input-default'
-                                    placeholder='00000-000'
-                                    value={endereco.cep}
-                                    onChange = {(e) => {
-                                        const novoCep = e.target.value
-                                        setEndereco(atual => ({...atual, cep: novoCep }))
-
-                                        if(novoCep.length === 8)
-                                        {
-                                            fetch(`https://brasilapi.com.br/api/cep/v1/${novoCep}`)
-                                                .then(retorno => retorno.json())
-                                                .then(dados =>
-                                                    {
-                                                        setEndereco( atual => ({
-                                                            ...atual,
-                                                            rua: dados.street,
-                                                            bairro: dados.neighborhood,
-                                                            cidade: dados.city,
-                                                            estado: dados.state
-                                                        }))
-                                                    })
-                                                    .catch(() => {
-                                                    })
-                                        }
-                                    }}
-                                />
+                                <label htmlFor="cep-anuncio" className = 'label-field'>CEP</label>
+                                <div className="relative">
+                                    <input
+                                        id="cep-anuncio"
+                                        className='input-default pr-28'
+                                        placeholder='00000-000'
+                                        inputMode="numeric"
+                                        autoComplete="postal-code"
+                                        maxLength={9}
+                                        aria-describedby={erroCep ? 'erro-cep' : undefined}
+                                        aria-invalid={Boolean(erroCep)}
+                                        value={endereco.cep}
+                                        onChange={(e) => setEndereco((atual) => ({ ...atual, cep: formatarCep(e.target.value) }))}
+                                    />
+                                    {buscandoCep && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-azul-oceano">Buscando...</span>}
+                                </div>
+                                {erroCep && <p id="erro-cep" className="mt-2 text-xs font-medium text-red-600">{erroCep}</p>}
+                                {!erroCep && <p className="mt-2 text-xs text-slate-400">Pode digitar ou colar com ou sem hífen.</p>}
                             </div>
 
                             <div className = 'mb-4'>
-                                <label className = 'label-field'>Rua</label>
+                                <label htmlFor="rua-anuncio" className = 'label-field'>Rua</label>
                                 <input
+                                    id="rua-anuncio"
                                     className='input-default'
                                     value={endereco.rua}
                                     onChange = {(e) => setEndereco({...endereco, rua: e.target.value})}
@@ -840,8 +1013,9 @@ function CriarAnuncio ()
 
                             <div className = 'flex flex-col gap-4 mb-4 sm:flex-row'>
                                 <div className = 'flex-1'>
-                                    <label className = 'label-field'>Número</label>
+                                    <label htmlFor="numero-anuncio" className = 'label-field'>Número</label>
                                     <input
+                                        id="numero-anuncio"
                                         className='input-default'
                                         placeholder='ex: 123'
                                         value={endereco.numero}
@@ -850,8 +1024,9 @@ function CriarAnuncio ()
                                 </div>
 
                                 <div className = 'flex-1'>
-                                    <label className = 'label-field'>Complemento</label>
+                                    <label htmlFor="complemento-anuncio" className = 'label-field'>Complemento</label>
                                     <input
+                                        id="complemento-anuncio"
                                         disabled={endereco.semComplemento} 
                                         className='input-default'
                                         placeholder='ex: Casa, Apto, etc...'
@@ -876,8 +1051,9 @@ function CriarAnuncio ()
 
                             <div className = 'flex flex-col gap-4 mb-4 sm:flex-row'>
                                 <div className = 'flex-1'>
-                                    <label className = 'label-field'>Bairro</label>
+                                    <label htmlFor="bairro-anuncio" className = 'label-field'>Bairro</label>
                                     <input
+                                        id="bairro-anuncio"
                                         className='input-default'
                                         value={endereco.bairro}
                                         onChange = {(e) => setEndereco({...endereco, bairro: e.target.value})}
@@ -885,8 +1061,9 @@ function CriarAnuncio ()
                                 </div>
 
                                 <div className = 'flex-1'>
-                                    <label className = 'label-field'>Cidade</label>
+                                    <label htmlFor="cidade-anuncio" className = 'label-field'>Cidade</label>
                                     <input
+                                        id="cidade-anuncio"
                                         className='input-default'
                                         value={endereco.cidade}
                                         onChange = {(e) => setEndereco({...endereco, cidade: e.target.value})}
@@ -894,8 +1071,9 @@ function CriarAnuncio ()
                                 </div>
 
                                 <div className = 'flex-1'>
-                                    <label className = 'label-field'>Estado</label>
+                                    <label htmlFor="estado-anuncio" className = 'label-field'>Estado</label>
                                     <select
+                                        id="estado-anuncio"
                                         className='input-default'
                                         value={endereco.estado}
                                         onChange = {(e) => setEndereco({...endereco, estado: e.target.value})}
@@ -915,9 +1093,10 @@ function CriarAnuncio ()
                                     onMudarPosicao={handleMudarPosicaoMapa}
                                     carregandoGeocoding={buscandoCoordenadas}
                                 />
-                                {endereco.latitude && (
-                                    <p className="text-xs text-gray-400 mt-2">Arraste o pin ou clique no mapa para ajustar a localização exata</p>
-                                )}
+                                <div className="mt-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                                    <p className="text-xs text-gray-400">Arraste o pin ou clique no mapa para ajustar a localização exata.</p>
+                                    {avisoMapa && <p aria-live="polite" className="text-xs font-semibold text-azul-oceano">{avisoMapa}</p>}
+                                </div>
                             </div>
 
                             <div className = 'flex justify-between mt-6'>
@@ -928,29 +1107,34 @@ function CriarAnuncio ()
                     </div>
                 }
                 {step === 5 &&
-                    <div className="mt-6 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm sm:p-8">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_18px_45px_-34px_rgba(3,31,59,0.45)] sm:p-7">
                         <div className='mb-6'>
                             <h2 className = 'text-xl font-bold text-grafite'>Disponibilidade</h2>
                             <p className='text-gray-400 text-sm mt-1'>Selecione os dias em que o item estará disponível</p>
                         </div>
 
-                        <div className="flex justify-center my-4 bg-gray-50/50 rounded-2xl border border-gray-100 p-6">
+                        <div className="calendario-criacao my-4 flex justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/70 p-3 sm:p-6">
                             <DayPicker
                                 mode='multiple'
                                 selected={disponivel}
-                                onSelect={setDisponivel}
-                                classNames={{
-                                    day_selected: 'bg-verde-agua text-white rounded-lg',
-                                    day_today: 'font-bold text-azul-oceano'
-                                }}
+                                onSelect={(datas) => setDisponivel(datas || [])}
+                                locale={ptBR}
+                                disabled={{ before: inicioDoDia() }}
+                                startMonth={inicioDoDia()}
+                                endMonth={new Date(new Date().getFullYear() + 1, 11, 31)}
+                                showOutsideDays
+                                fixedWeeks
+                                animate
                             />
                         </div>
 
-                        {console.log(disponivel)}
-
-                        <p className="text-center text-verde-agua font-semibold mb-4">
-                            {disponivel.length} {disponivel.length === 1 ? 'dia selecionado' : 'dias selecionados'}
-                        </p>
+                        <div className="mb-4 flex flex-col gap-3 rounded-xl border border-verde-agua/15 bg-verde-agua/[0.06] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p aria-live="polite" className="text-sm font-bold text-grafite">{disponivel.length} {disponivel.length === 1 ? 'dia selecionado' : 'dias selecionados'}</p>
+                                <p className="mt-0.5 text-xs text-slate-500">As pessoas poderão solicitar o item somente nessas datas.</p>
+                            </div>
+                            {disponivel.length > 0 && <button type="button" onClick={() => setDisponivel([])} className="self-start text-xs font-bold text-verde-escuro underline underline-offset-4 sm:self-auto">Limpar seleção</button>}
+                        </div>
 
                         <div className = 'flex justify-between mt-6'>
                             <button type="button" onClick={voltarEtapa} className='btn-back'>↩ Voltar</button>
@@ -959,7 +1143,7 @@ function CriarAnuncio ()
                     </div>
                 }
                 {step === 6 &&
-                    <div className="mt-6 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm sm:p-8">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_18px_45px_-34px_rgba(3,31,59,0.45)] sm:p-7">
                         <form onSubmit={handlePrecosSubmit}>
                             <div className='mb-6'>
                                 <h2 className='text-xl font-bold text-grafite'>Preços e Condições</h2>
@@ -968,8 +1152,9 @@ function CriarAnuncio ()
 
                             <div className="flex flex-col gap-4 mb-4 sm:flex-row">
                                 <div className="flex-1">
-                                    <label className="label-field">Preço por dia</label>
+                                    <label htmlFor="preco-dia-anuncio" className="label-field">Preço por dia</label>
                                     <input
+                                        id="preco-dia-anuncio"
                                         type='number'
                                         className='input-default'
                                         placeholder='0,00'
@@ -979,8 +1164,9 @@ function CriarAnuncio ()
                                 </div>
 
                                 <div className="flex-1">
-                                    <label className="label-field">Caução (Opcional)</label>
+                                    <label htmlFor="caucao-anuncio" className="label-field">Caução (Opcional)</label>
                                     <input
+                                        id="caucao-anuncio"
                                         type='number'
                                         className='input-default'
                                         placeholder='0,00'
@@ -992,12 +1178,13 @@ function CriarAnuncio ()
 
                             <div className='flex items-center gap-2 mb-6'>
                                 <input
+                                    id="exigir-caucao-anuncio"
                                     type='checkbox'
                                     className="w-5 h-5 accent-verde-agua cursor-pointer"
                                     checked={precos.exigirCaucao}
                                     onChange={(e) => setPrecos({...precos, exigirCaucao: e.target.checked})}
                                 />
-                                <label className='label-field mb-0'>Exigir caução</label>
+                                <label htmlFor="exigir-caucao-anuncio" className='label-field mb-0'>Exigir caução</label>
                             </div>
 
                             <div className='border-t border-gray-100 pt-6 mb-2'>
@@ -1029,133 +1216,73 @@ function CriarAnuncio ()
                     </div>
                 }
                 {step === 7 &&
-                    <div className="mt-6 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm sm:p-8">
-                        <div className='mb-6'>
-                            <h2 className='text-xl font-bold text-grafite'>Resumo do Anúncio</h2>
-                            <p className='text-gray-400 text-sm mt-1'>Confira tudo antes de publicar</p>
+                    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_24px_65px_-42px_rgba(3,31,59,0.55)]">
+                        <div className="flex flex-col gap-4 border-b border-slate-100 px-5 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+                            <div>
+                                <span className="inline-flex items-center gap-2 rounded-full bg-verde-agua/10 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.14em] text-verde-escuro"><LuCheck size={13} strokeWidth={3} /> Etapa final</span>
+                                <h2 className="mt-3 text-2xl font-black tracking-tight text-grafite sm:text-3xl">Revise seu anúncio</h2>
+                                <p className="mt-1 text-sm text-slate-500">Confira como o item será apresentado antes de publicar.</p>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs font-bold text-slate-400"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-verde-escuro"><LuListChecks size={18} /></span> Tudo em um só lugar</div>
                         </div>
 
-                        <div className="flex flex-col lg:flex-row gap-4 mb-6">
-
-                            {/* Card de preview: foto + informações principais */}
-                            <div className="relative flex shrink-0 flex-col overflow-hidden rounded-2xl border border-gray-100 lg:w-[38%]">
-                                <div className="h-40 bg-gray-100 relative shrink-0">
-                                    <BotaoEditarResumo onClick={() => editarEtapa(3)} label="Editar fotos" />
-                                    {fotos.length > 0 ? (
-                                        <img src={typeof fotos[0] === 'string' ? fotos[0] : URL.createObjectURL(fotos[0])} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <div className="w-full h-full flex flex-col items-center justify-center text-gray-300">
-                                            <span className="text-2xl mb-1">📷</span>
-                                            <span className="text-[10px] font-bold">Sem foto</span>
-                                        </div>
-                                    )}
-                                    {fotos.length > 1 && (
-                                        <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
-                                            +{fotos.length - 1}
-                                        </span>
-                                    )}
+                        <div className="p-5 sm:p-8">
+                            <section className="grid overflow-hidden rounded-2xl border border-slate-200 bg-white lg:grid-cols-[minmax(20rem,.9fr)_minmax(0,1.1fr)]">
+                                <div className="relative min-h-64 bg-slate-100 lg:min-h-[360px]">
+                                    <BotaoEditarResumo compacto onClick={() => editarEtapa(3)} label="Editar fotos" />
+                                    {fotos.length > 0 ? <FotoPrincipal foto={fotos[0]} alt={titulo || 'Foto principal do anúncio'} className="absolute inset-0 h-full w-full object-cover" /> : <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-300"><span className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm"><LuCamera size={26} /></span><span className="text-sm font-bold">Nenhuma foto adicionada</span></div>}
+                                    {fotos.length > 1 && <span className="absolute bottom-4 left-4 rounded-full bg-black/65 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-sm">+{fotos.length - 1} fotos</span>}
                                 </div>
-
-                                <div className="relative flex-1 p-5">
-                                    <BotaoEditarResumo onClick={() => editarEtapa(1)} label="Editar detalhes" />
-                                    <div className="flex items-start justify-between gap-3 mb-1.5">
-                                        <h3 className="truncate pr-10 text-lg font-bold text-grafite">
-                                            {titulo || <span className="text-gray-300 italic font-normal">Sem título</span>}
-                                        </h3>
+                                <div className="flex flex-col justify-between p-6 sm:p-8">
+                                    <div>
+                                        <div className="flex items-start justify-between gap-4"><div className="flex flex-wrap gap-2">{categoria && <span className="inline-flex items-center gap-1.5 rounded-full bg-verde-agua/10 px-3 py-1.5 text-xs font-bold text-verde-escuro"><LuTag size={13} /> {categoriasDisponiveis.find(c => c.value === categoria)?.label || categoria}</span>}{endereco.cidade && <span className="inline-flex items-center gap-1.5 rounded-full bg-azul-oceano/10 px-3 py-1.5 text-xs font-bold text-azul-oceano"><LuMapPin size={13} /> {endereco.cidade}</span>}</div><BotaoEditarResumo onClick={() => editarEtapa(1)} label="Editar detalhes" /></div>
+                                        <h3 className="mt-5 text-2xl font-black leading-tight text-grafite sm:text-3xl">{titulo || <span className="font-medium italic text-slate-300">Anúncio sem título</span>}</h3>
+                                        <p className="mt-4 whitespace-pre-line text-sm leading-7 text-slate-600">{descricao || <span className="italic text-slate-300">Adicione uma descrição para apresentar melhor o item.</span>}</p>
                                     </div>
-
-                                    <span className="text-xl font-black text-grafite">R$ {precos.precoPorDia || '0,00'}</span>
-                                    <span className="text-[10px] font-bold text-gray-400 uppercase"> /dia</span>
-
-                                    {categoria && (
-                                        <div>
-                                            <span className="inline-block bg-verde-agua/10 text-verde-agua text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full mt-2 mb-2">
-                                                {categoriasDisponiveis.find(c => c.value === categoria)?.label || categoria}
-                                            </span>
-                                        </div>
-                                    )}
-
-                                    <p className="text-sm text-gray-500 leading-relaxed">
-                                        {descricao || <span className="text-gray-300 italic">Sem descrição</span>}
-                                    </p>
+                                    <div className="mt-8 flex items-end gap-2 border-t border-slate-100 pt-6"><span className="text-3xl font-black text-verde-escuro">R$ {precos.precoPorDia || '0,00'}</span><span className="pb-1 text-sm font-semibold text-slate-400">por dia</span></div>
                                 </div>
+                            </section>
+
+                            <div className="mb-4 mt-8 flex items-end justify-between gap-4"><div><h3 className="text-lg font-black text-grafite">Detalhes da locação</h3><p className="mt-1 text-sm text-slate-500">Revise cada informação e edite o que for necessário.</p></div></div>
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <ResumoDetalhe icone={LuListChecks} titulo="Especificações" onEditar={() => editarEtapa(2)}>
+                                    {especificacoes.filter(e => e.chave.trim()).length > 0 ? <div className="flex flex-wrap gap-2">{especificacoes.filter(e => e.chave.trim()).map((e, i) => <span key={i} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700">{e.chave}{e.valor ? `: ${e.valor}` : ''}</span>)}</div> : <p className="text-sm italic text-slate-400">Nenhuma especificação adicionada.</p>}
+                                    {subcategorias.length > 0 && <p className="mt-3 text-xs leading-relaxed text-slate-500"><strong className="text-slate-600">Subcategorias:</strong> {subcategorias.join(', ')}</p>}
+                                </ResumoDetalhe>
+
+                                <ResumoDetalhe icone={LuMapPin} titulo="Localização" onEditar={() => editarEtapa(4)}>
+                                    {endereco.rua ? <><p className="text-sm font-bold text-slate-700">{endereco.rua}, {endereco.numero}</p><p className="mt-1 text-sm text-slate-500">{endereco.bairro}, {endereco.cidade} — {endereco.estado}</p><span className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${endereco.latitude ? 'bg-emerald-50 text-emerald-700' : 'bg-orange-50 text-orange-600'}`}><LuMapPin size={12} /> {endereco.latitude ? 'Posição confirmada no mapa' : 'Posição no mapa não definida'}</span></> : <p className="text-sm italic text-slate-400">Endereço não preenchido.</p>}
+                                </ResumoDetalhe>
+
+                                <ResumoDetalhe icone={LuCalendarDays} titulo="Disponibilidade" onEditar={() => editarEtapa(5)}>
+                                    {disponivel.length > 0 ? <div className="flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-verde-agua/10 text-lg font-black text-verde-escuro">{disponivel.length}</span><div><p className="text-sm font-bold text-slate-700">{disponivel.length === 1 ? 'Dia disponível' : 'Dias disponíveis'}</p><p className="mt-0.5 text-xs text-slate-500">O calendário poderá ser atualizado depois.</p></div></div> : <p className="text-sm italic text-slate-400">Nenhum dia selecionado.</p>}
+                                </ResumoDetalhe>
+
+                                <ResumoDetalhe icone={LuCircleDollarSign} titulo="Preço e condições" onEditar={() => editarEtapa(6)}>
+                                    <div className="flex flex-wrap items-center gap-x-5 gap-y-3"><div><p className="text-xs font-semibold text-slate-400">Diária</p><p className="text-lg font-black text-verde-escuro">R$ {precos.precoPorDia || '0,00'}</p></div>{precos.exigirCaucao && precos.caucao && <div><p className="text-xs font-semibold text-slate-400">Caução</p><p className="text-lg font-black text-slate-700">R$ {precos.caucao}</p></div>}</div>
+                                    <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-slate-600"><span className="inline-flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1.5"><LuClock3 size={13} className="text-ciano" /> Retirada {precos.horarioRetirada}</span><span className="inline-flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1.5"><LuClock3 size={13} className="text-ciano" /> Devolução {precos.horarioDevolucao}</span></div>
+                                </ResumoDetalhe>
                             </div>
-
-                            {/* Detalhes agrupados: grid 2x2 ao lado do preview, usando a largura extra */}
-                            <div className="grid flex-1 grid-cols-1 content-start gap-3 sm:grid-cols-2">
-
-                                <div className="relative rounded-xl border border-gray-100 bg-gray-50/70 p-4">
-                                    <BotaoEditarResumo onClick={() => editarEtapa(2)} label="Editar especificações" />
-                                    <h4 className="mb-2 pr-9 text-[9px] font-bold uppercase tracking-widest text-gray-400">Especificações</h4>
-                                    {especificacoes.filter(e => e.chave.trim()).length > 0 ? (
-                                        <div className="flex flex-wrap gap-1">
-                                            {especificacoes.filter(e => e.chave.trim()).map((e, i) => (
-                                                <span key={i} className="bg-white border border-gray-200 text-grafite text-[10px] font-semibold px-2 py-1 rounded-md">
-                                                    {e.chave}{e.valor ? `: ${e.valor}` : ''}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <p className="text-xs text-gray-300 italic">Nenhuma especificação</p>
-                                    )}
-                                    {subcategorias.length > 0 && (
-                                        <p className="text-[10px] text-gray-400 mt-2">Subcategorias: {subcategorias.join(', ')}</p>
-                                    )}
-                                </div>
-
-                                <div className="relative rounded-xl border border-gray-100 bg-gray-50/70 p-4">
-                                    <BotaoEditarResumo onClick={() => editarEtapa(4)} label="Editar localização" />
-                                    <h4 className="mb-2 pr-9 text-[9px] font-bold uppercase tracking-widest text-gray-400">Localização</h4>
-                                    {endereco.rua ? (
-                                        <>
-                                            <p className="text-xs font-semibold text-grafite truncate">{endereco.rua}, {endereco.numero}</p>
-                                            <p className="text-[10px] text-gray-400 mt-0.5 truncate">{endereco.bairro}, {endereco.cidade} - {endereco.estado}</p>
-                                            <span className={`inline-block mt-1.5 text-[9px] font-bold px-2 py-0.5 rounded-full ${endereco.latitude ? 'bg-verde-agua/10 text-verde-agua' : 'bg-orange-50 text-orange-500'}`}>
-                                                {endereco.latitude ? '📍 Localização marcada no mapa' : '⚠ Posição no mapa não definida'}
-                                            </span>
-                                        </>
-                                    ) : (
-                                        <p className="text-xs text-gray-300 italic">Endereço não preenchido</p>
-                                    )}
-                                </div>
-
-                                <div className="relative rounded-xl border border-gray-100 bg-gray-50/70 p-4">
-                                    <BotaoEditarResumo onClick={() => editarEtapa(5)} label="Editar disponibilidade" />
-                                    <h4 className="mb-2 pr-9 text-[9px] font-bold uppercase tracking-widest text-gray-400">Disponibilidade</h4>
-                                    {disponivel.length > 0 ? (
-                                        <p className="text-xs font-semibold text-grafite">
-                                            {disponivel.length} {disponivel.length === 1 ? 'dia selecionado' : 'dias selecionados'}
-                                        </p>
-                                    ) : (
-                                        <p className="text-xs text-gray-300 italic">Nenhum dia selecionado</p>
-                                    )}
-                                </div>
-
-                                <div className="relative rounded-xl border border-gray-100 bg-gray-50/70 p-4">
-                                    <BotaoEditarResumo onClick={() => editarEtapa(6)} label="Editar preço e condições" />
-                                    <h4 className="mb-2 pr-9 text-[9px] font-bold uppercase tracking-widest text-gray-400">Preço e Condições</h4>
-                                    <p className="text-xs font-semibold text-grafite">
-                                        R$ {precos.precoPorDia || '0,00'} / dia
-                                    </p>
-                                    {precos.exigirCaucao && precos.caucao && (
-                                        <p className="text-[10px] text-gray-400 mt-0.5">+ caução de R$ {precos.caucao}</p>
-                                    )}
-                                    <p className="text-[10px] text-gray-400 mt-0.5">Retirada {precos.horarioRetirada} • Devolução {precos.horarioDevolucao}</p>
-                                </div>
-
-                            </div>
-
                         </div>
 
-                        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <button type="button" onClick={voltarEtapa} className='btn-back'>↩ Voltar</button>
-                            <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
-                                <button type="button" disabled={salvando} onClick={handleRascunho} className='rounded-lg border-2 border-verde-agua bg-transparent px-5 py-2.5 text-xs font-bold uppercase tracking-widest text-verde-agua transition-all hover:border-verde-escuro hover:text-verde-escuro disabled:cursor-wait disabled:opacity-60 sm:px-6'>Salvar como rascunho</button>
-                                <button type="button" disabled={salvando} onClick={handlePublicar} className='btn-next disabled:cursor-wait disabled:opacity-60'>Publicar Anúncio</button>
+                        <div className="border-t border-slate-100 bg-slate-50 p-5 sm:p-8">
+                            <div className="flex flex-col gap-5 rounded-2xl bg-verde-escuro p-5 text-white shadow-[0_18px_40px_-28px_rgba(3,45,84,.8)] sm:p-6 lg:flex-row lg:items-center lg:justify-between">
+                                <div className="flex gap-4"><span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-verde-agua/15 text-verde-agua"><LuRocket size={23} /></span><div><h3 className="font-black">Tudo pronto para publicar?</h3><p className="mt-1 max-w-lg text-sm leading-relaxed text-white/60">Seu anúncio poderá aparecer nas buscas assim que a publicação for concluída.</p></div></div>
+                                <div className="flex flex-col gap-2 sm:flex-row"><button type="button" disabled={salvando} onClick={handleRascunho} className="rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-white/20 disabled:cursor-wait disabled:opacity-60">Salvar rascunho</button><button type="button" disabled={salvando} onClick={handlePublicar} className="inline-flex items-center justify-center gap-2 rounded-xl bg-verde-agua px-6 py-3 text-xs font-black uppercase tracking-wider text-white transition hover:-translate-y-px hover:bg-ciano disabled:cursor-wait disabled:opacity-60"><LuRocket size={16} /> Publicar anúncio</button></div>
                             </div>
+                            <button type="button" onClick={voltarEtapa} className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-slate-500 transition-colors hover:text-verde-escuro">↩ Voltar para preços</button>
                         </div>
                     </div>
                 }
+                </main>
+
+                {step !== 7 && <PreviewAnuncio
+                    titulo={titulo}
+                    categoria={categoria}
+                    fotos={fotos}
+                    precos={precos}
+                    endereco={endereco}
+                />}
             </div>
             <ModalResultadoAnuncio
                 resultado={resultadoSalvamento}
@@ -1163,7 +1290,6 @@ function CriarAnuncio ()
                 onVerAnuncios={() => navigate('/painelLocador', { state: { abrirAba: 'anuncios' } })}
                 onVerAnuncio={() => navigate(`/produto/${resultadoSalvamento?.anuncioId}`)}
             />
-            <Footer />
         </div>    
     )
 }

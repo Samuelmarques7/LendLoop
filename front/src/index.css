@@ -84,6 +84,11 @@ button:not(:disabled),
   outline: none;
 }
 
+/* O contorno de foco pertence ao agrupador com ícone, não ao input interno. */
+.recuperacao-input:focus-visible {
+  outline: none;
+}
+
 /* Modal de status da solicitação de aluguel (ModalSolicitacao) */
 @keyframes modal-solicitacao-fundo { from { opacity: 0; } to { opacity: 1; } }
 @keyframes modal-solicitacao-entrada {
@@ -149,6 +154,81 @@ button:not(:disabled),
   }
   .label-field {
     @apply block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5;
+  }
+}
+
+.calendario-criacao .rdp-root {
+  --rdp-accent-color: var(--color-verde-escuro);
+  --rdp-accent-background-color: color-mix(in srgb, var(--color-verde-agua) 14%, white);
+  --rdp-day-width: 42px;
+  --rdp-day-height: 42px;
+  --rdp-day_button-width: 38px;
+  --rdp-day_button-height: 38px;
+  --rdp-day_button-border-radius: 12px;
+  margin: 0;
+  max-width: 100%;
+}
+
+.calendario-criacao .rdp-month_caption {
+  color: var(--color-grafite);
+  font-size: 0.95rem;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.calendario-criacao .rdp-weekday {
+  color: #94a3b8;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.calendario-criacao .rdp-button_previous,
+.calendario-criacao .rdp-button_next {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: white;
+  color: var(--color-grafite);
+}
+
+.calendario-criacao .rdp-day_button {
+  margin: auto;
+  border: 0;
+  color: #334155;
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: background-color 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+.calendario-criacao .rdp-day_button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-verde-agua) 12%, white);
+  color: var(--color-verde-escuro);
+  transform: translateY(-1px);
+}
+
+.calendario-criacao .rdp-selected .rdp-day_button {
+  background: var(--color-verde-agua);
+  color: white;
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--color-verde-agua) 28%, transparent);
+}
+
+.calendario-criacao .rdp-today:not(.rdp-selected) .rdp-day_button {
+  box-shadow: inset 0 0 0 1.5px var(--color-azul-oceano);
+  color: var(--color-azul-oceano);
+}
+
+.calendario-criacao .rdp-disabled .rdp-day_button,
+.calendario-criacao .rdp-outside .rdp-day_button {
+  color: #cbd5e1;
+  opacity: 0.65;
+}
+
+@media (max-width: 380px) {
+  .calendario-criacao .rdp-root {
+    --rdp-day-width: 38px;
+    --rdp-day-height: 38px;
+    --rdp-day_button-width: 34px;
+    --rdp-day_button-height: 34px;
   }
 }
 

@@ -15,6 +15,7 @@ const usuarioSchema = new mongoose.Schema({
   // Mantidos fora das respostas usuais para não expor credenciais temporárias.
   tokenRecuperacaoSenha: { type: String, default: null, select: false },
   tokenRecuperacaoExpira: { type: Date, default: null, select: false },
+  versaoSessao: { type: Number, default: 0, select: false },
   
   // Campos para Admin e KYC
   papel: { type: String, enum: ['usuario', 'admin'], default: 'usuario' },

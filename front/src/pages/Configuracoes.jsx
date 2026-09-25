@@ -9,13 +9,17 @@ import {
   LuCircleCheck,
   LuTimer,
   LuCircleX,
-  LuCheck
+  LuCheck,
+  LuBadgeCheck,
+  LuMegaphone,
+  LuShoppingBag
 } from 'react-icons/lu';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { VerificacaoIdentidade } from '../components/VerificacaoIdentidade';
 import { apiRequest } from '../services/api';
 import { useConfirmacao } from '../context/ConfirmacaoContext';
+import { useNotificacao } from '../context/NotificacaoContext';
 
 const OPCOES_OBJETIVO = [
   { valor: 'ambos', titulo: 'Ambos', descricao: 'Quero alugar e também disponibilizar meus itens' },
@@ -23,14 +27,25 @@ const OPCOES_OBJETIVO = [
   { valor: 'locador', titulo: 'Apenas Disponibilizar', descricao: 'Quero colocar meus itens na plataforma para render uma grana' },
 ];
 
+function lerUsuarioSalvo() {
+  try {
+    if (localStorage.getItem('usuarioLogado') !== 'true') return null;
+    return JSON.parse(localStorage.getItem('dadosUsuario') || 'null');
+  } catch {
+    return null;
+  }
+}
+
 export default function Configuracoes() {
   const navigate = useNavigate();
   const confirmar = useConfirmacao();
+  const { notificar } = useNotificacao();
+  const [dadosIniciais] = useState(lerUsuarioSalvo);
 
-  const [usuarioLogado, setUsuarioLogado] = useState(null);
-  const [objetivoAtual, setObjetivoAtual] = useState('ambos');
-  const [statusVerificacao, setStatusVerificacao] = useState('nao_enviado'); 
-  const [motivoRejeicao, setMotivoRejeicao] = useState(''); // Guarda o motivo que o admin escreveu
+  const [usuarioLogado, setUsuarioLogado] = useState(dadosIniciais);
+  const [objetivoAtual, setObjetivoAtual] = useState(dadosIniciais?.objetivo || 'ambos');
+  const [statusVerificacao, setStatusVerificacao] = useState(dadosIniciais?.verificacao?.status || 'nao_enviado');
+  const [motivoRejeicao, setMotivoRejeicao] = useState(dadosIniciais?.verificacao?.motivoRejeicao || '');
   const [salvandoObjetivo, setSalvandoObjetivo] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
   const [erro, setErro] = useState('');
@@ -43,25 +58,16 @@ export default function Configuracoes() {
   }, []);
 
   useEffect(() => {
-    const isLogado = localStorage.getItem('usuarioLogado') === 'true';
-    const dados = JSON.parse(localStorage.getItem('dadosUsuario') || 'null');
-
-    if (!isLogado || !dados) {
-      return;
-    }
-
-    setUsuarioLogado(dados);
-    setObjetivoAtual(dados.objetivo || 'ambos');
-    
-    // Carrega o status salvo na memória primeiro para não a tela não piscar
-    setStatusVerificacao(dados.verificacao?.status || 'nao_enviado');
-    setMotivoRejeicao(dados.verificacao?.motivoRejeicao || '');
+    const dados = lerUsuarioSalvo();
+    if (!dados) return;
+    let ativo = true;
 
     // Busca silenciosa no servidor para garantir que estamos mostrando o status real (caso o admin tenha aprovado/rejeitado)
     async function sincronizarKYC() {
       try {
         const verificacaoAtualizada = await apiRequest(`/api/usuarios/${dados.id}/verificacao`);
         
+        if (!ativo) return;
         setStatusVerificacao(verificacaoAtualizada.status || 'nao_enviado');
         setMotivoRejeicao(verificacaoAtualizada.motivoRejeicao || '');
 
@@ -70,12 +76,13 @@ export default function Configuracoes() {
         setUsuarioLogado(dadosAtualizados);
         localStorage.setItem('dadosUsuario', JSON.stringify(dadosAtualizados));
       } catch (e) {
-        console.error("Erro ao sincronizar status de verificação:", e);
+        if (ativo) notificar(e.message || 'Não foi possível atualizar o status da verificação.', 'erro');
       }
     }
 
     sincronizarKYC();
-  }, []);
+    return () => { ativo = false; };
+  }, [notificar]);
 
   function handleVerificacaoEnviada(novoStatus) {
     setStatusVerificacao(novoStatus); 
@@ -92,6 +99,7 @@ export default function Configuracoes() {
       setUsuarioLogado(atualizado);
       localStorage.setItem('dadosUsuario', JSON.stringify(atualizado));
     }
+    notificar('Documentos enviados para análise.', 'sucesso');
   }
 
   async function handleAlterarObjetivo(valor) {
@@ -109,8 +117,9 @@ export default function Configuracoes() {
       localStorage.setItem('dadosUsuario', JSON.stringify(atualizado));
       setUsuarioLogado(atualizado);
       setObjetivoAtual(data.usuario.objetivo);
+      notificar('Preferência atualizada com sucesso.', 'sucesso');
     } catch (e) {
-      setErro(e.message);
+      notificar(e.message, 'erro');
     } finally {
       setSalvandoObjetivo(false);
     }
@@ -121,7 +130,7 @@ export default function Configuracoes() {
 
     const confirmado = await confirmar({
       titulo: 'Excluir conta',
-      mensagem: 'Tem certeza que deseja excluir sua conta? Essa ação não pode ser desfeita.',
+      mensagem: 'Encerrar sua conta? Isso só é possível sem aluguéis em aberto. Seus dados pessoais serão removidos e o histórico concluído ficará anônimo.',
       textoConfirmar: 'Excluir conta',
       variante: 'perigo',
     });
@@ -147,19 +156,19 @@ export default function Configuracoes() {
     <div className="page-shell min-h-screen font-sans flex flex-col text-grafite">
       <Header />
 
-      <main className="flex-grow w-full pb-16">
-          <div className="max-w-3xl mx-auto px-6 sm:px-8 pt-8">
+      <main className="w-full flex-grow pb-16">
+        <div className="mx-auto w-full max-w-7xl px-5 pt-8 sm:px-8 lg:px-10 lg:pt-10 2xl:max-w-[1440px]">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-grafite transition-colors cursor-pointer"
+            className="flex cursor-pointer items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400 transition-colors hover:text-verde-escuro"
           >
             <LuArrowLeft size={15} />
             Voltar
           </button>
 
-          <div className="mt-5 border-l-4 border-ciano pl-4">
-            <h1 className="text-xl font-semibold text-grafite">Configurações da conta</h1>
-            <p className="mt-1 text-sm text-gray-500">Gerencie sua conta e as preferências da plataforma.</p>
+          <div className="mt-5 max-w-2xl">
+            <h1 className="text-3xl font-semibold tracking-tight text-verde-escuro sm:text-4xl">Configurações da conta</h1>
+            <p className="mt-2 text-sm leading-relaxed text-slate-500 sm:text-base">Gerencie sua identidade, a forma como você usa o LendLoop e os dados da sua conta.</p>
           </div>
 
           {erro && (
@@ -168,28 +177,29 @@ export default function Configuracoes() {
             </div>
           )}
 
-          <div className="mt-8 space-y-8">
+          <div className="mt-8">
 
             {usuarioLogado ? (
-              <>
+              <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(22rem,0.85fr)] xl:gap-8">
+                <div className="space-y-6">
                 {/* === SESSÃO DE VERIFICAÇÃO DE IDENTIDADE (KYC) === */}
-                <section className="overflow-hidden rounded-3xl border border-gray-100 border-l-4 border-l-verde-agua bg-white shadow-md shadow-verde-escuro/5">
-                  <div className="flex items-center gap-3 border-b border-verde-escuro/10 bg-verde-escuro/[0.025] p-6">
-                    <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-verde-escuro/10 text-verde-escuro">
+                <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                  <div className="flex items-start gap-3 border-b border-slate-100 px-5 py-5 sm:items-center sm:px-6">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-azul-oceano/10 text-azul-oceano">
                       <LuIdCard size={20} />
                     </span>
                     <div>
-                      <h2 className="text-lg font-bold text-grafite">Verificação de Identidade (KYC)</h2>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Envie seus documentos oficiais para liberar todos os recursos da plataforma.
+                      <h2 className="text-lg font-bold text-verde-escuro">Verificação de identidade</h2>
+                      <p className="mt-1 text-sm leading-relaxed text-slate-500">
+                        Confirme sua identidade para anunciar e alugar com mais segurança.
                       </p>
                     </div>
                   </div>
                   
-                  <div className="p-6 bg-gray-50/50">
+                  <div>
                     {/* ESTADO 1: APROVADO */}
                     {statusVerificacao === 'aprovado' && (
-                      <div className="bg-verde-agua/10 border border-verde-agua/30 rounded-2xl p-6 flex items-center gap-4 animate-fade-in">
+                      <div className="m-5 flex items-center gap-4 rounded-2xl border border-verde-agua/30 bg-verde-agua/10 p-6 animate-fade-in sm:m-6">
                         <LuCircleCheck size={36} className="text-verde-agua flex-shrink-0" />
                         <div>
                           <h3 className="text-verde-escuro font-bold text-lg">Identidade Verificada!</h3>
@@ -202,7 +212,7 @@ export default function Configuracoes() {
 
                     {/* ESTADO 2: PENDENTE */}
                     {statusVerificacao === 'pendente' && (
-                      <div className="bg-azul-oceano/10 border border-azul-oceano/30 rounded-2xl p-6 flex items-center gap-4 animate-fade-in">
+                      <div className="m-5 flex items-center gap-4 rounded-2xl border border-azul-oceano/25 bg-azul-oceano/10 p-6 animate-fade-in sm:m-6">
                         <LuTimer size={36} className="text-azul-oceano flex-shrink-0" />
                         <div>
                           <h3 className="text-azul-oceano font-bold text-lg">Documentação em Análise</h3>
@@ -217,7 +227,7 @@ export default function Configuracoes() {
                     {(statusVerificacao === 'nao_enviado' || statusVerificacao === 'rejeitado') && (
                       <div className="animate-fade-in">
                         {statusVerificacao === 'rejeitado' && (
-                          <div className="bg-red-50 border border-red-100 rounded-2xl p-5 mb-6 flex items-center gap-4">
+                          <div className="mx-5 mt-5 flex items-center gap-4 rounded-2xl border border-red-100 bg-red-50 p-5 sm:mx-6 sm:mt-6">
                             <LuCircleX size={28} className="text-red-500 flex-shrink-0" />
                             <div>
                               <h3 className="text-red-600 font-bold text-base">Verificação Recusada</h3>
@@ -238,20 +248,46 @@ export default function Configuracoes() {
                   </div>
                 </section>
 
+                <section className="relative overflow-hidden rounded-2xl bg-[#031f3b] p-5 text-white shadow-sm sm:p-6">
+                  <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-ciano/15 blur-2xl" aria-hidden="true" />
+                  <div className="relative">
+                    <div className="max-w-xl">
+                      <h2 className="text-xl font-bold">Mais confiança dos dois lados.</h2>
+                      <p className="mt-1.5 text-sm leading-relaxed text-white/65">A verificação libera as principais formas de participar da comunidade.</p>
+                    </div>
+                    <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                      <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.06] p-3.5">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-verde-agua/15 text-verde-agua"><LuMegaphone size={18} /></span>
+                        <span className="text-sm font-semibold">Publicar anúncios</span>
+                      </div>
+                      <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.06] p-3.5">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-verde-agua/15 text-verde-agua"><LuShoppingBag size={18} /></span>
+                        <span className="text-sm font-semibold">Solicitar aluguéis</span>
+                      </div>
+                      <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.06] p-3.5">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-verde-agua/15 text-verde-agua"><LuBadgeCheck size={18} /></span>
+                        <span className="text-sm font-semibold">Selo no perfil</span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+                </div>
+
+                <div className="space-y-6 xl:sticky xl:top-28">
                 {/* === TIPO DE CONTA === */}
-                <section className="overflow-hidden rounded-3xl border border-gray-100 border-l-4 border-l-azul-oceano bg-white shadow-md shadow-azul-oceano/5">
-                  <div className="flex items-center gap-3 border-b border-azul-oceano/10 bg-azul-oceano/[0.025] p-6">
-                    <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-azul-oceano/10 text-azul-oceano">
+                <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                  <div className="flex items-center gap-3 border-b border-slate-100 p-5 sm:px-6">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ciano/10 text-ciano">
                       <LuUserCog size={20} />
                     </span>
                     <div>
-                      <h2 className="text-lg font-bold text-grafite">Tipo de Conta</h2>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Mudou de ideia? Ajuste aqui o que você quer fazer no LendLoop.
+                      <h2 className="text-lg font-bold text-verde-escuro">Como você usa o LendLoop</h2>
+                      <p className="mt-1 text-sm leading-relaxed text-slate-500">
+                        Escolha entre alugar, disponibilizar itens ou fazer os dois.
                       </p>
                     </div>
                   </div>
-                  <div className="p-6 space-y-3">
+                  <div className="space-y-3 p-5 sm:p-6">
                     {OPCOES_OBJETIVO.map((op) => (
                       <button
                         type="button"
@@ -259,7 +295,7 @@ export default function Configuracoes() {
                         onClick={() => handleAlterarObjetivo(op.valor)}
                         disabled={salvandoObjetivo}
                         aria-pressed={objetivoAtual === op.valor}
-                        className={`flex w-full items-center justify-between gap-4 rounded-2xl border p-4 text-left transition-all ${
+                        className={`flex w-full items-center justify-between gap-4 rounded-xl border p-4 text-left transition-all ${
                           objetivoAtual === op.valor
                             ? 'border-verde-agua bg-verde-agua/10 shadow-sm ring-1 ring-verde-agua'
                             : 'border-gray-200 hover:border-azul-oceano/35 hover:bg-azul-oceano/[0.025]'
@@ -276,30 +312,31 @@ export default function Configuracoes() {
                 </section>
 
                 {/* === ZONA DE PERIGO === */}
-                <section className="overflow-hidden rounded-3xl border border-red-100 border-l-4 border-l-red-400 bg-white shadow-md shadow-red-500/5">
-                  <div className="flex items-center gap-3 border-b border-red-100 bg-red-50/60 p-6">
-                    <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-red-50 text-red-500">
+                <section className="overflow-hidden rounded-2xl border border-red-100 bg-white shadow-sm">
+                  <div className="flex items-center gap-3 border-b border-red-100 bg-red-50/50 p-5 sm:px-6">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-100/70 text-red-500">
                       <LuShieldAlert size={20} />
                     </span>
                     <h2 className="text-lg font-bold text-red-500">Zona de Perigo</h2>
                   </div>
-                  <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex flex-col gap-4 p-5 sm:p-6">
                     <div>
                       <p className="text-sm font-bold text-grafite">Excluir minha conta</p>
                       <p className="text-xs text-gray-400 mt-1">
-                        Essa ação é permanente e remove seus dados e anúncios.
+                        Disponível somente sem aluguéis em aberto. Seus dados pessoais serão removidos e o histórico concluído ficará anonimizado.
                       </p>
                     </div>
                     <button
                       onClick={handleExcluirConta}
                       disabled={excluindo}
-                      className="flex items-center justify-center gap-2 bg-red-50 text-red-500 text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-red-100 transition-colors cursor-pointer uppercase tracking-widest disabled:opacity-60 disabled:pointer-events-none"
+                      className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-red-500 transition-colors hover:bg-red-100 disabled:pointer-events-none disabled:opacity-60"
                     >
                       <LuTrash2 size={14} /> {excluindo ? 'Excluindo...' : 'Excluir Conta'}
                     </button>
                   </div>
                 </section>
-              </>
+                </div>
+              </div>
             ) : (
               <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 text-center">
                 <p className="text-sm font-bold text-grafite">Faça login para gerenciar sua conta</p>
