@@ -28,6 +28,12 @@ const { ErroMercadoPago, criarOrder, buscarOrder } = require('./config/mercadopa
 const OcupacaoDia = require('./models/OcupacaoDia');
 const { criarFiltroBusca, pontuarAnuncio } = require('./utils/busca');
 const { statusPagamentoDaOrder, aluguelPodeIniciar, pagamentoVencido } = require('./utils/pagamentos');
+const { arquivoImagemValido, caminhosDocumentos, cpfValido, removerArquivos } = require('./utils/verificacao');
+const { STATUS_ALUGUEL_ABERTO } = require('./utils/conta');
+const { emailValido, senhaForteOSuficiente, validarCadastro } = require('./utils/cadastro');
+const { hashTokenRecuperacao, tokenRecuperacaoTemFormatoValido } = require('./utils/recuperacao');
+
+const DIRETORIO_DOCUMENTOS = uploadVerificacao.diretorio;
 
 const origensPermitidas = (process.env.FRONTEND_URL || 'http://localhost:5173')
   .split(',')
@@ -79,8 +85,8 @@ async function criarNotificacao({ usuario, tipo, titulo, texto, linkPainel = nul
 // rejeita valores com mais de 2 casas decimais.
 const emCentavos = (valor) => Math.round(Number(valor) * 100);
 
-function criarTokenDeSessao(usuarioId) {
-  return jwt.sign({ id: usuarioId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+function criarTokenDeSessao(usuarioId, versaoSessao = 0) {
+  return jwt.sign({ id: usuarioId, sessao: Number(versaoSessao || 0) }, process.env.JWT_SECRET, { expiresIn: '7d' });
 }
 
 function normalizarData(valor) {
@@ -95,6 +101,24 @@ function diasDoPeriodo(inicio, fim) {
     dias.push(dia.toISOString().slice(0, 10));
   }
   return dias;
+}
+
+function processarUploadVerificacao(req, res, next) {
+  const middlewareUpload = uploadVerificacao.fields([
+    { name: 'frente', maxCount: 1 },
+    { name: 'verso', maxCount: 1 },
+    { name: 'selfie', maxCount: 1 }
+  ]);
+
+  middlewareUpload(req, res, async (erro) => {
+    if (!erro) return next();
+    const arquivosParciais = Object.values(req.files || {}).flat();
+    await removerArquivos(arquivosParciais.map((arquivo) => arquivo.path)).catch(() => {});
+    if (erro.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ erro: 'Cada documento deve ter no máximo 5 MB.' });
+    }
+    return res.status(400).json({ erro: erro.message || 'Não foi possível enviar os documentos.' });
+  });
 }
 
 class ErroHttp extends Error {
@@ -223,20 +247,23 @@ app.post('/api/usuarios', async (req, res) => {
   try {
     const { nome, senha, telefone, cep, localizacao, objetivo } = req.body;
     const email = String(req.body.email || '').trim().toLowerCase();
-    if (!nome?.trim() || !email || !senha || senha.length < 8) {
-      return res.status(400).json({ erro: 'Nome, e-mail e senha com pelo menos 8 caracteres são obrigatórios.' });
-    }
+    const erroValidacao = validarCadastro({ nome, email, senha, cep, localizacao, objetivo });
+    if (erroValidacao) return res.status(400).json({ erro: erroValidacao });
+
     const senhaCriptografada = await bcrypt.hash(senha, 10);
     const novoUsuario = new Usuario({
       nome: nome.trim(), email: email.trim().toLowerCase(), senha: senhaCriptografada,
-      telefone, cep, localizacao, objetivo
+      telefone: String(telefone || '').trim().slice(0, 30),
+      cep: String(cep).replace(/\D/g, ''),
+      localizacao: localizacao.trim().slice(0, 120),
+      objetivo
     });
 
     await novoUsuario.save();
 
     res.status(201).json({
       mensagem: 'Usuário criado com sucesso no LendLoop!',
-      token: criarTokenDeSessao(novoUsuario._id),
+      token: criarTokenDeSessao(novoUsuario._id, novoUsuario.versaoSessao),
       usuario: {
         id: novoUsuario._id,
         nome: novoUsuario.nome,
@@ -252,7 +279,11 @@ app.post('/api/usuarios', async (req, res) => {
     if (erro.code === 11000) {
       return res.status(409).json({ erro: 'Este e-mail já está cadastrado.' });
     }
-    res.status(500).json({ erro: 'Erro ao criar usuário', detalhes: erro.message });
+    if (erro.name === 'ValidationError') {
+      return res.status(400).json({ erro: 'Os dados informados não são válidos.' });
+    }
+    console.error('Erro ao criar usuário:', erro);
+    res.status(500).json({ erro: 'Não foi possível criar a conta. Tente novamente.' });
   }
 });
 
@@ -333,10 +364,10 @@ app.delete('/api/usuarios/:id', autenticacao, async (req, res) => {
     // Não deixa excluir a conta com aluguel em andamento (o outro lado ficaria sem resposta)
     const aluguelAberto = await Aluguel.exists({
       $or: [{ locador: usuario._id }, { locatario: usuario._id }],
-      status: { $in: ['pendente', 'aceito', 'andamento', 'aguardando_confirmacao'] }
+      status: { $in: STATUS_ALUGUEL_ABERTO }
     });
     if (aluguelAberto) {
-      return res.status(409).json({ erro: 'Você tem aluguéis em aberto. Conclua ou cancele antes de excluir a conta.' });
+      return res.status(409).json({ erro: 'Sua conta não pode ser encerrada enquanto houver solicitações ou aluguéis em aberto. Conclua ou cancele todos eles e tente novamente.' });
     }
 
     // Apaga de fato os anúncios do usuário (só afetam o próprio dono) e o que dependia deles
@@ -344,12 +375,30 @@ app.delete('/api/usuarios/:id', autenticacao, async (req, res) => {
     await Anuncio.deleteMany({ locador: usuario._id });
     await removerDependenciasDeAnuncios(anunciosDoUsuario.map((a) => a._id));
 
-    // Anonimiza o usuário em vez de apagar, preservando histórico de terceiros
+    // Mantém o vínculo técnico dos históricos concluídos, mas elimina os dados
+    // pessoais e documentos que não precisam continuar armazenados.
+    await removerArquivos(caminhosDocumentos(usuario.verificacao, DIRETORIO_DOCUMENTOS));
     usuario.nome = 'Usuário removido';
     usuario.email = `removido_${usuario._id}@lendloop.com`;
     usuario.senha = await bcrypt.hash(Math.random().toString(36), 10);
     usuario.telefone = '';
     usuario.avatar = '';
+    usuario.bio = '';
+    usuario.cep = '';
+    usuario.localizacao = '';
+    usuario.cpf = '';
+    usuario.tokenRecuperacaoSenha = null;
+    usuario.tokenRecuperacaoExpira = null;
+    usuario.verificacao = {
+      status: 'nao_enviado',
+      documentoFrente: '',
+      documentoVerso: '',
+      selfie: '',
+      enviadoEm: null,
+      motivoRejeicao: '',
+      revisadoEm: null,
+      revisadoPor: null
+    };
     usuario.ativo = false;
 
     await usuario.save();
@@ -360,15 +409,47 @@ app.delete('/api/usuarios/:id', autenticacao, async (req, res) => {
   }
 });
 
+// Limite simples por IP + e-mail. Impede força bruta sem revelar se a conta existe.
+const tentativasLogin = new Map();
+const JANELA_LOGIN_MS = 15 * 60 * 1000;
+const MAX_TENTATIVAS_LOGIN = 5;
+
+function chaveTentativaLogin(req, email) {
+  return `${req.ip || req.socket.remoteAddress || 'desconhecido'}:${email}`;
+}
+
+function tentativasLoginAtivas(chave) {
+  const registro = tentativasLogin.get(chave);
+  if (!registro || Date.now() - registro.inicio >= JANELA_LOGIN_MS) {
+    tentativasLogin.delete(chave);
+    return 0;
+  }
+  return registro.total;
+}
+
+function registrarFalhaLogin(chave) {
+  const registro = tentativasLogin.get(chave);
+  if (!registro || Date.now() - registro.inicio >= JANELA_LOGIN_MS) {
+    tentativasLogin.set(chave, { total: 1, inicio: Date.now() });
+    return;
+  }
+  registro.total += 1;
+}
+
 // Login
 app.post('/api/login', async (req, res) => {
   try {
     const email = String(req.body.email || '').trim().toLowerCase();
     const { senha } = req.body;
-    if (!email || !senha) {
-      return res.status(400).json({ erro: 'E-mail e senha são obrigatórios.' });
+    if (!emailValido(email) || typeof senha !== 'string' || !senha) {
+      return res.status(400).json({ erro: 'Informe um e-mail válido e sua senha.' });
     }
-    const usuario = await Usuario.findOne({ email });
+
+    const chaveTentativa = chaveTentativaLogin(req, email);
+    if (tentativasLoginAtivas(chaveTentativa) >= MAX_TENTATIVAS_LOGIN) {
+      return res.status(429).json({ erro: 'Muitas tentativas seguidas. Aguarde 15 minutos e tente novamente.' });
+    }
+    const usuario = await Usuario.findOne({ email }).select('+versaoSessao');
 
     // Mesma resposta para e-mail inexistente e senha errada: evita enumerar contas.
     // O bcrypt.compare roda mesmo sem usuário para o tempo de resposta não denunciar.
@@ -376,6 +457,7 @@ app.post('/api/login', async (req, res) => {
     const senhaCorreta = await bcrypt.compare(senha, hashParaComparar);
 
     if (!usuario || !senhaCorreta) {
+      registrarFalhaLogin(chaveTentativa);
       return res.status(401).json({ erro: 'E-mail ou senha incorretos.' });
     }
 
@@ -383,7 +465,8 @@ app.post('/api/login', async (req, res) => {
       return res.status(403).json({ erro: 'Esta conta está desativada.' });
     }
 
-    const token = criarTokenDeSessao(usuario._id);
+    const token = criarTokenDeSessao(usuario._id, usuario.versaoSessao);
+    tentativasLogin.delete(chaveTentativa);
 
     res.status(200).json({
       mensagem: 'Login realizado com sucesso!',
@@ -408,11 +491,33 @@ app.post('/api/login', async (req, res) => {
 
 // --- Recuperação de Senha ---
 
+const solicitacoesRecuperacao = new Map();
+const JANELA_RECUPERACAO_MS = 15 * 60 * 1000;
+const MAX_SOLICITACOES_RECUPERACAO = 3;
+
+function registrarSolicitacaoRecuperacao(chave) {
+  const agora = Date.now();
+  const registro = solicitacoesRecuperacao.get(chave);
+  if (!registro || agora - registro.inicio >= JANELA_RECUPERACAO_MS) {
+    solicitacoesRecuperacao.set(chave, { total: 1, inicio: agora });
+    return 1;
+  }
+  registro.total += 1;
+  return registro.total;
+}
+
 // Solicitar recuperação (envia e-mail com o link)
 app.post('/api/esqueceu-senha', async (req, res) => {
   try {
-    const { email } = req.body;
-    const usuario = await Usuario.findOne({ email: email?.trim().toLowerCase() });
+    const email = String(req.body.email || '').trim().toLowerCase();
+    if (!emailValido(email)) return res.status(400).json({ erro: 'Informe um endereço de e-mail válido.' });
+
+    const chave = `${req.ip || req.socket.remoteAddress || 'desconhecido'}:${email}`;
+    if (registrarSolicitacaoRecuperacao(chave) > MAX_SOLICITACOES_RECUPERACAO) {
+      return res.status(429).json({ erro: 'Muitas solicitações seguidas. Aguarde 15 minutos antes de tentar novamente.' });
+    }
+
+    const usuario = await Usuario.findOne({ email });
 
     // Não revela se o e-mail existe ou não, por segurança
     if (!usuario || usuario.ativo === false) {
@@ -424,7 +529,7 @@ app.post('/api/esqueceu-senha', async (req, res) => {
     const token = crypto.randomBytes(32).toString('hex');
     const expira = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
 
-    usuario.tokenRecuperacaoSenha = crypto.createHash('sha256').update(token).digest('hex');
+    usuario.tokenRecuperacaoSenha = hashTokenRecuperacao(token);
     usuario.tokenRecuperacaoExpira = expira;
     await usuario.save();
 
@@ -439,6 +544,20 @@ app.post('/api/esqueceu-senha', async (req, res) => {
   }
 });
 
+// Permite que a interface informe um link expirado antes de pedir a nova senha.
+app.get('/api/redefinir-senha/validar', async (req, res) => {
+  try {
+    const token = String(req.query.token || '');
+    if (!tokenRecuperacaoTemFormatoValido(token)) return res.status(400).json({ valido: false });
+    const tokenHash = hashTokenRecuperacao(token);
+    const existe = await Usuario.exists({ tokenRecuperacaoSenha: tokenHash, tokenRecuperacaoExpira: { $gt: new Date() }, ativo: { $ne: false } });
+    return res.status(existe ? 200 : 400).json({ valido: Boolean(existe) });
+  } catch (erro) {
+    console.error('Erro ao validar token de recuperação:', erro);
+    return res.status(500).json({ erro: 'Não foi possível validar o link.' });
+  }
+});
+
 // Redefinir senha (recebe token + nova senha)
 app.post('/api/redefinir-senha', async (req, res) => {
   try {
@@ -447,15 +566,15 @@ app.post('/api/redefinir-senha', async (req, res) => {
     if (!token || !novaSenha) {
       return res.status(400).json({ erro: 'Token e nova senha são obrigatórios.' });
     }
-    if (novaSenha.length < 8) {
-      return res.status(400).json({ erro: 'A nova senha deve ter pelo menos 8 caracteres.' });
+    if (!senhaForteOSuficiente(novaSenha)) {
+      return res.status(400).json({ erro: 'A nova senha deve ter pelo menos 8 caracteres e combinar letras, números, maiúsculas ou símbolos.' });
     }
 
-    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const tokenHash = hashTokenRecuperacao(token);
     const usuario = await Usuario.findOne({
       tokenRecuperacaoSenha: tokenHash,
       tokenRecuperacaoExpira: { $gt: new Date() }
-    });
+    }).select('+tokenRecuperacaoSenha +tokenRecuperacaoExpira +versaoSessao');
 
     if (!usuario) {
       return res.status(400).json({ erro: 'Token inválido ou expirado. Solicite a recuperação novamente.' });
@@ -464,6 +583,7 @@ app.post('/api/redefinir-senha', async (req, res) => {
     usuario.senha = await bcrypt.hash(novaSenha, 10);
     usuario.tokenRecuperacaoSenha = null;
     usuario.tokenRecuperacaoExpira = null;
+    usuario.versaoSessao = Number(usuario.versaoSessao || 0) + 1;
     await usuario.save();
 
     res.status(200).json({ mensagem: 'Senha redefinida com sucesso!' });
@@ -2025,24 +2145,35 @@ app.delete('/api/notificacoes/:id', autenticacao, async (req, res) => {
 app.post(
   '/api/usuarios/:id/verificacao',
   autenticacao,
-  uploadVerificacao.fields([
-    { name: 'frente', maxCount: 1 },
-    { name: 'verso', maxCount: 1 }, // <-- Adicionado aqui
-    { name: 'selfie', maxCount: 1 }
-  ]),
+  processarUploadVerificacao,
   async (req, res) => {
+    const arquivosNovos = Object.values(req.files || {}).flat();
     try {
       if (req.usuarioId !== req.params.id) {
+        await removerArquivos(arquivosNovos.map((arquivo) => arquivo.path));
         return res.status(403).json({ erro: 'Você não tem permissão.' });
       }
 
       const frente = req.files?.frente?.[0];
-      const verso = req.files?.verso?.[0]; // <-- Capturando o verso
+      const verso = req.files?.verso?.[0];
       const selfie = req.files?.selfie?.[0];
       const cpf = String(req.body.cpf || '').replace(/\D/g, '');
 
-      if (!frente || !verso || !selfie || cpf.length !== 11) {
+      if (!frente || !verso || !selfie || !cpfValido(cpf)) {
+        await removerArquivos(arquivosNovos.map((arquivo) => arquivo.path));
         return res.status(400).json({ erro: 'Envie a frente, o verso, a selfie e um CPF válido.' });
+      }
+
+      const arquivosValidos = await Promise.all(arquivosNovos.map(arquivoImagemValido));
+      if (arquivosValidos.some((valido) => !valido)) {
+        await removerArquivos(arquivosNovos.map((arquivo) => arquivo.path));
+        return res.status(400).json({ erro: 'Um ou mais arquivos não correspondem a uma imagem JPG, PNG ou WebP válida.' });
+      }
+
+      const usuarioAnterior = await Usuario.findById(req.params.id).select('verificacao');
+      if (!usuarioAnterior) {
+        await removerArquivos(arquivosNovos.map((arquivo) => arquivo.path));
+        return res.status(404).json({ erro: 'Usuário não encontrado.' });
       }
 
       const usuario = await Usuario.findByIdAndUpdate(
@@ -2052,7 +2183,7 @@ app.post(
           verificacao: {
             status: 'pendente',
             documentoFrente: frente.filename,
-            documentoVerso: verso.filename, // <-- Salvando no banco se quiser criar o campo no model
+            documentoVerso: verso.filename,
             selfie: selfie.filename,
             enviadoEm: new Date()
           }
@@ -2060,9 +2191,8 @@ app.post(
         { new: true }
       ).select('-senha');
 
-      if (!usuario) {
-        return res.status(404).json({ erro: 'Usuário não encontrado.' });
-      }
+      await removerArquivos(caminhosDocumentos(usuarioAnterior.verificacao, DIRETORIO_DOCUMENTOS))
+        .catch((erro) => console.error('Não foi possível remover documentos KYC antigos:', erro));
 
       // Cada envio entra na fila de todos os administradores ativos. Assim a
       // central administrativa e o sino conseguem sinalizar a nova análise.
@@ -2078,6 +2208,7 @@ app.post(
 
       res.status(200).json({ mensagem: 'Documentos enviados com sucesso!', verificacao: usuario.verificacao });
     } catch (erro) {
+      await removerArquivos(arquivosNovos.map((arquivo) => arquivo.path)).catch(() => {});
       res.status(500).json({ erro: 'Erro ao enviar documentos', detalhes: erro.message });
     }
   }
@@ -2102,6 +2233,43 @@ app.get('/api/usuarios/:id/verificacao', autenticacao, async (req, res) => {
 });
 
 // --- Painel administrativo de verificação (somente admin) ---
+
+// Lista enxuta para gestão e auditoria visual de quem possui acesso administrativo.
+app.get('/api/admin/usuarios', autenticacao, autenticacaoAdmin, async (req, res) => {
+  try {
+    const administradores = await Usuario.find({ papel: 'admin' })
+      .select('nome email avatar ativo createdAt updatedAt')
+      .sort({ nome: 1 });
+    res.status(200).json(administradores);
+  } catch (erro) {
+    console.error('Erro ao listar administradores:', erro);
+    res.status(500).json({ erro: 'Erro ao carregar administradores.' });
+  }
+});
+
+// Busca perfis elegíveis por nome ou e-mail para o seletor de promoção.
+app.get('/api/admin/usuarios/busca', autenticacao, autenticacaoAdmin, async (req, res) => {
+  try {
+    const termo = String(req.query.q || '').trim();
+    if (termo.length < 2) return res.status(200).json([]);
+
+    const termoSeguro = termo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const correspondencia = new RegExp(termoSeguro, 'i');
+    const usuarios = await Usuario.find({
+      papel: { $ne: 'admin' },
+      ativo: { $ne: false },
+      $or: [{ nome: correspondencia }, { email: correspondencia }]
+    })
+      .select('nome email avatar')
+      .sort({ nome: 1 })
+      .limit(8);
+
+    res.status(200).json(usuarios);
+  } catch (erro) {
+    console.error('Erro ao buscar perfis para promoção:', erro);
+    res.status(500).json({ erro: 'Erro ao buscar perfis.' });
+  }
+});
 
 // Promove uma conta ativa a administrador. Apenas outro administrador pode executar esta ação.
 app.patch('/api/admin/usuarios/promover', autenticacao, autenticacaoAdmin, async (req, res) => {

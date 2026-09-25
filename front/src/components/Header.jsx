@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { LuLogOut, LuMenu, LuPackage, LuSettings, LuShieldCheck, LuShoppingBag, LuUser, LuX } from 'react-icons/lu';
-import logo from '../assets/logocompleta.png';
+import logoMarca from '../assets/logo-painel-transparente.png';
 import { NotificacaoSino } from './NotificacaoSino';
 import { useConfirmacao } from '../context/ConfirmacaoContext';
 
@@ -59,18 +59,10 @@ export function Header({ variant = 'standard' }) {
     <header className={variant === 'hero' ? 'absolute inset-x-0 top-0 z-50 bg-gradient-to-b from-slate-950/55 to-transparent' : 'sticky top-0 z-50 bg-[#031f3b] shadow-[0_8px_24px_rgba(3,24,48,0.2)]'}>
       <div className={`relative mx-auto flex min-h-[5.25rem] items-center justify-between gap-3 px-5 sm:px-8 ${isHero ? 'max-w-none lg:px-6' : 'max-w-7xl lg:px-10'}`}>
         <button type="button" onClick={() => navegar('/')} aria-label="Ir para a página inicial" className="shrink-0 transition-opacity hover:opacity-80 focus-visible:outline-offset-3">
-          {isHero ? (
-            <span className="flex items-center gap-2" aria-hidden="true">
-              <span className="relative block h-11 w-11 shrink-0 overflow-hidden sm:h-12 sm:w-12">
-                <img src={logo} alt="" style={{ maxWidth: 'none' }} className="absolute left-0 top-0 h-11 w-auto drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)] sm:h-12" />
-              </span>
-              <span className="relative block h-10 w-[124px] overflow-hidden sm:h-11 sm:w-[138px]">
-                <img src={logo} alt="" style={{ maxWidth: 'none' }} className="absolute left-[-36px] top-0 h-10 w-auto brightness-0 invert drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)] sm:left-[-40px] sm:h-11" />
-              </span>
-            </span>
-          ) : (
-            <img src={logo} alt="LendLoop" className="h-8 w-auto sm:h-9" />
-          )}
+          <span className="flex items-center gap-2" aria-hidden="true">
+            <img src={logoMarca} alt="" className="h-10 w-10 shrink-0 scale-[1.14] object-contain drop-shadow-[0_2px_10px_rgba(0,0,0,0.3)] sm:h-11 sm:w-11" />
+            <span className={`text-[23px] font-semibold leading-none tracking-[-0.06em] sm:text-[26px] ${isHero ? 'text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.3)]' : 'text-grafite'}`}>LendLoop</span>
+          </span>
         </button>
 
         {!isLogado && (

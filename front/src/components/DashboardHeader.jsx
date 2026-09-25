@@ -1,7 +1,6 @@
 import { LuSettings } from 'react-icons/lu';
 import { NotificacaoSino } from './NotificacaoSino';
 import logoMarcaPainel from '../assets/logo-painel-transparente.png';
-import logoCompleta from '../assets/logocompleta.png';
 
 const VARIANTES = {
   locatario: {
@@ -49,9 +48,7 @@ export function DashboardHeader({
           className="flex shrink-0 items-center gap-2 border-0 bg-transparent shadow-none transition-opacity hover:opacity-85 focus-visible:outline-offset-3"
         >
           <img src={logoMarcaPainel} alt="" className="h-11 w-11 shrink-0 scale-[1.2] object-contain sm:h-12 sm:w-12" />
-          <span className="relative hidden h-10 w-[124px] overflow-hidden lg:block sm:h-11 sm:w-[138px]" aria-hidden="true">
-            <img src={logoCompleta} alt="" style={{ maxWidth: 'none' }} className="absolute left-[-36px] top-0 h-10 w-auto brightness-0 invert sm:left-[-40px] sm:h-11" />
-          </span>
+          <span className="hidden text-[25px] font-semibold leading-none tracking-[-0.06em] text-white lg:block" aria-hidden="true">LendLoop</span>
         </button>
 
         <div className="hidden shrink-0 items-center gap-2 2xl:flex">

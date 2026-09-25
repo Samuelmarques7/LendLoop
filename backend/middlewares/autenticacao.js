@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const Usuario = require('../models/Usuario');
+const { versaoSessaoValida } = require('../utils/recuperacao');
 
 async function autenticacao(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -16,9 +17,12 @@ async function autenticacao(req, res, next) {
 
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
-    const usuario = await Usuario.findById(payload.id).select('ativo');
+    const usuario = await Usuario.findById(payload.id).select('ativo +versaoSessao');
     if (!usuario || usuario.ativo === false) {
       return res.status(401).json({ erro: 'Sessão inválida ou conta desativada.' });
+    }
+    if (!versaoSessaoValida(payload.sessao, usuario.versaoSessao)) {
+      return res.status(401).json({ erro: 'Sua senha foi alterada. Entre novamente.' });
     }
     req.usuarioId = payload.id;
     next();

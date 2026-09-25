@@ -24,7 +24,8 @@ export async function apiRequest(caminho, options = {}) {
         throw new Error('Erro de conexão. O servidor está rodando?');
     }
 
-    if (response.status === 401) {
+    // Um 401 no login significa credenciais inválidas, não uma sessão expirada.
+    if (response.status === 401 && caminho !== '/api/login') {
         localStorage.removeItem('token');
         localStorage.removeItem('usuarioLogado');
         localStorage.removeItem('dadosUsuario');
