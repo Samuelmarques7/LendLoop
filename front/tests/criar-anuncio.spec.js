@@ -206,7 +206,7 @@ test.describe('Criar anúncio', () => {
     await page.getByLabel('Exigir caução').check()
     await page.getByLabel('Hora de horário de retirada').selectOption('10')
     await page.getByRole('button', { name: 'Concluir' }).click()
-    await expect(page.getByRole('heading', { name: 'Resumo do Anúncio' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Revise seu anúncio' })).toBeVisible()
 
     // 7. Rascunho e publicação
     await page.getByRole('button', { name: 'Salvar como rascunho' }).click()

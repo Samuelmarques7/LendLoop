@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { LuArrowRight, LuCheck, LuEye, LuEyeOff, LuKeyRound, LuMail, LuShieldCheck, LuSparkles } from 'react-icons/lu';
 import {apiRequest } from '../services/api';
 import { emailEhValido } from '../utils/validarEmail';
-import logoMarca from '../assets/logo-painel-transparente.png';
+import logoMarca from '../assets/logo-painel-transparente.webp';
 
 export default function Login() {
   const navigate = useNavigate();

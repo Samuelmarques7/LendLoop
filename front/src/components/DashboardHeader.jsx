@@ -1,6 +1,6 @@
 import { LuSettings } from 'react-icons/lu';
 import { NotificacaoSino } from './NotificacaoSino';
-import logoMarcaPainel from '../assets/logo-painel-transparente.png';
+import logoMarcaPainel from '../assets/logo-painel-transparente.webp';
 
 const VARIANTES = {
   locatario: {

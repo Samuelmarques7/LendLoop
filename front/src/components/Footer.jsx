@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { LuMail, LuShieldCheck } from 'react-icons/lu';
-import logoMarcaPainel from '../assets/logo-painel-transparente.png';
+import logoMarcaPainel from '../assets/logo-painel-transparente.webp';
 
 const linksInstitucionais = [
   { to: '/sobre', label: 'Sobre nós' },

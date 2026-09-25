@@ -16,8 +16,8 @@ import {
 } from 'react-icons/lu';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
-import heroEscuro from '../assets/hero/lendloop-hero-dark-v11.png';
-import heroEscuroWide from '../assets/hero/lendloop-hero-dark-v12-wide.png';
+import heroEscuro from '../assets/hero/lendloop-hero-dark-v11.webp';
+import heroEscuroWide from '../assets/hero/lendloop-hero-dark-v12-wide.webp';
 import { useBuscasRecentes } from '../hooks/useBuscasRecentes';
 import { SUGESTOES_POPULARES, BANCO_DE_PALAVRAS } from '../constants/buscasPopulares';
 import { CATEGORIAS } from '../constants/categorias';

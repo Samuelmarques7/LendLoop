@@ -5,7 +5,7 @@ import {apiRequest } from '../services/api';
 import { MedidorForcaSenha } from '../components/MedidorForcaSenha';
 import { senhaEhForteOSuficiente } from '../utils/forcaSenha';
 import { emailEhValido } from '../utils/validarEmail';
-import logoMarca from '../assets/logo-painel-transparente.png';
+import logoMarca from '../assets/logo-painel-transparente.webp';
 
 const OBJETIVOS = [
   { valor: 'ambos', titulo: 'Ambos', descricao: 'Quero alugar e também disponibilizar meus itens' },

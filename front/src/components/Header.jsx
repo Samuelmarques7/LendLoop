@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { LuLogOut, LuMenu, LuPackage, LuSettings, LuShieldCheck, LuShoppingBag, LuUser, LuX } from 'react-icons/lu';
-import logoMarca from '../assets/logo-painel-transparente.png';
+import logoMarca from '../assets/logo-painel-transparente.webp';
 import { NotificacaoSino } from './NotificacaoSino';
 import { useConfirmacao } from '../context/ConfirmacaoContext';
 

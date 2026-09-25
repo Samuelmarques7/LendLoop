@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import logo from '../assets/logo-painel-transparente.png';
+import logo from '../assets/logo-painel-transparente.webp';
 
 export function RecuperacaoLayout({ children }) {
   return (
